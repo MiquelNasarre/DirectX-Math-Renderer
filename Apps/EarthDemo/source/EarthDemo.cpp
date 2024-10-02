@@ -3,6 +3,8 @@
 #include "Mouse.h"
 #include "IG_EarthDemo.h"
 
+#include <string>
+
 float IG_DATA::EARTH_THETA = 0.f;
 float IG_DATA::EARTH_PHI = 0.f;
 float IG_DATA::SPEED = 0.f;

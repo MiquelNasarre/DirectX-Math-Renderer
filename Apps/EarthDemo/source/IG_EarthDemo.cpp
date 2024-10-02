@@ -3,6 +3,8 @@
 #include "imgui/imgui.h"
 #include "EarthDemo.h"
 
+#include <string>
+
 static IG_DATA::lightsource savestate;
 
 void IG_EarthDemo::saveLightState(int id)

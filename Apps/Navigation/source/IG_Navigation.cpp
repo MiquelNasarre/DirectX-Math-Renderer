@@ -10,7 +10,7 @@ void IG_Navigation::renderWaypointSettings(int& w)
 	if (ImGui::Begin("Waypoint settings"))
 	{
 		ImGui::Text("Name");
-		ImGui::InputText("", IG_DATA::POINTS[w].name, 20);
+		ImGui::InputText("##", IG_DATA::POINTS[w].name, 20);
 
 
 		ImGui::Spacing();
@@ -37,7 +37,7 @@ void IG_Navigation::renderWaypointSettings(int& w)
 		ImGui::Spacing();
 		ImGui::Text("Color");
 
-		if (ImGui::ColorPicker4("", IG_DATA::POINTS[w].color))
+		if (ImGui::ColorPicker4("##", IG_DATA::POINTS[w].color))
 			IG_DATA::POINTS[w].point->updateColor(IG_DATA::window->graphics, Color(IG_DATA::POINTS[w].color));
 
 		if (ImGui::Button("Delete"))

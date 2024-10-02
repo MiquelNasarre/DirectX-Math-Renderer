@@ -9,13 +9,16 @@ enum PROJECTION_TYPES {
 class Background : public Drawable
 {
 public:
-	Background(Graphics& gfx, std::string filename, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
+	Background(Graphics& gfx, const char* filename, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
+	Background(Graphics& gfx, Image& texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
 	Background(Graphics& gfx, Texture texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
 
-	void create(Graphics& gfx, std::string filename, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
+	void create(Graphics& gfx, const char* filename, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
+	void create(Graphics& gfx, Image& texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
 	void create(Graphics& gfx, Texture texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
 
-	void updateTexture(Graphics& gfx, std::string filename);
+	void updateTexture(Graphics& gfx, const char* filename);
+	void updateTexture(Graphics& gfx, Image& texture);
 	void updateTexture(Graphics& gfx, Texture texture);
 	void updateObserver(Graphics& gfx, Vector3f obs);
 	void updateWideness(Graphics& gfx, float FOV, Vector2f WindowDimensions);

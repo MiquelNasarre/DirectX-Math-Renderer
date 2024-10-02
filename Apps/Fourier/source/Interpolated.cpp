@@ -66,11 +66,11 @@ void Interpolated::create(Graphics& gfx, FourierSurface* surface0, FourierSurfac
 
 	AddBind(std::make_unique<IndexBuffer>(gfx, FourierSurface::getTrianglesIcosphere(), 3 * FourierSurface::getNtriangles()));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"InterpolatedVS.cso"))));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"InterpolatedVS.cso")));
 
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"InterpolatedPS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"InterpolatedPS.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[4] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Dylm0a",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
@@ -78,7 +78,7 @@ void Interpolated::create(Graphics& gfx, FourierSurface* surface0, FourierSurfac
 		{ "Color",0,DXGI_FORMAT_B8G8R8A8_UNORM,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 4u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
@@ -176,11 +176,11 @@ void Interpolated::create(Graphics& gfx, Interpolated* interpolation0, Interpola
 
 	AddBind(std::make_unique<IndexBuffer>(gfx, FourierSurface::getTrianglesIcosphere(), 3 * FourierSurface::getNtriangles()));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"InterpolatedVS.cso"))));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"InterpolatedVS.cso")));
 
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"InterpolatedPS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"InterpolatedPS.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[4] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Dylm0a",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
@@ -188,7 +188,7 @@ void Interpolated::create(Graphics& gfx, Interpolated* interpolation0, Interpola
 		{ "Color",0,DXGI_FORMAT_B8G8R8A8_UNORM,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 4u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
@@ -277,11 +277,11 @@ void Interpolated::create(Graphics& gfx, Interpolated* interpolation0, FourierSu
 
 	AddBind(std::make_unique<IndexBuffer>(gfx, FourierSurface::getTrianglesIcosphere(), 3 * FourierSurface::getNtriangles()));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"InterpolatedVS.cso"))));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"InterpolatedVS.cso")));
 
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"InterpolatedPS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"InterpolatedPS.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[4] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Dylm0a",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
@@ -289,7 +289,7 @@ void Interpolated::create(Graphics& gfx, Interpolated* interpolation0, FourierSu
 		{ "Color",0,DXGI_FORMAT_B8G8R8A8_UNORM,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 4u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
@@ -947,7 +947,7 @@ void Interpolated::Curves::create(Graphics& gfx, const Coefficient* coef, const 
 	std::thread worker2 = std::thread(generateThetaCurveAsync, 0u, Npoints / 2u, coef, ncoef, phi, theta, vertexs);
 	std::thread worker3 = std::thread(generateThetaCurveAsync, Npoints / 2u + 1, Npoints, coef, ncoef, phi, theta, vertexs);
 
-	unsigned short* indexs = (unsigned short*)calloc(2 * (Npoints + 1), sizeof(unsigned short));
+	unsigned int* indexs = (unsigned int*)calloc(2 * (Npoints + 1), sizeof(unsigned int));
 	for (UINT i = 0; i <= 2 * Npoints + 1; i++)
 		indexs[i] = i;
 
@@ -962,16 +962,16 @@ void Interpolated::Curves::create(Graphics& gfx, const Coefficient* coef, const 
 	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, 2 * (Npoints + 1)));
 	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, 2 * (Npoints + 1)));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"CurvesVS.cso"))));
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"CurvesPS.cso")));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"CurvesVS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"CurvesPS.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[2] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Color",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 2u, pvs->GetBytecode()));
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
 	AddBind(std::make_unique<Blender>(gfx, false));
 

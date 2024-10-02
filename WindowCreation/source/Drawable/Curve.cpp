@@ -19,18 +19,21 @@ void Curve::create(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoin
 	else
 		isInit = true;
 
-	std::vector<Vertex> vertexs;
+	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
 	for (UINT i = 0; i <= Npoints; i++)
-		vertexs.push_back(Vertex( F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4() , color.getColor4() ));
+	{
+		vertexs[i].color = color.getColor4();
+		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
+	}
 
-	std::vector<unsigned short> indexs;
+	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
 
 	for (UINT i = 0; i <= Npoints; i++)
-		indexs.push_back(i);
+		indexs[i] = i;
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1));
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1));
 
 	addDefaultBinds(gfx, transparency);
 }
@@ -45,7 +48,7 @@ void Curve::create(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoin
 	if (!colors.size())
 		throw std::exception("The color vector for a curve must have at least one color!!");
 
-	std::vector<Vertex> vertexs;
+	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
 	for (UINT i = 0; i <= Npoints; i++) {
 		float c = (colors.size() - 1) * float(i) / Npoints;
@@ -53,20 +56,18 @@ void Curve::create(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoin
 		UINT C1 = (C0 + 1) % colors.size();
 		c -= C0;
 
-		vertexs.push_back(Vertex(
-			F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4(),
-			(colors[C0] * (1 - c) + colors[C1] * c).getColor4()
-		));
+		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
+		vertexs[i].color = (colors[C0] * (1 - c) + colors[C1] * c).getColor4();
 	}
 
 
-	std::vector<unsigned short> indexs;
+	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
 
 	for (UINT i = 0; i <= Npoints; i++)
-		indexs.push_back(i);
+		indexs[i] = i;
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1));
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1));
 
 	addDefaultBinds(gfx, transparency);
 }
@@ -76,18 +77,21 @@ void Curve::updateShape(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT 
 	if (!isInit)
 		throw std::exception("You cannot update the shape of a curve if you havent initialized it first");
 
-	std::vector<Vertex> vertexs;
+	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
 	for (UINT i = 0; i <= Npoints; i++)
-		vertexs.push_back(Vertex(F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4(), color.getColor4()));
+	{
+		vertexs[i].color = color.getColor4();
+		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
+	}
 
-	std::vector<unsigned short> indexs;
+	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
 
 	for (UINT i = 0; i <= Npoints; i++)
-		indexs.push_back(i);
+		indexs[i] = i;
 
-	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-	changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1), 0u);
+	changeBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1), 1u);
 }
 
 void Curve::updateShape(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoints, std::vector<Color> colors)
@@ -98,7 +102,7 @@ void Curve::updateShape(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT 
 	if (!colors.size())
 		throw std::exception("The color vector for a curve must have at least one color!!");
 
-	std::vector<Vertex> vertexs;
+	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
 	for (UINT i = 0; i <= Npoints; i++) {
 		float c = (colors.size() - 1) * float(i) / Npoints;
@@ -106,20 +110,18 @@ void Curve::updateShape(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT 
 		UINT C1 = (C0 + 1) % colors.size();
 		c -= C0;
 
-		vertexs.push_back(Vertex(
-			F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4(),
-			(colors[C0] * (1 - c) + colors[C1] * c).getColor4()
-		));
+		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
+		vertexs[i].color = (colors[C0] * (1 - c) + colors[C1] * c).getColor4();
 	}
 
 
-	std::vector<unsigned short> indexs;
+	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
 
 	for (UINT i = 0; i <= Npoints; i++)
-		indexs.push_back(i);
+		indexs[i] = i;
 
-	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-	changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1), 0u);
+	changeBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1), 1u);
 }
 
 //	Public
@@ -181,16 +183,16 @@ Vector3f Curve::getPosition()
 
 void Curve::addDefaultBinds(Graphics& gfx, bool transparency)
 {
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"CurveVS.cso"))));
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"CurvePS.cso")));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"CurveVS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"CurvePS.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[2] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Color",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 2u, pvs->GetBytecode()));
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
 	AddBind(std::make_unique<Blender>(gfx, transparency));
 

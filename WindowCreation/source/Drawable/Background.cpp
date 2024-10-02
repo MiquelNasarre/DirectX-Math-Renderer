@@ -1,8 +1,13 @@
 #include "Drawable/Background.h"
 
-Background::Background(Graphics& gfx, std::string filename, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
+Background::Background(Graphics& gfx, const char* filename, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
 {
 	create(gfx, filename, MakeDynamic, ProjectionType);
+}
+
+Background::Background(Graphics& gfx, Image& texture, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
+{
+	create(gfx, texture, MakeDynamic, ProjectionType);
 }
 
 Background::Background(Graphics& gfx, Texture texture, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
@@ -10,7 +15,7 @@ Background::Background(Graphics& gfx, Texture texture, bool MakeDynamic, PROJECT
 	create(gfx, texture, MakeDynamic, ProjectionType);
 }
 
-void Background::create(Graphics& gfx, std::string filename, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
+void Background::create(Graphics& gfx, const char* filename, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
 {
 	if (isInit)
 		throw std::exception("You cannot create a background over one that is already initialized");
@@ -21,39 +26,34 @@ void Background::create(Graphics& gfx, std::string filename, bool MakeDynamic, P
 
 	AddBind(std::make_unique<Sampler>(gfx, D3D11_FILTER_MIN_MAG_MIP_LINEAR));
 
-	std::vector<_float4vector> vertexs;
-	vertexs.push_back({ -1.f,-1.f,1.f,1.f });
-	vertexs.push_back({  1.f,-1.f,1.f,1.f });
-	vertexs.push_back({ -1.f, 1.f,1.f,1.f });
-	vertexs.push_back({  1.f, 1.f,1.f,1.f });
+	_float4vector vertexs[4] = {
+		{ -1.f,-1.f,1.f,1.f },
+		{  1.f,-1.f,1.f,1.f },
+		{ -1.f, 1.f,1.f,1.f },
+		{  1.f, 1.f,1.f,1.f },
+	};
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, 4u));
 
-	std::vector<unsigned short> indexs;
-	indexs.push_back(0u);
-	indexs.push_back(2u);
-	indexs.push_back(1u);
-	indexs.push_back(1u);
-	indexs.push_back(2u);
-	indexs.push_back(3u);
+	unsigned int indexs[6] = { 0u,2u,1u,1u,2u,3u };
 
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, 6u));
 
 	VertexShader* pvs;
 
 	if (!MakeDynamic) {
-		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"BackgroundVS.cso"))));
-		AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"BackgroundPS.cso")));
+		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"BackgroundVS.cso")));
+		AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"BackgroundPS.cso"));
 
 		vscBuff = (ConstantBuffer<_float4vector>*)AddBind(std::make_unique<ConstantBuffer<_float4vector>>(gfx, _float4vector{ 0.f,0.f,1.f,1.f }, VERTEX_CONSTANT_BUFFER_TYPE));
 	}
 	else {
-		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"DynamicBgVS.cso"))));
+		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"DynamicBgVS.cso")));
 
 		if (ProjectionType == PT_MERCATOR)
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"DyBgMercatorPS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"DyBgMercatorPS.cso"));
 		else if (ProjectionType == PT_AZIMUTHAL)
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"DyBgAzimuthPS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"DyBgAzimuthPS.cso"));
 		else
 			throw std::exception("this Projection Type is not suported by the dynamic bacground");
 
@@ -63,12 +63,72 @@ void Background::create(Graphics& gfx, std::string filename, bool MakeDynamic, P
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-	std::vector< D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[1] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 1u, pvs->GetBytecode()));
+
+	AddBind(std::make_unique<Rasterizer>(gfx, false));
+
+	AddBind(std::make_unique<Blender>(gfx, false));
+}
+
+void Background::create(Graphics& gfx, Image& texture, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
+{
+	if (isInit)
+		throw std::exception("You cannot create a background over one that is already initialized");
+	else
+		isInit = true;
+
+	AddBind(std::make_unique<Texture>(gfx, texture));
+
+	AddBind(std::make_unique<Sampler>(gfx, D3D11_FILTER_MIN_MAG_MIP_LINEAR));
+
+	_float4vector vertexs[4] = {
+		{ -1.f,-1.f,1.f,1.f },
+		{  1.f,-1.f,1.f,1.f },
+		{ -1.f, 1.f,1.f,1.f },
+		{  1.f, 1.f,1.f,1.f },
+	};
+
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, 4u));
+
+	unsigned int indexs[6] = { 0u,2u,1u,1u,2u,3u };
+
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, 6u));
+
+	VertexShader* pvs;
+
+	if (!MakeDynamic) {
+		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"BackgroundVS.cso")));
+		AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"BackgroundPS.cso"));
+
+		vscBuff = (ConstantBuffer<_float4vector>*)AddBind(std::make_unique<ConstantBuffer<_float4vector>>(gfx, _float4vector{ 0.f,0.f,1.f,1.f }, VERTEX_CONSTANT_BUFFER_TYPE));
+	}
+	else {
+		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"DynamicBgVS.cso")));
+
+		if (ProjectionType == PT_MERCATOR)
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"DyBgMercatorPS.cso"));
+		else if (ProjectionType == PT_AZIMUTHAL)
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"DyBgAzimuthPS.cso"));
+		else
+			throw std::exception("this Projection Type is not suported by the dynamic background");
+
+		pscBuff0 = (ConstantBuffer<PSconstBuffer>*)AddBind(std::make_unique<ConstantBuffer<PSconstBuffer>>(gfx, PIXEL_CONSTANT_BUFFER_TYPE));
+		pscBuff1 = (ConstantBuffer<_float4vector>*)AddBind(std::make_unique<ConstantBuffer<_float4vector>>(gfx, PIXEL_CONSTANT_BUFFER_TYPE, 1u));
+	}
+
+	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+
+	D3D11_INPUT_ELEMENT_DESC ied[1] =
+	{
+		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
+	};
+
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 1u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Rasterizer>(gfx, false));
 
@@ -86,39 +146,34 @@ void Background::create(Graphics& gfx, Texture texture, bool MakeDynamic, PROJEC
 
 	AddBind(std::make_unique<Sampler>(gfx, D3D11_FILTER_MIN_MAG_MIP_LINEAR));
 
-	std::vector<_float4vector> vertexs;
-	vertexs.push_back({ -1.f,-1.f,1.f,1.f });
-	vertexs.push_back({ 1.f,-1.f,1.f,1.f });
-	vertexs.push_back({ -1.f, 1.f,1.f,1.f });
-	vertexs.push_back({ 1.f, 1.f,1.f,1.f });
+	_float4vector vertexs[4] = {
+		{ -1.f,-1.f,1.f,1.f },
+		{  1.f,-1.f,1.f,1.f },
+		{ -1.f, 1.f,1.f,1.f },
+		{  1.f, 1.f,1.f,1.f },
+	};
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, 4u));
 
-	std::vector<unsigned short> indexs;
-	indexs.push_back(0u);
-	indexs.push_back(2u);
-	indexs.push_back(1u);
-	indexs.push_back(1u);
-	indexs.push_back(2u);
-	indexs.push_back(3u);
+	unsigned int indexs[6] = { 0u,2u,1u,1u,2u,3u };
 
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, 6u));
 
 	VertexShader* pvs;
 
 	if (!MakeDynamic) {
-		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"BackgroundVS.cso"))));
-		AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"BackgroundPS.cso")));
+		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"BackgroundVS.cso")));
+		AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"BackgroundPS.cso"));
 
 		vscBuff = (ConstantBuffer<_float4vector>*)AddBind(std::make_unique<ConstantBuffer<_float4vector>>(gfx, _float4vector{ 0.f,0.f,1.f,1.f } , VERTEX_CONSTANT_BUFFER_TYPE));
 	}
 	else {
-		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"DynamicBgVS.cso"))));
+		pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"DynamicBgVS.cso")));
 
 		if (ProjectionType == PT_MERCATOR)
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"DyBgMercatorPS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"DyBgMercatorPS.cso"));
 		else if (ProjectionType == PT_AZIMUTHAL)
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"DyBgAzimuthPS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"DyBgAzimuthPS.cso"));
 		else
 			throw std::exception("this Projection Type is not suported by the dynamic background");
 
@@ -128,21 +183,26 @@ void Background::create(Graphics& gfx, Texture texture, bool MakeDynamic, PROJEC
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-	std::vector< D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[1] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 1u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Rasterizer>(gfx, false));
 
 	AddBind(std::make_unique<Blender>(gfx, false));
 }
 
-void Background::updateTexture(Graphics& gfx, std::string filename)
+void Background::updateTexture(Graphics& gfx, const char* filename)
 {
 	changeBind(std::make_unique<Texture>(gfx, filename), 0u);
+}
+
+void Background::updateTexture(Graphics& gfx, Image& texture)
+{
+	changeBind(std::make_unique<Texture>(gfx, texture), 0u);
 }
 
 void Background::updateTexture(Graphics& gfx, Texture texture)

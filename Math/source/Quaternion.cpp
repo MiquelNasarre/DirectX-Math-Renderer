@@ -156,7 +156,7 @@ const char* Quaternion::str(int decimals) const
 	else if (k < 0)
 		String = String + " - " + std::to_string(-k).erase(2 + decimals, 6 - decimals) + " k";
 
-	return String.c_str();
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 Vector3f Quaternion::getVector() const

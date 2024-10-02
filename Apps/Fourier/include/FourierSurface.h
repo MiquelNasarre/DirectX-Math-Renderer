@@ -106,7 +106,7 @@ private:
 	static Vector3f*		vertexsIcosphere;
 	static infoVect*		infoIcosphere;
 	static unsigned int		depthIcosphere;
-	static unsigned short*	trianglesIcosphere;
+	static unsigned int*	trianglesIcosphere;
 
 	static unsigned int ntriangles;
 	static unsigned int nvertexs;
@@ -144,7 +144,7 @@ public:
 	static void generateDataSet();
 	static unsigned int depthDataset();
 	static unsigned int getNvertexs();
-	static unsigned short* getTrianglesIcosphere();
+	static unsigned int* getTrianglesIcosphere();
 	static unsigned int getNtriangles();
 private:
 

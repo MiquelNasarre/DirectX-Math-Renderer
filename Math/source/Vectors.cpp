@@ -181,7 +181,8 @@ double Vector2d::abs() const
 
 const char* Vector2d::str() const
 {
-	return ("( " + std::to_string(x) + " , " + std::to_string(y) + " )").c_str();
+	std::string String = "( " + std::to_string(x) + " , " + std::to_string(y) + " )";
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 //	Vector2f
@@ -362,7 +363,8 @@ float Vector2f::abs() const
 
 const char* Vector2f::str() const
 {
-	return ("( " + std::to_string(x) + " , " + std::to_string(y) + " )").c_str();
+	std::string String = "( " + std::to_string(x) + " , " + std::to_string(y) + " )";
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 _float4vector Vector2f::getVector4() const
@@ -514,7 +516,8 @@ float Vector2i::abs() const
 
 const char* Vector2i::str() const
 {
-	return ("( " + std::to_string(x) + " , " + std::to_string(y) + " )").c_str();
+	std::string String = "( " + std::to_string(x) + " , " + std::to_string(y) + " )";
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 //	Rest of operators
@@ -759,7 +762,8 @@ double Vector3d::abs() const
 
 const char* Vector3d::str() const
 {
-	return ("( " + std::to_string(x) + " , " + std::to_string(y) + " , " + std::to_string(z) + " )").c_str();
+	std::string String = "( " + std::to_string(x) + " , " + std::to_string(y) + " , " + std::to_string(z) + " )";
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 //	Vector3f
@@ -956,7 +960,8 @@ float Vector3f::abs() const
 
 const char* Vector3f::str() const
 {
-	return ("( " + std::to_string(x) + " , " + std::to_string(y) + " , " + std::to_string(z) + " )").c_str();
+	std::string String = "( " + std::to_string(x) + " , " + std::to_string(y) + " , " + std::to_string(z) + " )";
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 _float4vector Vector3f::getVector4() const
@@ -1121,7 +1126,8 @@ float Vector3i::abs() const
 
 const char* Vector3i::str() const
 {
-	return ("( " + std::to_string(x) + " , " + std::to_string(y) + " , " + std::to_string(z) + " )").c_str();
+	std::string String = "( " + std::to_string(x) + " , " + std::to_string(y) + " , " + std::to_string(z) + " )";
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 //	Rest of operators

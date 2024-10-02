@@ -3,7 +3,7 @@
 
 Vector3f*					FourierSurface::vertexsIcosphere = NULL;
 unsigned int				FourierSurface::depthIcosphere = 6u;
-unsigned short*				FourierSurface::trianglesIcosphere = NULL;
+unsigned int*				FourierSurface::trianglesIcosphere = NULL;
 FourierSurface::infoVect*	FourierSurface::infoIcosphere = NULL;
 
 unsigned int	FourierSurface::ntriangles = 0;
@@ -864,7 +864,7 @@ void		FourierSurface::generateIcosphere()
 
 	infoIcosphere = (infoVect*)calloc(V, sizeof(infoVect));
 
-	trianglesIcosphere = (unsigned short*)calloc(3 * C, sizeof(unsigned short));
+	trianglesIcosphere = (unsigned int*)calloc(3 * C, sizeof(unsigned int));
 	for (unsigned int i = 0; i < C; i++)
 	{
 		unsigned int aris0 = abs(triangles[i].a0) - 1;
@@ -998,18 +998,18 @@ void		FourierSurface::create(Graphics& gfx, const Coefficient* coef, const unsig
 
 	AddBind(std::make_unique<IndexBuffer>(gfx, trianglesIcosphere, 3 * ntriangles));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"VertexShader.cso"))));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"VertexShader.cso")));
 
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"PixelShader.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"PixelShader.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[3] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Dylm",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Color",0,DXGI_FORMAT_B8G8R8A8_UNORM,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 3u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
@@ -1242,7 +1242,7 @@ unsigned int	FourierSurface::getNvertexs()
 	return nvertexs;
 }
 
-unsigned short* FourierSurface::getTrianglesIcosphere()
+unsigned int* FourierSurface::getTrianglesIcosphere()
 {
 	return trianglesIcosphere;
 }
@@ -1325,7 +1325,7 @@ void FourierSurface::Curves::create(Graphics& gfx, const Coefficient* coef, cons
 	std::thread worker2 = std::thread(generateThetaCurveAsync, 0u, Npoints / 2u, coef, ncoef, phi, theta, vertexs);
 	std::thread worker3 = std::thread(generateThetaCurveAsync, Npoints / 2u + 1, Npoints, coef, ncoef, phi, theta, vertexs);
 
-	unsigned short* indexs = (unsigned short*)calloc(2 * (Npoints + 1), sizeof(unsigned short));
+	unsigned int* indexs = (unsigned int*)calloc(2 * (Npoints + 1), sizeof(unsigned int));
 	for (UINT i = 0; i <= 2 * Npoints + 1; i++)
 		indexs[i] = i;
 
@@ -1340,16 +1340,16 @@ void FourierSurface::Curves::create(Graphics& gfx, const Coefficient* coef, cons
 	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, 2 * (Npoints + 1)));
 	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, 2 * (Npoints + 1)));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"CurvesVS.cso"))));
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"CurvesPS.cso")));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"CurvesVS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"CurvesPS.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[2] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Color",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 2u, pvs->GetBytecode()));
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
 	AddBind(std::make_unique<Blender>(gfx, false));
 

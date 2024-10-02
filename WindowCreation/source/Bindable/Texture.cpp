@@ -1,11 +1,11 @@
 #include "Bindable/Texture.h"
 #include "Exception/ExceptionMacros.h"
 
-Texture::Texture(Graphics& gfx, std::string filename, UINT slot) : Slot{ slot }
+Texture::Texture(Graphics& gfx, const char* filename, UINT slot) : Slot{ slot }
 {
 	INFOMAN(gfx);
 
-	Image image(filename.c_str());
+	Image image(filename);
 
 	//	Create texture resource
 

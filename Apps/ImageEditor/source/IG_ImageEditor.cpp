@@ -11,7 +11,7 @@ void IG_ImageEditor::render()
 	if (ImGui::Begin("View"))
 	{
 		const char* items[3] = { "Background", "Sphere", "Weird" };
-		ImGui::ListBox("", (int*)&IG_DATA::SHOW, items, 3);
+		ImGui::ListBox("##", (int*)&IG_DATA::SHOW, items, 3);
 	}
 	ImGui::End();
 

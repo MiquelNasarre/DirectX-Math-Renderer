@@ -99,13 +99,10 @@
     <ClCompile Include="source\Drawable\PointLight.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>
-    <ClCompile Include="source\Drawable\Sphere.cpp">
-      <Filter>Sources\Private\Drawable</Filter>
-    </ClCompile>
     <ClCompile Include="source\Drawable\Surface.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>
-    <ClCompile Include="source\Drawable\Triangle.cpp">
+    <ClCompile Include="source\Drawable\Polihedron.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>
     <ClCompile Include="source\Exception\_exFunc.cpp">
@@ -194,13 +191,10 @@
     <ClInclude Include="include\Drawable\PointLight.h">
       <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
-    <ClInclude Include="include\Drawable\Sphere.h">
-      <Filter>Sources\Public\Drawable</Filter>
-    </ClInclude>
     <ClInclude Include="include\Drawable\Surface.h">
       <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
-    <ClInclude Include="include\Drawable\Triangle.h">
+    <ClInclude Include="include\Drawable\Polihedron.h">
       <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
     <ClInclude Include="include\Exception\DxgiInfoManager.h">

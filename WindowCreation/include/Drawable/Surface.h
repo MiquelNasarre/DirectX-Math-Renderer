@@ -346,10 +346,10 @@ public:
 	void updateRotation(Graphics& gfx, Vector3f axis, float angle, bool multiplicative = false);
 	void updateRotation(Graphics& gfx, Quaternion rotation, bool multiplicative = false);
 	void updatePosition(Graphics& gfx, Vector3f position, bool additive = false);
-	void updateTexture(Graphics& gfx, UINT id, std::string texture);
+	void updateTexture(Graphics& gfx, UINT id, const char* filename);
 	void updateTexture(Graphics& gfx, UINT id, Texture texture);
 	void updateTextures(Graphics& gfx, Texture texture0, Texture texture1);
-	void updateTextures(Graphics& gfx, std::string texture0, std::string texture1);
+	void updateTextures(Graphics& gfx, const char* filename0, const char* filename1);
 	void updateLight(Graphics& gfx, UINT id, Vector2f intensity, Color color, Vector3f position);
 	void updateLight(Graphics& gfx, UINT id, _float4vector intensity, _float4color color, _float4vector position);
 	void clearLights(Graphics& gfx);
@@ -461,20 +461,20 @@ private:
 
 	struct IndexArr
 	{
-		unsigned short* data = NULL;
+		unsigned int* data = NULL;
 		UINT counter = 0;
 		//UINT maxcount = 0;
 
 		IndexArr(UINT max)
 		{
-			data = (unsigned short*)calloc(max, sizeof(unsigned short));
+			data = (unsigned int*)calloc(max, sizeof(unsigned int));
 			//if (!data)
 			//	throw std::exception(("not able to allocate space for " + std::to_string(max) + " indexs").c_str());
 
 			//maxcount = max;
 		}
 
-		void push_back(unsigned short i)
+		void push_back(unsigned int i)
 		{
 			//if (counter == maxcount)
 			//	throw std::exception("you reached the limit of vector space");
@@ -491,7 +491,7 @@ private:
 
 	Vector3f evalPolar(float r(float, float), float theta, float phi);
 	Vector3f makePolar(Vector3f other);
-	void addVertexsCube(_float4vector cube[8], std::vector<Vertex>& vertexs, std::vector<unsigned short>& indexs, bool polar = false);
+	void addVertexsCube(_float4vector cube[8], std::vector<Vertex>& vertexs, std::vector<unsigned int>& indexs, bool polar = false);
 
 };
 
@@ -697,7 +697,7 @@ void Surface::create(Graphics& gfx, PARAM_SURFACE_SHAPE<C> ss, SURFACE_COLORING*
 			else
 				AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, nV));
 
-			AddBind(std::make_unique<IndexBuffer>(gfx, (unsigned short*)icosphere[1], ((unsigned int*)icosphere[2])[1]));
+			AddBind(std::make_unique<IndexBuffer>(gfx, (unsigned int*)icosphere[1], ((unsigned int*)icosphere[2])[1]));
 
 			free(icosphere[0]);
 			free(icosphere[1]);
@@ -773,8 +773,8 @@ void Surface::create(Graphics& gfx, PARAM_SURFACE_SHAPE<C> ss, SURFACE_COLORING*
 			}
 			free(h);
 
-			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-			AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()));
+			AddBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()));
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");
@@ -845,8 +845,8 @@ void Surface::create(Graphics& gfx, PARAM_SURFACE_SHAPE<C> ss, SURFACE_COLORING*
 			}
 			free(h);
 
-			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-			AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()));
+			AddBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()));
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");
@@ -1376,8 +1376,8 @@ void Surface::updateShape(Graphics& gfx, PARAM_SURFACE_SHAPE<C> ss)
 			}
 			free(h);
 
-			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-			changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()), 0u);
+			changeBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()), 1u);
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");
@@ -1448,8 +1448,8 @@ void Surface::updateShape(Graphics& gfx, PARAM_SURFACE_SHAPE<C> ss)
 			}
 			free(h);
 
-			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-			changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()), 0u);
+			changeBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()), 1u);
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");

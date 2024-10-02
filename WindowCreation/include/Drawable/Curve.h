@@ -79,13 +79,13 @@ void Curve::create(Graphics& gfx, Vector3f F(float, const C&), const C& param, V
 	for (UINT i = 0; i <= Npoints; i++)
 		vertexs.push_back(Vertex(F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x), param).getVector4(), color.getColor4()));
 
-	std::vector<unsigned short> indexs;
+	std::vector<unsigned int> indexs;
 
 	for (UINT i = 0; i <= Npoints; i++)
 		indexs.push_back(i);
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (unsigned int)vertexs.size()));
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (unsigned int)indexs.size()));
 
 	addDefaultBinds(gfx, transparency);
 }
@@ -121,8 +121,8 @@ void Curve::create(Graphics& gfx, Vector3f F(float, const C&), const C& param, V
 	for (UINT i = 0; i <= Npoints; i++)
 		indexs.push_back(i);
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (unsigned int)vertexs.size()));
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (unsigned int)indexs.size()));
 
 	addDefaultBinds(gfx, transparency);
 }
@@ -143,8 +143,8 @@ void Curve::updateShape(Graphics& gfx, Vector3f F(float, const C&), const C& par
 	for (UINT i = 0; i <= Npoints; i++)
 		indexs.push_back(i);
 
-	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-	changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (unsigned int)vertexs.size()), 0u);
+	changeBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (unsigned int)indexs.size()), 1u);
 }
 
 template<typename C>
@@ -176,6 +176,6 @@ void Curve::updateShape(Graphics& gfx, Vector3f F(float, const C&), const C& par
 	for (UINT i = 0; i <= Npoints; i++)
 		indexs.push_back(i);
 
-	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-	changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (unsigned int)vertexs.size()), 0u);
+	changeBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (unsigned int)indexs.size()), 1u);
 }

@@ -206,9 +206,8 @@
     <ClCompile Include="source\Drawable\Curve.cpp" />
     <ClCompile Include="source\Drawable\Point.cpp" />
     <ClCompile Include="source\Drawable\PointLight.cpp" />
-    <ClCompile Include="source\Drawable\Sphere.cpp" />
     <ClCompile Include="source\Drawable\Surface.cpp" />
-    <ClCompile Include="source\Drawable\Triangle.cpp" />
+    <ClCompile Include="source\Drawable\Polihedron.cpp" />
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp" />
     <ClCompile Include="source\Exception\Exception.cpp" />
     <ClCompile Include="source\Exception\_exFunc.cpp" />
@@ -238,9 +237,8 @@
     <ClInclude Include="include\Drawable\Curve.h" />
     <ClInclude Include="include\Drawable\Point.h" />
     <ClInclude Include="include\Drawable\PointLight.h" />
-    <ClInclude Include="include\Drawable\Sphere.h" />
     <ClInclude Include="include\Drawable\Surface.h" />
-    <ClInclude Include="include\Drawable\Triangle.h" />
+    <ClInclude Include="include\Drawable\Polihedron.h" />
     <ClInclude Include="include\Exception\DxgiInfoManager.h" />
     <ClInclude Include="include\Exception\Exception.h" />
     <ClInclude Include="include\Exception\ExceptionMacros.h" />

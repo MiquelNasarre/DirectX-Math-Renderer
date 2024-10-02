@@ -185,6 +185,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\FreeImage\include\FreeImage.h" />
     <ClInclude Include="include\Color.h" />
     <ClInclude Include="include\Image.h" />
   </ItemGroup>

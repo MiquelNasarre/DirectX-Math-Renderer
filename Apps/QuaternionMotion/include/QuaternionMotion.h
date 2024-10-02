@@ -2,7 +2,7 @@
 
 #include "Window.h"
 #include "Drawable/Surface.h"
-#include "Drawable/Triangle.h"
+#include "Drawable/Polihedron.h"
 
 enum DRAG_TYPE
 {
@@ -65,8 +65,8 @@ private:
 	Vector3f magnetPos = { 1.f, 0.f, 0.f };
 
 	Surface		shape_0;
-	Triangle	shape_1;
-	Triangle	shape_2;
+	Polihedron	shape_1;
+	Polihedron	shape_2;
 	Surface		shape_3;
 
 public:

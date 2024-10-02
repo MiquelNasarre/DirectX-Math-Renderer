@@ -3,6 +3,8 @@
 #include "Mouse.h"
 #include "IG_Fourier.h"
 
+#include <string>
+
 #define INTERPRET_FIGURE_VIEW(view, call) \
 if (view == -1) harmonics.call; \
 else if (view >= int(IG::NFIG)) Interpolations[view-IG::NFIG]->call; \

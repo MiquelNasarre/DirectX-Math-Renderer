@@ -203,7 +203,9 @@ void QuaternionMotion::doFrame()
 
 	DO(updateRotation(window.graphics, axis, dangle, true));
 
-	window.setTitle(shape_0.getRotation().str() + "  -  " + std::to_string(int(std::round(window.getFramerate()))) + "fps");
+	const char* rot = shape_0.getRotation().str();
+	window.setTitle(std::string(rot) + "  -  " + std::to_string(int(std::round(window.getFramerate()))) + "fps");
+	free((void*)rot);
 
 	//	Rendering
 

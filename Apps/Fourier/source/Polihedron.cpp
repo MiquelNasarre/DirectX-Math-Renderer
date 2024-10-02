@@ -70,7 +70,7 @@ void Polihedron::create(Graphics& gfx, const Vector3f* vertexs, const Vector3i* 
 		V[3 * i + 2].norm = norm;
 	}
 
-	unsigned short* indexs = (unsigned short*)calloc(3 * numT, sizeof(unsigned short));
+	unsigned int* indexs = (unsigned int*)calloc(3 * numT, sizeof(unsigned int));
 
 	for (UINT i = 0; i < 3 * numT; i++)
 		indexs[i] = i;
@@ -82,18 +82,18 @@ void Polihedron::create(Graphics& gfx, const Vector3f* vertexs, const Vector3i* 
 
 	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, 3 * numT));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"PolihedronVS.cso"))));
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"PolihedronVS.cso")));
 
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"PolihedronPS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"PolihedronPS.cso"));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	D3D11_INPUT_ELEMENT_DESC ied[3] =
 	{
 		{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Normal",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Color",0,DXGI_FORMAT_B8G8R8A8_UNORM,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 3u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
@@ -266,7 +266,7 @@ void Polihedron::updateShape(Graphics& gfx, const Vector3f* vertexs, const Vecto
 	changeBind(std::make_unique<VertexBuffer>(gfx, V, 3 * numT), 0u);
 
 
-	unsigned short* indexs = (unsigned short*)calloc(3 * numT, sizeof(unsigned short));
+	unsigned int* indexs = (unsigned int*)calloc(3 * numT, sizeof(unsigned int));
 
 	for (UINT i = 0; i < 3 * numT; i++)
 		indexs[i] = i;

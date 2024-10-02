@@ -2,31 +2,37 @@
 
 PointLight::PointLight(Graphics& gfx, Color color, Vector3f Position, float Radius, UINT circlePoints)
 {
-	std::vector<Vertex> vertexs;
-	vertexs.push_back(Vertex({ 0 , 0 }, 1));
-	for (UINT i = 0; i < circlePoints; i++)
-		vertexs.push_back(Vertex({ cosf(2.f * pi * float(i) / circlePoints) , sinf(2.f * pi * float(i) / circlePoints) }, 0));
+	Vertex* vertexs = (Vertex*)calloc(circlePoints + 1, sizeof(Vertex));
+	vertexs[0].intensity = 1;
+	vertexs[0].reference = { 0,0 };
 
-	std::vector<unsigned short> indexs;
-	for (UINT i = 1; i <= circlePoints; i++) {
-		indexs.push_back(0);
-		indexs.push_back(i % circlePoints + 1);
-		indexs.push_back(i);
+	for (UINT i = 1; i <= circlePoints; i++)
+	{
+		vertexs[i].intensity = 0;
+		vertexs[i].reference = { cosf(2.f * pi * float(i) / circlePoints) , sinf(2.f * pi * float(i) / circlePoints) };
 	}
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+	unsigned int* indexs = (unsigned int*)calloc(circlePoints * 3, sizeof(unsigned int));
+	for (UINT i = 1; i <= circlePoints; i++)
+	{
+		indexs[3 * (i - 1)] = 0;
+		indexs[3 * (i - 1) + 1] = i % circlePoints + 1;
+		indexs[3 * (i - 1) + 2] = i;
+	}
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"PointLightVS.cso"))));
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"PointLightPS.cso")));
+	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, circlePoints + 1));
+	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, circlePoints * 3));
 
-	std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"PointLightVS.cso")));
+	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"PointLightPS.cso"));
+
+	D3D11_INPUT_ELEMENT_DESC ied[2] =
 	{
 		{ "Reference",0,DXGI_FORMAT_R32G32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "Intensity",0,DXGI_FORMAT_R32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+	AddBind(std::make_unique<InputLayout>(gfx, ied, 2u, pvs->GetBytecode()));
 
 	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 

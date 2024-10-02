@@ -20,6 +20,9 @@
     <ClInclude Include="include\Color.h">
       <Filter>Sources\Public</Filter>
     </ClInclude>
+    <ClInclude Include="..\FreeImage\include\FreeImage.h">
+      <Filter>Sources\Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Image.cpp">

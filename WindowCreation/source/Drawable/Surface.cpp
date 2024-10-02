@@ -362,7 +362,7 @@ void Surface::create(Graphics& gfx, SURFACE_SHAPE ss, SURFACE_COLORING* psc)
 			else
 				AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, nV));
 
-			AddBind(std::make_unique<IndexBuffer>(gfx, (unsigned short*)icosphere[1], ((unsigned int*)icosphere[2])[1]));
+			AddBind(std::make_unique<IndexBuffer>(gfx, (unsigned int*)icosphere[1], ((unsigned int*)icosphere[2])[1]));
 
 			free(icosphere[0]);
 			free(icosphere[1]);
@@ -413,7 +413,7 @@ void Surface::create(Graphics& gfx, SURFACE_SHAPE ss, SURFACE_COLORING* psc)
 			}
 
 			std::vector<Vertex> vertexs;
-			std::vector<unsigned short> indexs;
+			std::vector<unsigned int> indexs;
 
 			for (int i = 0; i < cubes; i++)
 			{
@@ -438,8 +438,8 @@ void Surface::create(Graphics& gfx, SURFACE_SHAPE ss, SURFACE_COLORING* psc)
 			}
 			free(h);
 
-			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-			AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()));
+			AddBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()));
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");
@@ -485,7 +485,7 @@ void Surface::create(Graphics& gfx, SURFACE_SHAPE ss, SURFACE_COLORING* psc)
 			}
 
 			std::vector<Vertex> vertexs;
-			std::vector<unsigned short> indexs;
+			std::vector<unsigned int> indexs;
 
 			for (int i = 0; i < cubes; i++)
 			{
@@ -510,8 +510,8 @@ void Surface::create(Graphics& gfx, SURFACE_SHAPE ss, SURFACE_COLORING* psc)
 			}
 			free(h);
 
-			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs));
-			AddBind(std::make_unique<IndexBuffer>(gfx, indexs));
+			AddBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()));
+			AddBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()));
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");
@@ -827,14 +827,14 @@ void Surface::updatePosition(Graphics& gfx, Vector3f position, bool additive)
 	pVSCB->Update(gfx, vscBuff);
 }
 
-void Surface::updateTexture(Graphics& gfx, UINT id, std::string texture)
+void Surface::updateTexture(Graphics& gfx, UINT id, const char* filename)
 {
 	if (!sc.Textured)
-		throw std::exception(std::string("ERROR: You cannot call a texture update in a surface that wasn't initialized as textured\nREF: [" + texture + "]").c_str());
+		throw std::exception(std::string("ERROR: You cannot call a texture update in a surface that wasn't initialized as textured\nREF: [" + std::string(filename) + "]").c_str());
 	if (id > 1u)
 		throw std::exception("ERROR: The given id to update the texture is not valid, id must be 0 or 1");
 
-	changeBind(std::make_unique<Texture>(gfx, texture, id), id + 2);
+	changeBind(std::make_unique<Texture>(gfx, filename, id), id + 2);
 }
 
 void Surface::updateTexture(Graphics& gfx, UINT id, Texture texture)
@@ -856,13 +856,13 @@ void Surface::updateTextures(Graphics& gfx, Texture texture0, Texture texture1)
 	changeBind(std::make_unique<Texture>(texture1, 1u), 5u);
 }
 
-void Surface::updateTextures(Graphics& gfx, std::string texture0, std::string texture1)
+void Surface::updateTextures(Graphics& gfx, const char* filename0, const char* filename1)
 {
 	if (!sc.Textured)
 		throw std::exception("ERROR: You cannot call a texture update in a surface that wasn't initialized as textured");
 
-	changeBind(std::make_unique<Texture>(gfx, texture0, 0u), 4u);
-	changeBind(std::make_unique<Texture>(gfx, texture1, 1u), 5u);
+	changeBind(std::make_unique<Texture>(gfx, filename0, 0u), 4u);
+	changeBind(std::make_unique<Texture>(gfx, filename1, 1u), 5u);
 }
 
 void Surface::updateLight(Graphics& gfx, UINT id, Vector2f intensity, Color color, Vector3f position)
@@ -1072,7 +1072,7 @@ void Surface::updateShape(Graphics& gfx, SURFACE_SHAPE ss)
 			else
 				changeBind(std::make_unique<VertexBuffer>(gfx, vertexs, nV), 0u);
 
-			changeBind(std::make_unique<IndexBuffer>(gfx, (unsigned short*)icosphere[1], ((unsigned int*)icosphere[2])[1]), 1u);
+			changeBind(std::make_unique<IndexBuffer>(gfx, (unsigned int*)icosphere[1], ((unsigned int*)icosphere[2])[1]), 1u);
 
 			free(icosphere[0]);
 			free(icosphere[1]);
@@ -1123,7 +1123,7 @@ void Surface::updateShape(Graphics& gfx, SURFACE_SHAPE ss)
 			}
 
 			std::vector<Vertex> vertexs;
-			std::vector<unsigned short> indexs;
+			std::vector<unsigned int> indexs;
 
 			for (int i = 0; i < cubes; i++)
 			{
@@ -1148,8 +1148,8 @@ void Surface::updateShape(Graphics& gfx, SURFACE_SHAPE ss)
 			}
 			free(h);
 
-			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-			changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()), 0u);
+			changeBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()), 1u);
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");
@@ -1195,7 +1195,7 @@ void Surface::updateShape(Graphics& gfx, SURFACE_SHAPE ss)
 			}
 
 			std::vector<Vertex> vertexs;
-			std::vector<unsigned short> indexs;
+			std::vector<unsigned int> indexs;
 
 			for (int i = 0; i < cubes; i++)
 			{
@@ -1220,8 +1220,8 @@ void Surface::updateShape(Graphics& gfx, SURFACE_SHAPE ss)
 			}
 			free(h);
 
-			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs), 0u);
-			changeBind(std::make_unique<IndexBuffer>(gfx, indexs), 1u);
+			changeBind(std::make_unique<VertexBuffer>(gfx, vertexs.data(), (UINT)vertexs.size()), 0u);
+			changeBind(std::make_unique<IndexBuffer>(gfx, indexs.data(), (UINT)indexs.size()), 1u);
 		}
 
 		else throw std::exception("Found nullptr while trying to read Implicit function");
@@ -1694,8 +1694,8 @@ void** Surface::generateIcosphere(unsigned int depth)
 	if (paristas)	free(paristas);
 	if (pvertexs)	free(pvertexs);
 
-	returnptr[1] = calloc(3 * C, sizeof(unsigned short));
-	unsigned short* trianglesIcosphere = (unsigned short*)returnptr[1];
+	returnptr[1] = calloc(3 * C, sizeof(unsigned int));
+	unsigned int* trianglesIcosphere = (unsigned int*)returnptr[1];
 
 	for (unsigned int i = 0; i < C; i++)
 	{
@@ -1747,8 +1747,8 @@ void Surface::addOtherBinds(Graphics& gfx)
 		VertexShader* pvs = NULL;
 		if (sc.Lighted)
 		{
-			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"TexSurfaceVS.cso"))));
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"TexSurfacePS.cso")));
+			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"TexSurfaceVS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"TexSurfacePS.cso"));
 
 
 			float unused = 0.f;
@@ -1762,19 +1762,19 @@ void Surface::addOtherBinds(Graphics& gfx)
 		}
 		else
 		{
-			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"UnlitSurfaceVS.cso"))));
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"UnlitSurfacePS.cso")));
+			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"UnlitSurfaceVS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"UnlitSurfacePS.cso"));
 		}
 
 
-		std::vector< D3D11_INPUT_ELEMENT_DESC> ied =
+		D3D11_INPUT_ELEMENT_DESC ied[3] =
 		{
 			{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 			{ "Normal",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 			{ "TexCoord",0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		};
 
-		AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+		AddBind(std::make_unique<InputLayout>(gfx, ied, 3u, pvs->GetBytecode()));
 
 		AddBind(std::make_unique<Sampler>(gfx, D3D11_FILTER_MIN_MAG_MIP_LINEAR));
 
@@ -1785,8 +1785,8 @@ void Surface::addOtherBinds(Graphics& gfx)
 		VertexShader* pvs = NULL;
 		if (sc.Lighted)
 		{
-			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"SurfaceVS.cso"))));
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"SurfacePS.cso")));
+			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"SurfaceVS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"SurfacePS.cso"));
 
 			float unused = 0.f;
 			if (sc.DefaultInitialLights)
@@ -1804,17 +1804,17 @@ void Surface::addOtherBinds(Graphics& gfx)
 		}
 		else
 		{
-			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR + std::wstring(L"UnlitUntexVS.cso"))));
-			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR + std::wstring(L"UnlitUntexPS.cso")));
+			pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"UnlitUntexVS.cso")));
+			AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"UnlitUntexPS.cso"));
 		}
 
-		std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
+		D3D11_INPUT_ELEMENT_DESC ied[2] =
 		{
 			{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 			{ "Normal",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 		};
 
-		AddBind(std::make_unique<InputLayout>(gfx, ied, pvs->GetBytecode()));
+		AddBind(std::make_unique<InputLayout>(gfx, ied, 2u, pvs->GetBytecode()));
 	}
 
 }
@@ -1829,7 +1829,7 @@ Vector3f Surface::makePolar(Vector3f other)
 	return other.z * Vector3f(cosf(other.y) * cosf(other.x), cosf(other.y) * sinf(other.x), sinf(other.y));
 }
 
-void Surface::addVertexsCube(_float4vector cube[8], std::vector<Vertex>& vertexs, std::vector<unsigned short>& indexs, bool polar)
+void Surface::addVertexsCube(_float4vector cube[8], std::vector<Vertex>& vertexs, std::vector<unsigned int>& indexs, bool polar)
 {
 	struct triangle {
 		unsigned short v0;

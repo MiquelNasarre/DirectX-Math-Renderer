@@ -3,6 +3,8 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 
+#include <string>
+
 bool			IG_Fourier::loadMenuOpen = false;
 bool			IG_Fourier::saveMenuOpen = false;
 bool			IG_Fourier::addName = false;

@@ -4,6 +4,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowCreation", "WindowCreation\WindowCreation.vcxproj", "{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E60BC50D-F12D-4007-A37E-5B3D059B7C32} = {E60BC50D-F12D-4007-A37E-5B3D059B7C32}
+		{E69CE630-EAA6-4F19-9F2E-212CFAB9B9EE} = {E69CE630-EAA6-4F19-9F2E-212CFAB9B9EE}
+		{E819D583-6D5E-4091-B719-CB557324CC13} = {E819D583-6D5E-4091-B719-CB557324CC13}
+		{F1C146DD-125D-4D9A-840C-1BD478497821} = {F1C146DD-125D-4D9A-840C-1BD478497821}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Math", "Math\Math.vcxproj", "{E819D583-6D5E-4091-B719-CB557324CC13}"
 EndProject
@@ -14,20 +20,41 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{126DADA5-B017-4BA2-B741-9AE3681A611B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EarthDemo", "Apps\EarthDemo\EarthDemo.vcxproj", "{7EB94D47-B96E-44C7-9DD6-AC78AD8E30D5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334} = {0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Template", "Apps\Template\Template.vcxproj", "{36AFC177-6E7A-462F-8AEA-6D774E175E65}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334} = {0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Tester", "Apps\Tester\Tester.vcxproj", "{25A2899D-E824-41FB-9673-F52D7C4945A1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334} = {0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Navigation", "Apps\Navigation\Navigation.vcxproj", "{D6051E20-7E25-4D39-95FD-EC0B55A737D8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334} = {0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Image", "Image\Image.vcxproj", "{E60BC50D-F12D-4007-A37E-5B3D059B7C32}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImageEditor", "Apps\ImageEditor\ImageEditor.vcxproj", "{8B33200C-B4BF-4345-944A-13B17F38FD2A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334} = {0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QuaternionMotion", "Apps\QuaternionMotion\QuaternionMotion.vcxproj", "{D57EEB9F-E0A6-48C6-9AB5-106882CE89B5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334} = {0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Fourier", "Apps\Fourier\Fourier.vcxproj", "{47DECA59-F694-476B-93AF-85226C3EC69C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334} = {0C1C4094-3EB1-4AEA-B4DF-8C2CC2990334}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

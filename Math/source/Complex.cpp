@@ -102,7 +102,7 @@ const char* Complex::str() const
 		String = String + " + " + std::to_string(b) + " i";
 	else if (b < 0)
 		String = String + " - " + std::to_string(-b) + " i";
-	return String.c_str();
+	return (const char*)memcpy(calloc(String.size() + 1, sizeof(char)), String.c_str(), String.size() + 1);
 }
 
 Complex operator*(const int& lhs, const Complex& rhs)

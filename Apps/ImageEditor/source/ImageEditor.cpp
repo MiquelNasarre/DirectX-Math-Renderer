@@ -4,6 +4,8 @@
 #include "IG_ImageEditor.h"
 #include "ImageFunctions.h"
 
+#include <string>
+
 float IG_DATA::THETA = 0.f;
 float IG_DATA::PHI   = 0.f;
 float IG_DATA::SPEED = 0.f;
@@ -11,7 +13,7 @@ float IG_DATA::SPEED = 0.f;
 IG_DATA::TYPE IG_DATA::SHOW = BACK;
 
 ImageEditor::ImageEditor()
-	: window(640, 480, "ImageEditor", "", true),
+	: window(640, 480, "ImageEditor"),
 
 	image(initialImage()),
 	imageTex(window.graphics, image),

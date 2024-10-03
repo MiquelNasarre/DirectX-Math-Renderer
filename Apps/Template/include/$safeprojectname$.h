@@ -2,7 +2,6 @@
 
 #include "Window.h"
 #include "Drawable/Surface.h"
-#include <string>
 
 //  Struct for variables shared with ImGui
 
@@ -26,7 +25,7 @@ private:
 
 	//  Variables for the mouse interaction
 
-	bool dragging;
+	bool dragging = false;
 	Vector2i lastPos;
 	Vector3f axis = Vector3f(1.f, -1.f, 1.f);
 	float dangle = 0.01f;

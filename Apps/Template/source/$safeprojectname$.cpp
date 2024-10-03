@@ -3,6 +3,8 @@
 #include "Mouse.h"
 #include "IG_$safeprojectname$.h"
 
+#include <string>
+
 float IG_DATA::THETA = pi / 2.f;
 float IG_DATA::PHI	 = 0.f;
 
@@ -38,7 +40,7 @@ void $safeprojectname$::drag_motion()
 //  Public
 
 $safeprojectname$::$safeprojectname$()
-	: window(640, 480, "$safeprojectname$", "", true),
+	: window(640, 480, "$safeprojectname$"),
 
 	example(window.graphics, SURFACE_SHAPE(_EXPLICIT_SPHERICAL, exampleRadius))
 {

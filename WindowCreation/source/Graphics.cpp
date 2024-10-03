@@ -1,6 +1,5 @@
 #include "Graphics.h"
 #include <sstream>
-
 #include "iGManager.h"
 
 #include "Exception/ExceptionMacros.h"
@@ -199,6 +198,8 @@ void Graphics::setWindowDimensions(Vector2i& Dim)
 	cbuff.traslation = Center.getVector4();
 
 	GFX_THROW_INFO_ONLY(pContext->UpdateSubresource(pPerspective.Get(), 0u, NULL, &cbuff, 0u, 0u));
+
+	clearDepthBuffer();
 }
 
 Vector2i Graphics::getWindowDimensions()
@@ -215,8 +216,19 @@ void Graphics::updatePerspective(Vector3f obs, Vector3f center, float scale)
 	Center = center;
 	Scale = scale;
 
-	Matrix Projections = ProjectionMatrix(obs) * ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * scale;
-	cbuff.perspective = Projections.transpose().getMatrix4();
+	if (Observer == Vector3f(0.f, 0.f, -1.f))
+	{
+		Matrix Projections = ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * scale;
+		cbuff.perspective = Projections.transpose().getMatrix4();
+	}
+
+	else
+	{
+		Matrix Projections = ProjectionMatrix(obs) * ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * scale;
+		cbuff.perspective = Projections.transpose().getMatrix4();
+	}
+
+
 	cbuff.traslation = center.getVector4();
 
 	GFX_THROW_INFO_ONLY(pContext->UpdateSubresource(pPerspective.Get(), 0u, NULL, &cbuff, 0u, 0u));

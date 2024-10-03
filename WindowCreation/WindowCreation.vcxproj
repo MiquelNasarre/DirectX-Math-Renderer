@@ -160,6 +160,9 @@
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Resources/ResourceFiles/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <Lib>
+      <AdditionalDependencies>dxgi.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -187,6 +190,9 @@
     <ResourceCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Resources/ResourceFiles/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <Lib>
+      <AdditionalDependencies>dxgi.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\Bindable.cpp" />

@@ -36,6 +36,8 @@ bld/
 # Build files
 *.exe
 *.cso
+*.idb
+*.pbd
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

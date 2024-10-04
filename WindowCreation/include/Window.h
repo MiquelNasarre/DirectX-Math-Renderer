@@ -61,7 +61,8 @@ private:
 	iGManager imGui;
 
 public:
-	Window(int width, int height, const char* Title, const char* IconFilename = "", bool darkTheme = true);
+
+	Window(int width, int height, const char* Title, const char* IconFilename = "", bool darkTheme = true, GPU_PREFERENCE Preference = GPU_HIGH_PERFORMANCE);
 	~Window();
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;

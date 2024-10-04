@@ -4,18 +4,20 @@
 
 #include "Exception/ExceptionMacros.h"
 
+#include <dxgi1_6.h>
+
 //	Graphics stuff
 
 Graphics::~Graphics()
 {
 }
 
-Graphics::Graphics(HWND hWnd)
+Graphics::Graphics(HWND hWnd, GPU_PREFERENCE preference)
 {
-	create(hWnd);
+	create(hWnd, preference);
 }
 
-void Graphics::create(HWND hWnd)
+void Graphics::create(HWND hWnd, GPU_PREFERENCE preference)
 {
 	HWnd = hWnd;
 	DXGI_SWAP_CHAIN_DESC sd = {};
@@ -35,18 +37,15 @@ void Graphics::create(HWND hWnd)
 	sd.SwapEffect							= DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags								= 0;
 
-	UINT swapCreateFlags = 0u;
-#ifndef NDEBUG
-	swapCreateFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
+#ifdef _DEBUG
 
-	//	Create device & front/back buffers & swap chain & rendering context
+	//  Create D3D11 device and context & swap chain
 
 	GFX_THROW_INFO(D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
-		swapCreateFlags,
+		D3D11_CREATE_DEVICE_DEBUG,
 		nullptr,
 		0,
 		D3D11_SDK_VERSION,
@@ -56,6 +55,54 @@ void Graphics::create(HWND hWnd)
 		nullptr,
 		&pContext
 	));
+
+#else
+
+	//  Create Factory
+
+	pCom<IDXGIFactory> dxgiFactory;
+	GFX_THROW_INFO(CreateDXGIFactory(__uuidof(IDXGIFactory), &dxgiFactory));
+
+	//  Find adapter by GPU preference
+
+	pCom<IDXGIAdapter> bestAdapter = nullptr;
+
+	pCom<IDXGIFactory6> Factory6;
+	GFX_THROW_INFO(dxgiFactory.As(&Factory6));
+
+	switch (preference)
+	{
+	case GPU_HIGH_PERFORMANCE:
+		GFX_THROW_INFO(Factory6->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&bestAdapter)));
+		break;
+	case GPU_MINIMUM_POWER:
+		GFX_THROW_INFO(Factory6->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_MINIMUM_POWER, IID_PPV_ARGS(&bestAdapter)));
+		break;
+	case GPU_UNSPECIFIED:
+		GFX_THROW_INFO(Factory6->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_UNSPECIFIED, IID_PPV_ARGS(&bestAdapter)));
+		break;
+	}
+
+	//  Create D3D11 device and context with the chosen adapter
+
+	GFX_THROW_INFO(D3D11CreateDevice(
+		bestAdapter.Get(),
+		D3D_DRIVER_TYPE_UNKNOWN,
+		nullptr,
+		0u,
+		nullptr,
+		0u,
+		D3D11_SDK_VERSION,
+		&pDevice,
+		nullptr,
+		&pContext
+	));
+
+	//  Create swap chain
+
+	GFX_THROW_INFO(dxgiFactory->CreateSwapChain(pDevice.Get(), &sd, &pSwap));
+
+#endif
 
 	//	Gain access to render target through shinnanigins
 

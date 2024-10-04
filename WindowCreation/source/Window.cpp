@@ -73,7 +73,7 @@ void Window::handleFramerate()
 	frame = timer.mark();
 }
 
-Window::Window(int width, int height, const char* Title, const char* IconFilename, bool darkTheme)
+Window::Window(int width, int height, const char* Title, const char* IconFilename, bool darkTheme, GPU_PREFERENCE preference)
 	: Dimensions{ Vector2i(width,height) }, timer(true)
 {
 	Name = Title;
@@ -130,7 +130,7 @@ Window::Window(int width, int height, const char* Title, const char* IconFilenam
 
 	//	Create graphics object
 
-	graphics.create(hWnd);
+	graphics.create(hWnd, preference);
 	graphics.setWindowDimensions(Dimensions);
 
 }

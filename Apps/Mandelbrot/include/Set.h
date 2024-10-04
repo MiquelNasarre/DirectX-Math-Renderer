@@ -11,7 +11,7 @@ private:
 
 	struct PSconstBuffer
 	{
-		_float4color color[16];
+		_float4color color[20];
 	}PcBuff;
 
 	ConstantBuffer<PSconstBuffer>* pscBuff = NULL;

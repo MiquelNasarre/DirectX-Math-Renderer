@@ -17,6 +17,8 @@ private:
 
 	//  Variables for the FOV
 
+	bool mpressed = false;
+	bool menu = false;
 	float scale = 600.f;
 	Vector3f center   = { -0.5f, 0.f, 0.f };
 

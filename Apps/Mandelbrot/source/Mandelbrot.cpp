@@ -34,14 +34,16 @@ void Mandelbrot::eventManager()
 
 	//  Keyboard events
 
-	if (Keyboard::isKeyPressed('W'))
-		center.y += 5.f / scale;
-	if (Keyboard::isKeyPressed('S'))
-		center.y -= 5.f / scale;
-	if (Keyboard::isKeyPressed('A'))
-		center.x -= 5.f / scale;
-	if (Keyboard::isKeyPressed('D'))
-		center.x += 5.f / scale;
+	if (!mpressed && Keyboard::isKeyPressed('M'))
+	{
+		mpressed = true;
+		if (menu)
+			menu = false;
+		else
+			menu = true;
+	}
+	if (mpressed && !Keyboard::isKeyPressed('M'))
+		mpressed = false;
 
 	//	Mouse events
 
@@ -82,7 +84,8 @@ void Mandelbrot::doFrame()
 
 	//	ImGui crap
 
-	IG_Mandelbrot::render();
+	if(menu)
+		IG_Mandelbrot::render();
 
 	//	Push the frame to the scriin
 

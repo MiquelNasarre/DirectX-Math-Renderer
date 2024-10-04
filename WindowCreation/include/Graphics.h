@@ -12,6 +12,13 @@
 
 #define pCom Microsoft::WRL::ComPtr
 
+enum GPU_PREFERENCE
+{
+	GPU_HIGH_PERFORMANCE,
+	GPU_MINIMUM_POWER,
+	GPU_UNSPECIFIED,
+};
+
 class Graphics
 {
 	friend class Bindable;
@@ -52,11 +59,11 @@ public:
 public:
 	Graphics() {}
 	~Graphics();
-	Graphics(HWND hWnd);
+	Graphics(HWND hWnd, GPU_PREFERENCE preference);
 	Graphics(const Graphics&) = delete;
 	Graphics& operator=(const Graphics&) = delete;
 
-	void create(HWND hWnd);
+	void create(HWND hWnd, GPU_PREFERENCE preference);
 	bool isInitialized();
 
 	void pushFrame();

@@ -22,21 +22,25 @@ Set::Set(Graphics& gfx)
 	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"SetPS.cso"));
 
 	PcBuff.color[0] = { 0.f,0.f,0.f,0.f };
-	PcBuff.color[1] = { 1.f,1.f,1.f,160.f };
-	PcBuff.color[2] = { 1.f,0.f,1.f,140.f };
-	PcBuff.color[3] = { 0.f,0.5f,1.f,120.f };
-	PcBuff.color[4] = { 0.5f,0.f,1.f,100.f };
-	PcBuff.color[5] = { 1.f,0.f,0.f,80.f };
-	PcBuff.color[6] = { 1.f,0.5f,0.f,70.f };
-	PcBuff.color[7] = { 1.f,1.f,0.f,60.f };
-	PcBuff.color[8] = { 0.5f,0.5f,0.5f,50.f };
-	PcBuff.color[9] = { 0.8f,0.2f,0.f,40.f };
-	PcBuff.color[10] = { 0.5f,0.1f,0.7f,30.f };
-	PcBuff.color[11] = { 0.f,0.6f,0.9f,20.f };
-	PcBuff.color[12] = { 0.7f,1.f,0.f,10.f };
-	PcBuff.color[13] = { 0.8f,0.6f,0.f,5.f };
-	PcBuff.color[14] = { 0.4f,0.7f,0.f,2.f };
-	PcBuff.color[15] = { 1.f,1.f,0.f,0.f };
+	PcBuff.color[1] = { 1.f,1.f,1.f,220.f };
+	PcBuff.color[2] = { 0.5f,0.7f,0.8f,200.f };
+	PcBuff.color[3] = { 0.f,0.8f,0.5f,180.f };
+	PcBuff.color[4] = { 0.f,1.f,1.f,160.f };
+	PcBuff.color[5] = { 1.f,0.5f,1.f,140.f };
+	PcBuff.color[6] = { 1.f,0.f,1.f,120.f };
+	PcBuff.color[7] = { 0.f,1.f,1.f,100.f };
+	PcBuff.color[8] = { 0.5f,0.f,1.f,90.f };
+	PcBuff.color[9] = { 0.1f,0.6f,1.f,80.f };
+	PcBuff.color[10] = { 1.f,0.f,0.f,70.f };
+	PcBuff.color[11] = { 1.f,0.5f,0.f,60.f };
+	PcBuff.color[12] = { 1.f,1.f,0.f,50.f };
+	PcBuff.color[13] = { 0.5f,0.5f,0.5f,40.f };
+	PcBuff.color[14] = { 0.8f,0.2f,0.f,30.f };
+	PcBuff.color[15] = { 0.5f,0.1f,0.7f,20.f };
+	PcBuff.color[16] = { 0.f,0.6f,0.9f,15.f };
+	PcBuff.color[17] = { 0.7f,1.f,0.f,10.f };
+	PcBuff.color[18] = { 0.8f,0.6f,0.f,5.f };
+	PcBuff.color[19] = { 1.f,0.f,0.f,0.f };
 
 	pscBuff = (ConstantBuffer<PSconstBuffer>*)AddBind(std::make_unique<ConstantBuffer<PSconstBuffer>>(gfx, PcBuff, PIXEL_CONSTANT_BUFFER_TYPE));
 

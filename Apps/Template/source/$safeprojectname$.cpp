@@ -5,8 +5,8 @@
 
 #include <string>
 
-float IG_DATA::THETA = pi / 2.f;
-float IG_DATA::PHI	 = 0.f;
+float IG::THETA = pi / 2.f;
+float IG::PHI	 = 0.f;
 
 //  Private
 
@@ -88,7 +88,7 @@ void $safeprojectname$::eventManager()
 
 	//  Update observer
 
-	observer = { -cosf(IG_DATA::PHI) * cosf(IG_DATA::THETA), -cosf(IG_DATA::PHI) * sinf(IG_DATA::THETA), -sinf(IG_DATA::PHI) };
+	observer = { -cosf(IG::PHI) * cosf(IG::THETA), -cosf(IG::PHI) * sinf(IG::THETA), -sinf(IG::PHI) };
 }
 
 void $safeprojectname$::doFrame()

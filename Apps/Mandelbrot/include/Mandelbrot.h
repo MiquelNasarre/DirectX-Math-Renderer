@@ -5,7 +5,15 @@
 
 //  Struct for variables shared with ImGui
 
-struct IG_DATA {
+struct IG {
+	static bool MENU_OPEN;
+	static bool SAVE_MENU_OPEN;
+	static Vector2i WindowDim;
+	
+	static bool SAVE;
+	static Vector2i QUALITY;
+	static const char* PATH;
+	static bool ADAPT;
 };
 
 //  Main class for running the Application

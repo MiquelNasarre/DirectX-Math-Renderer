@@ -15,7 +15,7 @@ const Color Color::Transparent	= Color(  0,   0,   0,   0);
 Color::Color()
 {
 	R = 0u;
-	B = 0u;
+	G = 0u;
 	B = 0u;
 	A = 0u;
 }

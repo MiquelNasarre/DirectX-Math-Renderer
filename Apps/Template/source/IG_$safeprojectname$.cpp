@@ -12,8 +12,8 @@ void IG_$safeprojectname$::render()
 		ImGui::SetWindowCollapsed(true, ImGuiCond_Once);
 		ImGui::SetWindowSize(ImVec2(315, 80), ImGuiCond_Once);
 
-		ImGui::SliderAngle("Theta", &IG_DATA::THETA);
-		ImGui::SliderAngle("Phi", &IG_DATA::PHI, -90, 90);
+		ImGui::SliderAngle("Theta", &IG::THETA);
+		ImGui::SliderAngle("Phi", &IG::PHI, -90, 90);
 	}
 	ImGui::End();
 

@@ -15,7 +15,7 @@ IG_DATA::TYPE IG_DATA::SHOW = BACK;
 ImageEditor::ImageEditor()
 	: window(640, 480, "ImageEditor"),
 
-	image(initialImage()),
+	image(initialImage("")),
 	imageTex(window.graphics, image),
 	imageBG(window.graphics, imageTex),
 	sc(&imageTex),
@@ -23,11 +23,17 @@ ImageEditor::ImageEditor()
 	imageWD(window.graphics, SURFACE_SHAPE(_EXPLICIT_SPHERICAL, exampleRadius), &sc)
 {
 	window.setFramerateLimit(60);
+	imageChanges();
+	//image.save(R"(C:\Users\PC\Desktop\mandelbrot logo 2.png)");
 }
 
-Image ImageEditor::initialImage() const
+Image ImageEditor::initialImage(const char* filename) const
 {
-	return EarthDiagram();
+	if (!filename[0])
+		return EarthDiagram();
+
+	Image image(filename);
+	return image;
 }
 
 int ImageEditor::Run()
@@ -39,7 +45,14 @@ int ImageEditor::Run()
 
 void ImageEditor::imageChanges()
 {
-
+	for (unsigned int i = 0; i < image.width; i++)
+	{
+		for (unsigned int j = 0; j < image.height; j++)
+		{
+			if(image.Pixels[j * image.width + i].R)
+				image.Pixels[j * image.width + i].A = unsigned char(256.f * powf(float(image.Pixels[j * image.width + i].A)/ 256.f,1.5f));
+		}
+	}
 }
 
 void ImageEditor::eventManager()

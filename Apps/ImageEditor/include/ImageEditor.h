@@ -44,7 +44,7 @@ private:
 
 public:
 	ImageEditor();
-	Image initialImage() const;
+	Image initialImage(const char* filename) const;
 
 	int Run();
 

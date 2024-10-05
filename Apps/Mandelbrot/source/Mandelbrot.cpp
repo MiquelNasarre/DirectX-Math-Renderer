@@ -5,6 +5,14 @@
 
 #include <string>
 
+bool		IG::MENU_OPEN		= false;
+bool		IG::SAVE_MENU_OPEN	= false;
+Vector2i	IG::WindowDim		= { 0,0 };
+bool		IG::SAVE			= false;
+Vector2i	IG::QUALITY			= { 0,0 };
+const char* IG::PATH			= (const char*)calloc(200, sizeof(char));
+bool		IG::ADAPT			= true;
+
 //  Public
 
 Mandelbrot::Mandelbrot()
@@ -13,6 +21,9 @@ Mandelbrot::Mandelbrot()
 	set(window.graphics)
 {
 	window.setFramerateLimit(60);
+	window.setIcon(R"(C:\Users\PC\Desktop\LearnDirectX\Apps\Mandelbrot\resources\mandelbrot.ico)");
+
+	memcpy((void*)IG::PATH, SAVE_DIR, sizeof(SAVE_DIR));
 }
 
 int Mandelbrot::Run()
@@ -37,13 +48,25 @@ void Mandelbrot::eventManager()
 	if (!mpressed && Keyboard::isKeyPressed('M'))
 	{
 		mpressed = true;
-		if (menu)
-			menu = false;
+		if (IG::MENU_OPEN)
+			IG::MENU_OPEN = false;
 		else
-			menu = true;
+			IG::MENU_OPEN = true;
 	}
 	if (mpressed && !Keyboard::isKeyPressed('M'))
 		mpressed = false;
+
+	static bool enable_save = false;
+	if (Keyboard::isKeyPressed(VK_CONTROL) && !Keyboard::isKeyPressed('S'))
+		enable_save = true;
+	else if (!Keyboard::isKeyPressed(VK_CONTROL))
+		enable_save = false;
+	if (Keyboard::isKeyPressed('S') && enable_save)
+	{
+		enable_save = false;
+		IG::SAVE_MENU_OPEN = true;
+	}
+
 
 	//	Mouse events
 
@@ -66,6 +89,14 @@ void Mandelbrot::eventManager()
 	Vector2f centerDisplacement = (1.f - factor) * (Mouse::getPosition() - window.getDimensions() / 2) / scale;
 	center += 2 * Vector3f(-centerDisplacement.x, centerDisplacement.y, 0.f);
 
+	IG::WindowDim = window.getDimensions();
+
+	if (IG::SAVE)
+	{
+		set.saveFrame(window.graphics, IG::PATH, IG::QUALITY, IG::ADAPT);
+		IG::SAVE = false;
+	}
+
 }
 
 void Mandelbrot::doFrame()
@@ -84,8 +115,7 @@ void Mandelbrot::doFrame()
 
 	//	ImGui crap
 
-	if(menu)
-		IG_Mandelbrot::render();
+	IG_Mandelbrot::render();
 
 	//	Push the frame to the scriin
 

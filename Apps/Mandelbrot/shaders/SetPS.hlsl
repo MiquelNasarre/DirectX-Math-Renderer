@@ -38,7 +38,7 @@ float4 main(float4 complex : Complex, float scale : Scale) : SV_TARGET
         if(i > colors[j].w)
         {
             float ip = i - sqrt((abs - divergence) / (divergence * (divergence - 1)));
-            return colors[j] * (colors[j - 1].w - ip) / (colors[j - 1].w - colors[j].w) + colors[j - 1] * (ip - colors[j].w) / (colors[j - 1].w - colors[j].w);            
+            return colors[j] * (colors[j - 1].w - ip) / (colors[j - 1].w - colors[j].w) + colors[j - 1] * (ip - colors[j].w) / (colors[j - 1].w - colors[j].w);
         }
 
     }

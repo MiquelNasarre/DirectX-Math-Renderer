@@ -1,5 +1,7 @@
 #include "Set.h"
 
+#include <thread>
+
 Set::Set(Graphics& gfx)
 {
 	isInit = true;
@@ -61,4 +63,31 @@ void Set::updateGradient(Graphics& gfx, Color color, float tolerance, unsigned c
 	PcBuff.color[ID] = color.getColor4();
 	PcBuff.color[ID].a = tolerance;
 	pscBuff->Update(gfx, PcBuff);
+}
+
+void Set::saveFrame(Graphics& gfx, const char* filename, Vector2i Dimensions, bool adapt)
+{
+	Vector2f center = { gfx.getCenter().x,gfx.getCenter().y };
+	Vector2i winDim = gfx.getWindowDimensions();
+	float scale = gfx.getScale();
+
+	Complex c(center.x - winDim.x / scale, center.y + winDim.y / scale);
+	float pixelStepX(2.f * winDim.x / (scale * Dimensions.x));
+	float pixelStepY(2.f * winDim.y / (scale * Dimensions.y));
+
+	if(adapt)
+	{
+		if (pixelStepX > pixelStepY)
+		{
+			pixelStepY = pixelStepX;
+			c.b = center.y + winDim.x * Dimensions.y / (scale * Dimensions.x);
+		}
+		else if (pixelStepX < pixelStepY)
+		{
+			pixelStepX = pixelStepY;
+			c.a = center.x - winDim.y * Dimensions.x / (scale * Dimensions.y);
+		}
+	}
+	
+	std::thread(saveFrameAsync, PcBuff, filename, c, pixelStepX, pixelStepY, Dimensions).detach();
 }

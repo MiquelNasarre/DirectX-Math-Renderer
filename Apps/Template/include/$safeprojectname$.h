@@ -5,7 +5,7 @@
 
 //  Struct for variables shared with ImGui
 
-struct IG_DATA {
+struct IG {
 	static float THETA;
 	static float PHI;
 };

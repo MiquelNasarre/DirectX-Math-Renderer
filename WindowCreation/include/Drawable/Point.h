@@ -4,15 +4,14 @@
 class Point : public Drawable
 {
 public:
-	Point(Graphics& gfx, Vector3f position, float radius, Color col = Color::White);
+	Point(Vector3f position, float radius, Color col = Color::White);
 
-	void updatePosition(Graphics& gfx, Vector3f position);
-	void updateRadius(Graphics& gfx, float radius);
-	void updateColor(Graphics& gfx, Color col);
-	void updateRotation(Graphics& gfx, Vector3f axis, float angle, bool multiplicative = false);
-	void updateRotation(Graphics& gfx, Quaternion rotation, bool multiplicative = false);
+	void updatePosition(Vector3f position);
+	void updateRadius(float radius);
+	void updateColor(Color col);
+	void updateRotation(Quaternion rotation, bool multiplicative = false);
 
-	void Draw(Graphics& gfx) override;
+	void Draw(Window& _w) override;
 private:
 
 	struct VSconstBuffer {
@@ -32,6 +31,6 @@ private:
 		float zero = 0.f;
 	};
 
-	ConstantBuffer<VSconstBuffer>* pVSCB;
-	ConstantBuffer<PSconstBuffer>* pPSCB;
+	void* pVSCB;
+	void* pPSCB;
 };

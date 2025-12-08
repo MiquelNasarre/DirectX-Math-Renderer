@@ -1,96 +1,323 @@
 #include "Window.h"
+#include "Exception/_exWindow.h"
 
+#include "Timer.h"
+#include "Graphics.h"
+#include "iGManager.h"
 #include "Keyboard.h"
 #include "Mouse.h"
+
 #include <windowsx.h>
 #include <dwmapi.h>
-#include <thread>
-#include <chrono>
+#include <queue>
+#include <string>
+#include <cstdarg>
 
-#include "iGManager.h"
+/*
+--------------------------------------------------------------------------------------------
+ Window Internal Data struct
+--------------------------------------------------------------------------------------------
+*/
 
-#include "Exception/ExceptionMacros.h"
+#define MAX_MSG 128 // The maximum amount of messages to be stored on queue
 
-// Window Class Stuff
+using std::queue;
+using std::string;
 
-Window::WindowClass Window::WindowClass::wndClass;
-
-Window::WindowClass::WindowClass() noexcept
-	:hInst{ GetModuleHandle(nullptr) }
+// This structure contains the internal data allocated by every window.
+struct WindowInternals
 {
-	//	Register Window class
+	Graphics* graphics; // Graphics object of the window.
+	Timer timer;		// Timer object to keep track of the framerate.
 
-	WNDCLASSEXA wc = { 0 };
-	wc.cbSize = sizeof(wc);
-	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = HandleMsgSetup;
-	wc.cbClsExtra = 0;
-	wc.cbWndExtra = 0;
-	wc.hInstance = GetInstance();
-	wc.hIcon = static_cast<HICON>(LoadImageA(0, (RESOURCES_DIR + std::string("Icon.ico")).c_str(), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE | LR_SHARED));
-	//wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = nullptr;
-	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = GetName();
-	wc.hIconSm = nullptr;
-	RegisterClassExA(&wc);
-}
+	Vector2i Dimensions = {};	// Dimensions of the window.
+	Vector2i Position = {};		// Position of the window.
+	string Name = {};			// Name of the window.
+	HWND hWnd = nullptr;		// Handle to the window.
 
-Window::WindowClass::~WindowClass()
+	queue<MSG> msgQueue = {};	// Stores the message queue
+
+	bool noFrameUpdate = false; // Schedules next frame time to be skipped.
+	float frame = 0;			// Stores the time of the last frame push.
+	float Frametime = 0;		// Stores the specified time for each frame.
+};
+
+/*
+--------------------------------------------------------------------------------------------
+ MSG Pipeline Static Class
+--------------------------------------------------------------------------------------------
+*/
+
+// Static class that handles the process messages and sets custom procedures.
+class MSGHandlePipeline
 {
-	UnregisterClassA(wndClassName, GetInstance());
-}
+public:
+	// Custom procedure for window message handling, Stores mouse and keyboard events and
+	// handles other specific window events. Other events are sent to the defaul procedure.
+	static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, WindowInternals* _data) noexcept
+	{
+		WindowInternals& data = *_data;
 
-const LPCSTR Window::WindowClass::GetName() noexcept
-{
-	return wndClassName;
-}
+		//	This function handles all the messages send by the computer to the application
 
-HINSTANCE Window::WindowClass::GetInstance() noexcept
-{
-	return wndClass.hInst;
-}
+		// Priority cases I want to always take care of
 
-// Window Stuff
+		switch (msg)
+		{
+		case WM_CLOSE:
+			PostQuitMessage(0);
+			return 0;
 
-void Window::pushMessage()
-{
-	msgQueue.push(msg);
-	if (msgQueue.size() > maxMessages)
-		msgQueue.pop();
-}
+		case WM_SIZE:
+			data.Dimensions.x = LOWORD(lParam);
+			data.Dimensions.y = HIWORD(lParam);
+			data.graphics->setWindowDimensions(data.Dimensions);
+			break;
 
-void Window::handleFramerate()
-{
-	if (noFrameUpdate) {
-		noFrameUpdate = false;
-		frame = timer.skip();
-		return;
+		case WM_MOVE:
+			data.noFrameUpdate = true;
+			data.Position.x = LOWORD(lParam);
+			data.Position.y = HIWORD(lParam);
+			break;
+
+		case WM_KILLFOCUS:
+			Keyboard::clearKeyStates();
+			Mouse::resetWheel();
+			Mouse::clearBuffer();
+			break;
+		}
+
+		// Let ImGui handle the rest if he has focus
+
+		if (iGManager::WndProcHandler(hWnd, msg, (unsigned int)wParam, (unsigned int)lParam))
+			return DefWindowProc(hWnd, msg, wParam, lParam);
+
+		// Other lesser cases
+
+		switch (msg)
+		{
+		case WM_CHAR:
+			Keyboard::pushChar((char)wParam);
+			break;
+
+		case WM_SYSKEYDOWN:
+		case WM_KEYDOWN:
+			if (Keyboard::getAutorepeat() || !Keyboard::isKeyPressed((unsigned char)wParam))
+				Keyboard::pushEvent(Keyboard::event::Pressed, (unsigned char)wParam);
+			Keyboard::setKeyPressed((unsigned char)wParam);
+			break;
+
+		case WM_SYSKEYUP:
+		case WM_KEYUP:
+			Keyboard::setKeyReleased((unsigned char)wParam);
+			Keyboard::pushEvent(Keyboard::event::Released, (unsigned char)wParam);
+			break;
+
+		case WM_LBUTTONDOWN:
+			Mouse::pushEvent(Mouse::event::Pressed, Mouse::Left);
+			Mouse::setButtonPressed(Mouse::Left);
+			SetCapture(hWnd);
+			break;
+
+		case WM_LBUTTONUP:
+			Mouse::pushEvent(Mouse::event::Released, Mouse::Left);
+			Mouse::setButtonReleased(Mouse::Left);
+			ReleaseCapture();
+			break;
+
+		case WM_RBUTTONDOWN:
+			Mouse::pushEvent(Mouse::event::Pressed, Mouse::Right);
+			Mouse::setButtonPressed(Mouse::Right);
+			break;
+
+		case WM_RBUTTONUP:
+			Mouse::pushEvent(Mouse::event::Released, Mouse::Right);
+			Mouse::setButtonReleased(Mouse::Right);
+			break;
+
+		case WM_MBUTTONDOWN:
+			Mouse::pushEvent(Mouse::event::Pressed, Mouse::Middle);
+			Mouse::setButtonPressed(Mouse::Middle);
+			break;
+
+		case WM_MBUTTONUP:
+			Mouse::pushEvent(Mouse::event::Released, Mouse::Middle);
+			Mouse::setButtonReleased(Mouse::Middle);
+			break;
+
+		case WM_MOUSEMOVE:
+			Mouse::setPosition(Vector2i(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
+			Mouse::setScPosition(Vector2i(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)) + data.Position);
+			Mouse::pushEvent(Mouse::event::Moved, Mouse::None);
+			break;
+
+		case WM_MOUSEWHEEL:
+			Mouse::increaseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
+			Mouse::pushEvent(Mouse::event::Wheel, Mouse::None);
+			break;
+		}
+
+		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 
-	if (timer.check() < Frametime)
-		std::this_thread::sleep_for(std::chrono::milliseconds(int(1000 * (Frametime - timer.check()))));
-	frame = timer.mark();
+	// Trampoline used to call the custom message pipeline to the specific window data.
+	static LRESULT CALLBACK HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	{
+		// retrieve ptr to window class
+		Window* const pWnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+		if (!pWnd || !pWnd->WindowData)
+			return DefWindowProc(hWnd, msg, wParam, lParam);
+		// forward message to window class handler
+		return HandleMsg(hWnd, msg, wParam, lParam, (WindowInternals*)pWnd->WindowData);
+	}
+
+	// Setup to create the trampoline method. Creates a virtual window that points to the 
+	// actual window and is accessible by the trampoline via its handle.
+	static LRESULT CALLBACK HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+	{
+		// use create parameter passed in from CreateWindow() to store window class pointer at WinAPI side
+		if (msg == WM_NCCREATE)
+		{
+			// extract ptr to window class from creation data
+			const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
+			Window* const pWnd = static_cast<Window*>(pCreate->lpCreateParams);
+			// set WinAPI-managed user data to store ptr to window class
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
+			// set message proc to normal (non-setup) handler now that setup is finished
+			SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&HandleMsgThunk));
+			// forward message to window class handler
+			return DefWindowProc(hWnd, msg, wParam, lParam);
+		}
+		// if we get a message before the WM_NCCREATE message, handle with default handler
+		return DefWindowProc(hWnd, msg, wParam, lParam);
+	}
+};
+
+/*
+--------------------------------------------------------------------------------------------
+ Instance creation Helper class
+--------------------------------------------------------------------------------------------
+*/
+
+// Global window class that creates the handle to the instance
+// and assings a name and icon to the process.
+class WindowClass
+{
+public:
+	// Returns the name of the window class.
+	static const LPCSTR GetName() noexcept
+	{
+		return wndClassName;
+	}
+	// Returns the handle to the instance.
+	static HINSTANCE GetInstance() noexcept
+	{
+		return wndClass.hInst;
+	}
+
+private:
+	// Private constructor creates the instance.
+	WindowClass() noexcept
+		:hInst{ GetModuleHandle(nullptr) }
+	{
+		//	Register Window class
+
+		WNDCLASSEXA wc = { 0 };
+		wc.cbSize = sizeof(wc);
+		wc.style = CS_OWNDC;
+		wc.lpfnWndProc = MSGHandlePipeline::HandleMsgSetup;
+		wc.cbClsExtra = 0;
+		wc.cbWndExtra = 0;
+		wc.hInstance = GetInstance();
+		wc.hIcon = static_cast<HICON>(LoadImageA(0, (RESOURCES_DIR + std::string("Icon.ico")).c_str(), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE | LR_SHARED));
+		//wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wc.hbrBackground = nullptr;
+		wc.lpszMenuName = nullptr;
+		wc.lpszClassName = GetName();
+		wc.hIconSm = nullptr;
+		RegisterClassExA(&wc);
+	}
+	// Private destructor deletes the instance.
+	~WindowClass()
+	{
+		UnregisterClassA(wndClassName, GetInstance());
+	}
+
+	WindowClass(const WindowClass&) = delete;
+	WindowClass& operator=(const WindowClass&) = delete;
+	static constexpr LPCSTR wndClassName = "DirectX Window";
+	static WindowClass wndClass;
+	HINSTANCE hInst;
+};
+
+WindowClass WindowClass::wndClass;
+
+/*
+--------------------------------------------------------------------------------------------
+ Window Class Functions
+--------------------------------------------------------------------------------------------
+*/
+
+// Returns a reference to the window internal Graphics object.
+
+Graphics& Window::graphics()
+{
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	return *data.graphics;
 }
 
-Window::Window(int width, int height, const char* Title, const char* IconFilename, bool darkTheme, GPU_PREFERENCE preference)
-	: Dimensions{ Vector2i(width,height) }, timer(true)
-{
-	Name = Title;
+// Loops throgh the messages, pushes them to the queue and translates them.
 
+bool Window::processEvents()
+{
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	//	Message Pump
+	MSG msg;
+
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		if (msg.message == WM_QUIT)
+			return false;
+
+
+		data.msgQueue.push(msg);
+		if (data.msgQueue.size() > MAX_MSG)
+			data.msgQueue.pop();
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	handleFramerate();
+	return true;
+}
+
+// Closes the window.
+
+void Window::close()
+{
+	PostQuitMessage(0);
+}
+
+// Creates the window and its associated Graphics object with the
+// specified dimensions, title, icon and theme.
+
+Window::Window(Vector2i Dim, const char* Title, const char* IconFilename, bool darkTheme)
+{
 	//	Calculate window size based on desired client region size
 
 	RECT wr;
 	wr.left = 100;
-	wr.right = width + wr.left;
+	wr.right = Dim.x + wr.left;
 	wr.top = 100;
-	wr.bottom = height + wr.top;
-	if (!AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE))
-		throw CHWND_LAST_EXCEPT();
+	wr.bottom = Dim.y + wr.top;
+	if (!AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_OVERLAPPEDWINDOW, FALSE))
+		throw WND_LAST_EXCEPT();
 
 	//	Create Window & get hWnd
 
-	hWnd = CreateWindowExA(
+	HWND hWnd = CreateWindowExA(
 		NULL,
 		WindowClass::GetName(), 
 		NULL,
@@ -108,7 +335,15 @@ Window::Window(int width, int height, const char* Title, const char* IconFilenam
 	//	Check for error
 
 	if (!hWnd)
-		throw CHWND_LAST_EXCEPT();
+		throw WND_LAST_EXCEPT();
+
+	// Create internal data
+	WindowData = new WindowInternals;
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	data.graphics	= new Graphics(hWnd);
+	data.hWnd		= hWnd;
+	data.Dimensions = Dim;
 
 	//	Set title & icon & theme
 
@@ -118,246 +353,143 @@ Window::Window(int width, int height, const char* Title, const char* IconFilenam
 	if (darkTheme)
 		setDarkTheme(TRUE);
 
-	//	Initialize Keyboard & mouse & ...
-
-	Keyboard::init();
-	Mouse::init();
-	timer.reset();
-
-	//	Initialize ImGui
-
-	iGManager::initWin32(hWnd);
-
 	//	Create graphics object
 
-	graphics.create(hWnd, preference);
-	graphics.setWindowDimensions(Dimensions);
-
+	data.graphics->setWindowDimensions(data.Dimensions);
+	
 }
+
+// Handles the proper deletion of the window data after its closing.
 
 Window::~Window()
 {
-	DestroyWindow(hWnd);
+	WindowInternals& data = *((WindowInternals*)WindowData);
+	delete data.graphics;
+
+	DestroyWindow(data.hWnd);
+
+	delete &data;
 }
 
-LRESULT CALLBACK Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
+// Set the title of the window, allows for formatted strings.
+
+void Window::setTitle(const char* fmt_name, ...)
 {
-	// use create parameter passed in from CreateWindow() to store window class pointer at WinAPI side
-	if (msg == WM_NCCREATE)
-	{
-		// extract ptr to window class from creation data
-		const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
-		Window* const pWnd = static_cast<Window*>(pCreate->lpCreateParams);
-		// set WinAPI-managed user data to store ptr to window class
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
-		// set message proc to normal (non-setup) handler now that setup is finished
-		SetWindowLongPtr(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&Window::HandleMsgThunk));
-		// forward message to window class handler
-		return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
-	}
-	// if we get a message before the WM_NCCREATE message, handle with default handler
-	return DefWindowProc(hWnd, msg, wParam, lParam);
-}
+	va_list ap;
 
-LRESULT CALLBACK Window::HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
-{
-	// retrieve ptr to window class
-	Window* const pWnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-	// forward message to window class handler
-	return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
-}
+	// Unwrap the format
+	char name[512];
 
-LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
-{
-	//	This function handles all the messages send by the computer to the application
+	va_start(ap, fmt_name);
+	if (vsnprintf(name, 512, fmt_name, ap) < 0) return;
+	va_end(ap);
 
-	// Priority cases I want to always take care of
+	WindowInternals& data = *((WindowInternals*)WindowData);
 
-	switch (msg)
-	{
-	case WM_CLOSE:
-		PostQuitMessage(0);
-		return 0;
+	data.Name = name;
 
-	case WM_SIZE:
-		Dimensions.x = LOWORD(lParam);
-		Dimensions.y = HIWORD(lParam);
-		if (graphics.isInitialized())
-			graphics.setWindowDimensions(Dimensions);
-		break;
-
-	case WM_MOVE:
-		noFrameUpdate = true;
-		Position.x = LOWORD(lParam);
-		Position.y = HIWORD(lParam);
-		break;
-
-	case WM_KILLFOCUS:
-		Keyboard::clearKeyStates();
-		Mouse::resetWheel();
-		Mouse::clearBuffer();
-		break;
-	}
-
-	// Let ImGui handle the rest if he has focus
-
-	if (iGManager::WndProcHandler(hWnd, msg, (unsigned int)wParam, (unsigned int)lParam))
-		return DefWindowProc(hWnd, msg, wParam, lParam);
-
-	// Other lesser cases
-
-	switch (msg)
-	{
-	case WM_CHAR:
-		Keyboard::pushChar((char)wParam);
-		break;
-
-	case WM_SYSKEYDOWN:
-	case WM_KEYDOWN:
-		if(Keyboard::getAutorepeat() || !Keyboard::isKeyPressed((unsigned char)wParam))
-			Keyboard::pushEvent(Keyboard::event::Type::Pressed, (unsigned char)wParam);
-		Keyboard::setKeyPressed((unsigned char)wParam);
-		break;
-
-	case WM_SYSKEYUP:
-	case WM_KEYUP:
-		Keyboard::setKeyReleased((unsigned char)wParam);
-		Keyboard::pushEvent(Keyboard::event::Type::Released, (unsigned char)wParam);
-		break;
-
-	case WM_LBUTTONDOWN:
-		Mouse::pushEvent(Mouse::event::Type::Pressed, Mouse::Left, Mouse::Position);
-		Mouse::setButtonPressed(Mouse::Left);
-		SetCapture(hWnd);
-		break;
-
-	case WM_LBUTTONUP:
-		Mouse::pushEvent(Mouse::event::Type::Released, Mouse::Left, Mouse::Position);
-		Mouse::setButtonReleased(Mouse::Left);
-		ReleaseCapture();
-		break;
-
-	case WM_RBUTTONDOWN:
-		Mouse::pushEvent(Mouse::event::Type::Pressed, Mouse::Right, Mouse::Position);
-		Mouse::setButtonPressed(Mouse::Right);
-		break;
-
-	case WM_RBUTTONUP:
-		Mouse::pushEvent(Mouse::event::Type::Released, Mouse::Right, Mouse::Position);
-		Mouse::setButtonReleased(Mouse::Right);
-		break;
-
-	case WM_MBUTTONDOWN:
-		Mouse::pushEvent(Mouse::event::Type::Pressed, Mouse::Middle, Mouse::Position);
-		Mouse::setButtonPressed(Mouse::Middle);
-		break;
-
-	case WM_MBUTTONUP:
-		Mouse::pushEvent(Mouse::event::Type::Released, Mouse::Middle, Mouse::Position);
-		Mouse::setButtonReleased(Mouse::Middle);
-		break;
-
-	case WM_MOUSEMOVE:
-		Mouse::setPosition(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-		Mouse::setScPosition(GET_X_LPARAM(lParam) + Position.x, GET_Y_LPARAM(lParam) + Position.y);
-		Mouse::pushEvent(Mouse::event::Type::Moved, Mouse::None, Mouse::Position);
-		break;
-
-	case WM_MOUSEWHEEL:
-		Mouse::increaseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
-		Mouse::pushEvent(Mouse::event::Type::Wheel, Mouse::None, Mouse::Position);
-		break;
-	}
-
-	return DefWindowProc(hWnd, msg, wParam, lParam);
-}
-
-//	Client functions
-
-void Window::setTitle(std::string name)
-{
-	Name = name;
-
-	if (!IsWindow(hWnd))
+	if (!IsWindow(data.hWnd))
 		return;
-	if (!SetWindowTextA(hWnd, name.c_str()))
-		throw CHWND_LAST_EXCEPT();
+	if (!SetWindowTextA(data.hWnd, name))
+		throw WND_LAST_EXCEPT();
 }
 
-void Window::setIcon(std::string filename)
+// Sets the icon of the window via its filename (Has to be a .ico file).
+
+void Window::setIcon(const char* filename)
 {
-	HANDLE hIcon = LoadImageA(0, filename.c_str(), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE | LR_SHARED);
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	HANDLE hIcon = LoadImageA(0, filename, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE | LR_SHARED);
 	if (hIcon) {
 		//	Change both icons to the same icon handle
-		SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-		SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		SendMessage(data.hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+		SendMessage(data.hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 
 		//	This will ensure that the application icon gets changed too
-		SendMessage(GetWindow(hWnd, GW_OWNER), WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-		SendMessage(GetWindow(hWnd, GW_OWNER), WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		SendMessage(GetWindow(data.hWnd, GW_OWNER), WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+		SendMessage(GetWindow(data.hWnd, GW_OWNER), WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}
-	else throw CHWND_LAST_EXCEPT();
+	else throw WND_LAST_EXCEPT();
 }
 
-void Window::setDimensions(int width, int height)
+// Sets the dimensions of the window to the ones specified.
+
+void Window::setDimensions(Vector2i Dim)
 {
+	int width = Dim.x;
+	int height = Dim.y;
+	
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
 	RECT wr;
 	wr.left = 100;
 	wr.right = width + wr.left;
 	wr.top = 100;
 	wr.bottom = height + wr.top;
-	if (!AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE))
-		throw CHWND_LAST_EXCEPT();
+	if (!AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_MAXIMIZEBOX | WS_OVERLAPPEDWINDOW, FALSE))
+		throw WND_LAST_EXCEPT();
 
-	if (!SetWindowPos(hWnd, hWnd, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER))
-		throw CHWND_LAST_EXCEPT();
+	if (!SetWindowPos(data.hWnd, data.hWnd, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER))
+		throw WND_LAST_EXCEPT();
 }
 
-void Window::setDimensions(Vector2i Dim)
-{
-	setDimensions(Dim.x, Dim.y);
-}
+// Sets the position of the window to the one specified.
 
-void Window::setPosition(int X, int Y)
+void Window::setPosition(Vector2i Pos)
 {
+	int X = Pos.x, Y = Pos.y;
+
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
 	int eX = -8;
 	int eY = -31;
 	X += eX;
 	Y += eY;
 
-	if (!SetWindowPos(hWnd, hWnd, X, Y, 0, 0, SWP_NOSIZE | SWP_NOZORDER))
-		throw CHWND_LAST_EXCEPT();
+	if (!SetWindowPos(data.hWnd, data.hWnd, X, Y, 0, 0, SWP_NOSIZE | SWP_NOZORDER))
+		throw WND_LAST_EXCEPT();
 }
 
-void Window::setPosition(Vector2i Pos)
-{
-	setPosition(Pos.x, Pos.y);
-}
+// Sets the maximum framerate of the widow to the one specified.
 
 void Window::setFramerateLimit(int fps)
 {
-	Frametime = 1.f / float(fps);
-	timer.setMax(fps);
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	data.Frametime = 1.f / float(fps);
+	data.timer.setMax(fps);
 }
 
-void Window::setDarkTheme(BOOL DARK_THEME)
+// Toggles the dark theme of the window on or off as specified.
+
+void Window::setDarkTheme(bool DARK_THEME)
 {
-	CHWND_EXCEPT(DwmSetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, &DARK_THEME, sizeof(BOOL)));
-	setDimensions(Dimensions - Vector2i(1, 1));
-	setDimensions(Dimensions + Vector2i(1, 1));
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	if (FAILED(DwmSetWindowAttribute(data.hWnd, DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, &DARK_THEME, sizeof(BOOL))))
+		throw WND_LAST_EXCEPT();
+
+	// Window dimensions wiggle to force and udate.
+	setDimensions(data.Dimensions - Vector2i(1, 1));
+	setDimensions(data.Dimensions + Vector2i(1, 1));
 }
 
-void Window::setFullScreen(BOOL FULL_SCREEN)
+// Toggles the window on or off of full screen as specified.
+
+void Window::setFullScreen(bool FULL_SCREEN)
 {
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
 	static WINDOWPLACEMENT g_wpPrev;
 
-	DWORD dwStyle = GetWindowLong(hWnd, GWL_STYLE);
+	DWORD dwStyle = GetWindowLong(data.hWnd, GWL_STYLE);
 	if (dwStyle & WS_OVERLAPPEDWINDOW && FULL_SCREEN) {
 		MONITORINFO mi = { sizeof(mi) };
-		if (GetWindowPlacement(hWnd, &g_wpPrev) && GetMonitorInfo(MonitorFromWindow(hWnd,MONITOR_DEFAULTTOPRIMARY), &mi))
+		if (GetWindowPlacement(data.hWnd, &g_wpPrev) && GetMonitorInfo(MonitorFromWindow(data.hWnd,MONITOR_DEFAULTTOPRIMARY), &mi))
 		{
-			SetWindowLongPtr(hWnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
-			SetWindowPos(hWnd, HWND_TOP,
+			SetWindowLongPtr(data.hWnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+			SetWindowPos(data.hWnd, HWND_TOP,
 				mi.rcMonitor.left, 
 				mi.rcMonitor.top,
 				mi.rcMonitor.right - mi.rcMonitor.left,
@@ -368,68 +500,72 @@ void Window::setFullScreen(BOOL FULL_SCREEN)
 	}
 	else if (!FULL_SCREEN)
 	{
-		SetWindowLongPtr(hWnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
-		SetWindowPlacement(hWnd, &g_wpPrev);
+		SetWindowLongPtr(data.hWnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+		SetWindowPlacement(data.hWnd, &g_wpPrev);
 	}
 }
 
-std::string Window::getTitle()
+// Returns a string pointer to the title of the window.
+
+const char* Window::getTitle() const
 {
-	return Name;
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	return data.Name.c_str();
 }
 
-Vector2i Window::getDimensions()
+// Returns the dimensions vector of the window.
+
+Vector2i Window::getDimensions() const
 {
-	return Dimensions;
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	return data.Dimensions;
 }
 
-Vector2i Window::getPosition()
+// Returns the position vector of the window.
+
+Vector2i Window::getPosition() const
 {
-	return Position;
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	return data.Position;
 }
 
-float Window::getFramerate()
+// Returs the current framerate of the window.
+
+float Window::getFramerate() const
 {
-	return 1.f / timer.average();
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	return 1.f / data.timer.average();
 }
 
-float Window::getFrameTime()
+// Returns the HWND of the window.
+
+void* Window::getWindowHandle()
 {
-	return frame;
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	return data.hWnd;
 }
 
-bool Window::popMessage(MSG& clientMsg)
+// Waits for a certain amount of time to keep the window
+// running stable at the desired framerate.
+
+void Window::handleFramerate()
 {
-	if (!msgQueue.size())
-		return false;
-	clientMsg = msgQueue.front();
-	msgQueue.pop();
-	return true;
-}
+	WindowInternals& data = *((WindowInternals*)WindowData);
 
-void* Window::getImGuiContext()
-{
-	return imGui.getContext();
-}
-
-bool Window::processEvents()
-{
-	//	Message Pump
-
-	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-		if (msg.message == WM_QUIT)
-			return false;
-
-		pushMessage();
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+	if (data.noFrameUpdate) 
+	{
+		data.noFrameUpdate = false;
+		data.frame = data.timer.skip();
+		return;
 	}
 
-	handleFramerate();
-	return true;
-}
+	if (data.timer.check() < data.Frametime)
+		Timer::sleep_for(unsigned long(1000 * (data.Frametime - data.timer.check())));
 
-void Window::close()
-{
-	PostQuitMessage(0);
+	data.frame = data.timer.mark();
 }

@@ -39,9 +39,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Bindable.cpp">
-      <Filter>Sources\Private</Filter>
-    </ClCompile>
     <ClCompile Include="source\Drawable.cpp">
       <Filter>Sources\Private</Filter>
     </ClCompile>
@@ -105,13 +102,7 @@
     <ClCompile Include="source\Drawable\Polihedron.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>
-    <ClCompile Include="source\Exception\_exFunc.cpp">
-      <Filter>Sources\Private\Exception</Filter>
-    </ClCompile>
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp">
-      <Filter>Sources\Private\Exception</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Exception\Exception.cpp">
       <Filter>Sources\Private\Exception</Filter>
     </ClCompile>
     <ClCompile Include="source\Drawable\Point.cpp">
@@ -122,6 +113,9 @@
     </ClCompile>
     <ClCompile Include="source\Bindable\Blender.cpp">
       <Filter>Sources\Private\Bindable</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Exception\Exception.cpp">
+      <Filter>Sources\Private\Exception</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -203,9 +197,6 @@
     <ClInclude Include="include\Exception\Exception.h">
       <Filter>Sources\Public\Exception</Filter>
     </ClInclude>
-    <ClInclude Include="include\Exception\ExceptionMacros.h">
-      <Filter>Sources\Public\Exception</Filter>
-    </ClInclude>
     <ClInclude Include="include\Drawable\Point.h">
       <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
@@ -217,6 +208,15 @@
     </ClInclude>
     <ClInclude Include="include\WinHeader.h">
       <Filter>Sources\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exception\_exGraphics.h">
+      <Filter>Sources\Public\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exception\_exWindow.h">
+      <Filter>Sources\Public\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exception\_exDefault.h">
+      <Filter>Sources\Public\Exception</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

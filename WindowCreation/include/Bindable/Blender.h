@@ -4,11 +4,10 @@
 class Blender : public Bindable
 {
 public:
-	Blender(Graphics& gfx, bool blending, float* factors = NULL);
-	void Bind(Graphics& gfx) override;
+	Blender(bool blending, float* factors = nullptr);
+	~Blender() override;
+	void Bind() override;
 
 private:
-	pCom<ID3D11BlendState> pBlender;
-	bool blending;
-	float* factors;
+	void* BindableData = nullptr;
 };

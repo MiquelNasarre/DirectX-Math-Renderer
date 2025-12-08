@@ -1,20 +1,37 @@
 #include "Bindable/InputLayout.h"
-#include "Exception/ExceptionMacros.h"
+#include "WinHeader.h"
+#include "Graphics.h"
+#include "Exception/_exGraphics.h"
 
-InputLayout::InputLayout(Graphics& gfx, const D3D11_INPUT_ELEMENT_DESC* layout, UINT size, ID3DBlob* pVertexShaderBytecode)
+#define _device ((ID3D11Device*)device())
+#define _context ((ID3D11DeviceContext*)context())
+
+struct InputLayoutInternals
 {
-	INFOMAN(gfx);
+	ComPtr<ID3D11InputLayout> pInputLayout;
+};
 
-	GFX_THROW_INFO(GetDevice(gfx)->CreateInputLayout(
-		layout, size,
-		pVertexShaderBytecode->GetBufferPointer(),
-		pVertexShaderBytecode->GetBufferSize(),
-		&pInputLayout
+InputLayout::InputLayout(const void* layout, unsigned size, void* pVertexShaderBytecode)
+{
+	BindableData = new InputLayoutInternals;
+	InputLayoutInternals& data = *(InputLayoutInternals*)BindableData;
+
+	GFX_THROW_INFO(_device->CreateInputLayout(
+		(D3D11_INPUT_ELEMENT_DESC*)layout, size,
+		((ID3DBlob*)pVertexShaderBytecode)->GetBufferPointer(),
+		((ID3DBlob*)pVertexShaderBytecode)->GetBufferSize(),
+		data.pInputLayout.GetAddressOf()
 	));
 }
 
-void InputLayout::Bind(Graphics& gfx)
+InputLayout::~InputLayout()
 {
-	INFOMAN(gfx);
-	GFX_THROW_INFO_ONLY(GetContext(gfx)->IASetInputLayout(pInputLayout.Get()));
+	delete (InputLayoutInternals*)BindableData;
+}
+
+void InputLayout::Bind()
+{
+	InputLayoutInternals& data = *(InputLayoutInternals*)BindableData;
+
+	GFX_THROW_INFO_ONLY(_context->IASetInputLayout(data.pInputLayout.Get()));
 }

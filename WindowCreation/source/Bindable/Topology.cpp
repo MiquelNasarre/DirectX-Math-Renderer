@@ -1,13 +1,17 @@
 #include "Bindable/Topology.h"
-#include "Exception/ExceptionMacros.h"
+#include "WinHeader.h"
+#include "Graphics.h"
+#include "Exception/_exGraphics.h"
 
-Topology::Topology(D3D11_PRIMITIVE_TOPOLOGY type)
+#define _device ((ID3D11Device*)device())
+#define _context ((ID3D11DeviceContext*)context())
+
+Topology::Topology(unsigned type)
 	: type(type)
 {
 }
 
-void Topology::Bind(Graphics& gfx)
+void Topology::Bind()
 {
-	INFOMAN(gfx);
-	GFX_THROW_INFO_ONLY(GetContext(gfx)->IASetPrimitiveTopology(type));
+	GFX_THROW_INFO_ONLY(_context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)type));
 }

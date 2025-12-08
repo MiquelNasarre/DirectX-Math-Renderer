@@ -4,13 +4,12 @@
 class IndexBuffer : public Bindable
 {
 public:
-	IndexBuffer(Graphics& gfx, unsigned int* indices, UINT size);
-	void Bind(Graphics& gfx) override;
-	UINT GetCount() const noexcept;
+	IndexBuffer(unsigned* indices, unsigned size);
+	~IndexBuffer() override;
 
-	void Deletion() override;
+	void Bind() override;
+	unsigned GetCount() const noexcept;
 
 private:
-	UINT count;
-	pCom<ID3D11Buffer> pIndexBuffer;
+	void* BindableData = nullptr;
 };

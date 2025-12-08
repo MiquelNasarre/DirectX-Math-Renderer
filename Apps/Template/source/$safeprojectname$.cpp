@@ -3,16 +3,16 @@
 #include "Mouse.h"
 #include "IG_$safeprojectname$.h"
 
-#include <string>
+#include <cmath>
 
-float IG::THETA = pi / 2.f;
+float IG::THETA = MATH_PI / 2.f;
 float IG::PHI	 = 0.f;
 
 //  Private
 
 void $safeprojectname$::drag_motion()
 {
-	Vector3f obs = window.graphics.getObserver();
+	Vector3f obs = window.graphics().getObserver();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -29,7 +29,7 @@ void $safeprojectname$::drag_motion()
 
 	constexpr float s = 1.f / 1.5f;
 
-	Quaternion newRot = rotationQuaternion(newMouse, Mouse::getWheel() / 18000.f) * rotationQuaternion(axis0, dangle0) * rotationQuaternion(axis, (dangle * (1 - s + fabs(axis ^ newMouse) * s)));
+	Quaternion newRot = rotationQuaternion(newMouse, Mouse::getWheel() / 18000.f) * rotationQuaternion(axis0, dangle0) * rotationQuaternion(axis, (dangle * (1 - s + fabsf(axis ^ newMouse) * s)));
 
 	dangle = 2 * acosf(newRot.r);
 	axis = newRot.getVector();
@@ -40,10 +40,12 @@ void $safeprojectname$::drag_motion()
 //  Public
 
 $safeprojectname$::$safeprojectname$()
-	: window(640, 480, "$safeprojectname$"),
-
-	example(window.graphics, SURFACE_SHAPE(_EXPLICIT_SPHERICAL, exampleRadius))
+	: window({ 640, 480 }, "$safeprojectname$"), imGui( window )
 {
+	SURFACE_SHAPE ss(_EXPLICIT, exampleRadius);
+	example = new Surface(&ss);
+	curve = new Curve([](float t) { return Vector3f(sinf(t), cosf(t), sinf(t / 10)); }, Vector2f(0.f, 20 * MATH_PI), 1000u, [](float t) { return Color((unsigned char)(256 * (sinf(t) + 1.f) / 2.f), 0u, (unsigned char)(256 * (cosf(t) + 1.f) / 2.f)); });
+
 	window.setFramerateLimit(60);
 }
 
@@ -51,6 +53,8 @@ int $safeprojectname$::Run()
 {
 	while (window.processEvents())
 		doFrame();
+
+	delete example;
 	return 0;
 }
 
@@ -97,25 +101,27 @@ void $safeprojectname$::doFrame()
 
 	//	Update objects
 
-	window.graphics.updatePerspective(observer, center, scale);
+	window.graphics().updatePerspective(observer, center, scale);
 
-	example.updateRotation(window.graphics, axis, dangle, true);
+	example->updateRotation(rotationQuaternion(axis, dangle), true);
+	curve->updateRotation(rotationQuaternion(axis, dangle), true);
 
-	window.setTitle("$safeprojectname$  -  " + std::to_string(int(std::round(window.getFramerate()))) + "fps");
+	window.setTitle("$safeprojectname$  -  %u fps", (unsigned)window.getFramerate());
 
 	//	Rendering
 
-	window.graphics.clearBuffer(Color::Black);
+	window.graphics().clearBuffer(Color::Black);
 
-	example.Draw(window.graphics);
+	example->Draw(window);
+	curve->Draw(window);
 
 	//	ImGui crap
 
-	IG_$safeprojectname$::render();
+	imGui.render();
 
 	//	Push the frame to the scriin
 
-	window.graphics.pushFrame();
+	window.graphics().pushFrame();
 }
 
 //	Functions

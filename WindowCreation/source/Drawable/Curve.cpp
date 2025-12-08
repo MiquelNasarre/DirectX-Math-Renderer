@@ -1,88 +1,22 @@
 #include "Drawable/Curve.h"
+#include "Bindable/BindableBase.h"
+
+#include "WinHeader.h"
+#include "Exception/_exDefault.h"
 
 //	Constructors
 
-Curve::Curve(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoints, Color color, bool transparency)
+Curve::Curve(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*color)(float), bool transparency)
 {
-	create(gfx, F, rangeT, Npoints, color);
-}
-
-Curve::Curve(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoints, std::vector<Color> colors, bool transparency)
-{
-	create(gfx, F, rangeT, Npoints, colors);
-}
-
-void Curve::create(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoints, Color color, bool transparency)
-{
-	if (isInit)
-		throw std::exception("You cannot create a curve over one that is already initialized");
-	else
-		isInit = true;
-
-	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
-
-	for (UINT i = 0; i <= Npoints; i++)
-	{
-		vertexs[i].color = color.getColor4();
-		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
-	}
-
-	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
-
-	for (UINT i = 0; i <= Npoints; i++)
-		indexs[i] = i;
-
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1));
-
-	addDefaultBinds(gfx, transparency);
-}
-
-void Curve::create(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoints, std::vector<Color> colors, bool transparency)
-{
-	if (isInit)
-		throw std::exception("You cannot create a curve over one that is already initialized");
-	else
-		isInit = true;
-
-	if (!colors.size())
-		throw std::exception("The color vector for a curve must have at least one color!!");
+	isInit = true;
 
 	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
 	for (UINT i = 0; i <= Npoints; i++) {
-		float c = (colors.size() - 1) * float(i) / Npoints;
-		UINT C0 = UINT(c);
-		UINT C1 = (C0 + 1) % colors.size();
-		c -= C0;
+		float t = rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x);
 
-		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
-		vertexs[i].color = (colors[C0] * (1 - c) + colors[C1] * c).getColor4();
-	}
-
-
-	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
-
-	for (UINT i = 0; i <= Npoints; i++)
-		indexs[i] = i;
-
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1));
-
-	addDefaultBinds(gfx, transparency);
-}
-
-void Curve::updateShape(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoints, Color color)
-{
-	if (!isInit)
-		throw std::exception("You cannot update the shape of a curve if you havent initialized it first");
-
-	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
-
-	for (UINT i = 0; i <= Npoints; i++)
-	{
-		vertexs[i].color = color.getColor4();
-		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
+		vertexs[i].position = F(t).getVector4();
+		vertexs[i].color = color(t).getColor4();
 	}
 
 	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
@@ -90,61 +24,44 @@ void Curve::updateShape(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT 
 	for (UINT i = 0; i <= Npoints; i++)
 		indexs[i] = i;
 
-	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1), 0u);
-	changeBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1), 1u);
+	AddBind(new VertexBuffer(vertexs, Npoints + 1));
+	AddBind(new IndexBuffer(indexs, Npoints + 1));
+
+	free(vertexs);
+	free(indexs);
+
+	addDefaultBinds(transparency);
 }
 
-void Curve::updateShape(Graphics& gfx, Vector3f F(float), Vector2f rangeT, UINT Npoints, std::vector<Color> colors)
+void Curve::updateShape(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*color)(float))
 {
 	if (!isInit)
-		throw std::exception("You cannot update the shape of a curve if you havent initialized it first");
-
-	if (!colors.size())
-		throw std::exception("The color vector for a curve must have at least one color!!");
+		throw INFO_EXCEPT("You cannot update the shape of a curve if you havent initialized it first");
 
 	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
 	for (UINT i = 0; i <= Npoints; i++) {
-		float c = (colors.size() - 1) * float(i) / Npoints;
-		UINT C0 = UINT(c);
-		UINT C1 = (C0 + 1) % colors.size();
-		c -= C0;
+		float t = rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x);
 
-		vertexs[i].position = F(rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x)).getVector4();
-		vertexs[i].color = (colors[C0] * (1 - c) + colors[C1] * c).getColor4();
+		vertexs[i].position = F(t).getVector4();
+		vertexs[i].color = color(t).getColor4();
 	}
-
 
 	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
 
 	for (UINT i = 0; i <= Npoints; i++)
 		indexs[i] = i;
 
-	changeBind(std::make_unique<VertexBuffer>(gfx, vertexs, Npoints + 1), 0u);
-	changeBind(std::make_unique<IndexBuffer>(gfx, indexs, Npoints + 1), 1u);
+	changeBind(new VertexBuffer(vertexs, Npoints + 1), 0u);
+	changeBind(new IndexBuffer(indexs, Npoints + 1), 1u);
+
+	free(vertexs);
+	free(indexs);
 }
 
 //	Public
 
-void Curve::updateRotation(Graphics& gfx, float rotationX, float rotationY, float rotationZ)
-{
-	vscBuff.rotation = rotationQuaternion({ 1,0,0 }, rotationX) * rotationQuaternion({ 0,1,0 }, rotationY) * rotationQuaternion({ 0,0,1 }, rotationZ);
-
-	pVSCB->Update(gfx, vscBuff);
-}
-
-void Curve::updateRotation(Graphics& gfx, Vector3f axis, float angle, bool multiplicative)
-{
-	if (!multiplicative)
-		vscBuff.rotation = rotationQuaternion(axis, angle);
-	else
-		vscBuff.rotation *= rotationQuaternion(axis, angle);
-
-	vscBuff.rotation.normalize();
-	pVSCB->Update(gfx, vscBuff);
-}
-
-void Curve::updateRotation(Graphics& gfx, Quaternion rotation, bool multiplicative)
+void Curve::updateRotation(Quaternion rotation, bool multiplicative)
 {
 	if (!multiplicative)
 		vscBuff.rotation = rotation;
@@ -152,10 +69,10 @@ void Curve::updateRotation(Graphics& gfx, Quaternion rotation, bool multiplicati
 		vscBuff.rotation *= rotation;
 
 	vscBuff.rotation.normalize();
-	pVSCB->Update(gfx, vscBuff);
+	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 }
 
-void Curve::updatePosition(Graphics& gfx, Vector3f position, bool additive)
+void Curve::updatePosition(Vector3f position, bool additive)
 {
 	if (!additive)
 		vscBuff.translation = position.getVector4();
@@ -166,7 +83,7 @@ void Curve::updatePosition(Graphics& gfx, Vector3f position, bool additive)
 		vscBuff.translation.z += position.z;
 	}
 
-	pVSCB->Update(gfx, vscBuff);
+	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 }
 
 Quaternion Curve::getRotation()
@@ -181,10 +98,10 @@ Vector3f Curve::getPosition()
 
 //	Private
 
-void Curve::addDefaultBinds(Graphics& gfx, bool transparency)
+void Curve::addDefaultBinds(bool transparency)
 {
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"CurveVS.cso")));
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"CurvePS.cso"));
+	VertexShader* pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"CurveVS.cso"));
+	AddBind(new PixelShader(SHADERS_DIR L"CurvePS.cso"));
 
 	D3D11_INPUT_ELEMENT_DESC ied[2] =
 	{
@@ -192,9 +109,9 @@ void Curve::addDefaultBinds(Graphics& gfx, bool transparency)
 		{ "Color",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, 2u, pvs->GetBytecode()));
-	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
-	AddBind(std::make_unique<Blender>(gfx, transparency));
+	AddBind(new InputLayout(ied, 2u, pvs->GetBytecode()));
+	AddBind(new Topology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
+	AddBind(new Blender(transparency));
 
-	pVSCB = (ConstantBuffer<VSconstBuffer>*)AddBind(std::make_unique<ConstantBuffer<VSconstBuffer>>(gfx, vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
+	pVSCB = AddBind(new ConstantBuffer(vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
 }

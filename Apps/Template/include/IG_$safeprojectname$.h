@@ -4,5 +4,7 @@
 class IG_$safeprojectname$ : public iGManager
 {
 public:
-	static void render();
+	IG_$safeprojectname$(Window& _w) : iGManager(_w) {}
+
+	void render();
 };

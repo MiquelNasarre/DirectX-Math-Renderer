@@ -85,7 +85,7 @@ Complex& Complex::operator+=(const Complex& other)
 
 Complex Complex::exp(const Complex& exponent)
 {
-	float r = (float)pow(en, exponent.a);
+	float r = (float)expf(exponent.a);
 	return Complex(r * cosf(exponent.b), r * sinf(exponent.b));
 }
 

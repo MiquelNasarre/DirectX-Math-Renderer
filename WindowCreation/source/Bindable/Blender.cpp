@@ -1,11 +1,24 @@
 #include "Bindable/Blender.h"
-#include "Exception/ExceptionMacros.h"
+#include "WinHeader.h"
+#include "Graphics.h"
+#include "Exception/_exGraphics.h"
 
-Blender::Blender(Graphics& gfx, bool blending, float* factors)
-	:blending{ blending },
-	factors{ factors }
+#define _device ((ID3D11Device*)device())
+#define _context ((ID3D11DeviceContext*)context())
+
+struct BlenderInternals
 {
-	INFOMAN(gfx);
+	ComPtr<ID3D11BlendState> pBlender;
+	bool blending;
+	float* factors;
+};
+
+Blender::Blender(bool blending, float* factors)
+{
+	BindableData = new BlenderInternals;
+	BlenderInternals& data = *(BlenderInternals*)BindableData;
+	data.blending = blending;
+	data.factors = factors;
 
 	D3D11_BLEND_DESC blendDesc = {};
 	auto& brt = blendDesc.RenderTarget[0];
@@ -26,12 +39,17 @@ Blender::Blender(Graphics& gfx, bool blending, float* factors)
 		brt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	}
 
-	GFX_THROW_INFO(GetDevice(gfx)->CreateBlendState(&blendDesc, &pBlender));
+	GFX_THROW_INFO(_device->CreateBlendState(&blendDesc, data.pBlender.GetAddressOf()));
 }
 
-void Blender::Bind(Graphics& gfx)
+Blender::~Blender()
 {
-	INFOMAN(gfx);
+	delete (BlenderInternals*)BindableData;
+}
 
-	GFX_THROW_INFO_ONLY(GetContext(gfx)->OMSetBlendState(pBlender.Get(), factors, 0xFFFFFFFFu));
+void Blender::Bind()
+{
+	BlenderInternals& data = *(BlenderInternals*)BindableData;
+
+	GFX_THROW_INFO_ONLY(_context->OMSetBlendState(data.pBlender.Get(), data.factors, 0xFFFFFFFFu));
 }

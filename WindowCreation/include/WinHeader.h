@@ -1,5 +1,17 @@
 #pragma once
 
+/* WIN32 / D3D11 HEADER
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+This header contains necessary libraries to be loaded for most the D3D11 dependencies 
+that are used across the library. 
+
+The define list at the beggining gets rid of some chunks of the code to not bloat the 
+bult time, if those dependencies are needed just comment them from the list.
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+*/
+
 // target Windows 7 or later
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0601
@@ -53,3 +65,5 @@
 #include <WinUser.h>
 #include <d3d11.h>
 #include <wrl.h>
+
+using Microsoft::WRL::ComPtr;

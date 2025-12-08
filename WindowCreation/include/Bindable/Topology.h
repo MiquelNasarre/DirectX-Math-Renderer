@@ -4,8 +4,8 @@
 class Topology : public Bindable
 {
 public:
-	Topology(D3D11_PRIMITIVE_TOPOLOGY type);
-	void Bind(Graphics& gfx) override;
+	Topology(unsigned type);
+	void Bind() override;
 private:
-	D3D11_PRIMITIVE_TOPOLOGY type;
+	unsigned type;
 };

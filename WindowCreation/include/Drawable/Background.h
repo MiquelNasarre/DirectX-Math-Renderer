@@ -1,5 +1,6 @@
 #pragma once
 #include "Drawable.h"
+#include "Bindable/Texture.h"
 
 enum PROJECTION_TYPES {
 	PT_MERCATOR,
@@ -9,20 +10,12 @@ enum PROJECTION_TYPES {
 class Background : public Drawable
 {
 public:
-	Background(Graphics& gfx, const char* filename, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
-	Background(Graphics& gfx, Image& texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
-	Background(Graphics& gfx, Texture texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
+	Background(Image& texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
 
-	void create(Graphics& gfx, const char* filename, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
-	void create(Graphics& gfx, Image& texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
-	void create(Graphics& gfx, Texture texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
-
-	void updateTexture(Graphics& gfx, const char* filename);
-	void updateTexture(Graphics& gfx, Image& texture);
-	void updateTexture(Graphics& gfx, Texture texture);
-	void updateObserver(Graphics& gfx, Vector3f obs);
-	void updateWideness(Graphics& gfx, float FOV, Vector2f WindowDimensions);
-	void updateRectangle(Graphics& gfx, _float4vector X0_Y0_X1_Y1);
+	void updateTexture(Image& texture);
+	void updateObserver(Vector3f obs);
+	void updateWideness(float FOV, Vector2f WindowDimensions);
+	void updateRectangle(_float4vector X0_Y0_X1_Y1);
 
 private:
 
@@ -32,7 +25,7 @@ private:
 		_float4vector zp;
 	}cBuff0;
 
-	ConstantBuffer<PSconstBuffer>* pscBuff0 = NULL;
-	ConstantBuffer<_float4vector>* pscBuff1 = NULL;
-	ConstantBuffer<_float4vector>* vscBuff = NULL;
+	void* pscBuff0 = nullptr;
+	void* pscBuff1 = nullptr;
+	void* vscBuff = nullptr;
 };

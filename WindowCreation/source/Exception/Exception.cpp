@@ -1,41 +1,55 @@
 #include "Exception/Exception.h"
-#include <sstream>
+#include <string>
 
-ExceptionClass::ExceptionClass( int line,const char* file ) noexcept
-	:line( line ),
-	file( file )
+// Default constructor, Only accessable to inheritance.
+// Stores the code line and file where the exception was thrown.
+
+Exception::Exception(int line, const char* _file) noexcept
+	: line(line)
 {
+	file = new char[512];
 
+	int i = -1;
+	while (_file[++i]) file[i] = _file[i];
+	file[i] = '\0';
 }
 
-const char* ExceptionClass::what() const noexcept
+// Virtual function that returns the description of the exception.
+// Each exception type can override this default method.
+
+const char* Exception::what() const noexcept
 {
-	std::ostringstream oss;
-	oss << GetType() << std::endl
-		<< GetOriginString();
-	whatBuffer = (char*)oss.str().c_str();
+	auto message = new std::string(GetOriginString());
+	whatBuffer = (char*)message->c_str();
 	return whatBuffer;
 }
 
-const char* ExceptionClass::GetType() const noexcept
-{
-	return "Chili Exception";
-}
+// Returns the line of the code file the exception was thrown.
 
-int ExceptionClass::GetLine() const noexcept
+int Exception::GetLine() const noexcept
 {
 	return line;
 }
 
-const char* ExceptionClass::GetFile() const noexcept
+// Returns the file path of the file where the exception was thrown.
+
+const char* Exception::GetFile() const noexcept
 {
 	return file;
 }
 
-const char* ExceptionClass::GetOriginString() const noexcept
+// Returns the original code string where the exception was thrown.
+
+const char* Exception::GetOriginString() const noexcept
 {
-	std::ostringstream oss;
-	oss << "[File] " << file << std::endl
-		<< "[Line] " << line;
-	return oss.str().c_str();
+	auto string = new std::string("[File] " + std::string(file) + "\n[Line] " + std::to_string(line));
+	return string->c_str();
+}
+
+// Creates a default message box using Win32 with the exception data.
+#include "WinHeader.h"
+
+void Exception::PopMessageBox() const noexcept
+{
+	MessageBoxA(nullptr, what(), GetType(), MB_OK | MB_ICONEXCLAMATION);
 }

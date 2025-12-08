@@ -4,8 +4,10 @@
 class Rasterizer : public Bindable
 {
 public:
-	Rasterizer(Graphics& gfx, bool doubleSided);
-	void Bind(Graphics& gfx) override;
+	Rasterizer(bool doubleSided);
+	~Rasterizer() override;
+
+	void Bind() override;
 private:
-	pCom<ID3D11RasterizerState> pRasterizer;
+	void* BindableData = nullptr;
 };

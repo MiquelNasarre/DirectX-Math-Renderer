@@ -1,7 +1,8 @@
 #pragma once
-
+#include "IG_$safeprojectname$.h"
 #include "Window.h"
 #include "Drawable/Surface.h"
+#include "Drawable/Curve.h"
 
 //  Struct for variables shared with ImGui
 
@@ -16,6 +17,7 @@ class $safeprojectname$ {
 
 private:
 	Window window;
+	IG_$safeprojectname$ imGui;
 
 	//  Variables for the FOV
 
@@ -33,7 +35,8 @@ private:
 
 	//  Drawables
 
-	Surface example;
+	Surface* example = nullptr;
+	Curve* curve = nullptr;
 
 public:
 	$safeprojectname$();

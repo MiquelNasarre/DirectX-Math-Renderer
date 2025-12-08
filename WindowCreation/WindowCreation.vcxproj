@@ -195,7 +195,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="source\Bindable.cpp" />
     <ClCompile Include="source\Bindable\Blender.cpp" />
     <ClCompile Include="source\Bindable\ConstantBuffers.cpp" />
     <ClCompile Include="source\Bindable\IndexBuffer.cpp" />
@@ -216,7 +215,6 @@
     <ClCompile Include="source\Drawable\Polihedron.cpp" />
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp" />
     <ClCompile Include="source\Exception\Exception.cpp" />
-    <ClCompile Include="source\Exception\_exFunc.cpp" />
     <ClCompile Include="source\Graphics.cpp" />
     <ClCompile Include="source\iGManager.cpp" />
     <ClCompile Include="source\Keyboard.cpp" />
@@ -247,7 +245,9 @@
     <ClInclude Include="include\Drawable\Polihedron.h" />
     <ClInclude Include="include\Exception\DxgiInfoManager.h" />
     <ClInclude Include="include\Exception\Exception.h" />
-    <ClInclude Include="include\Exception\ExceptionMacros.h" />
+    <ClInclude Include="include\Exception\_exDefault.h" />
+    <ClInclude Include="include\Exception\_exGraphics.h" />
+    <ClInclude Include="include\Exception\_exWindow.h" />
     <ClInclude Include="include\Graphics.h" />
     <ClInclude Include="include\Header.h" />
     <ClInclude Include="include\iGManager.h" />

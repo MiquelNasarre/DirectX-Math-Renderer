@@ -1,19 +1,36 @@
 #include "Bindable/PixelShader.h"
-#include "Exception/ExceptionMacros.h"
+#include "WinHeader.h"
+#include "Graphics.h"
+#include "Exception/_exGraphics.h"
+
+#define _device ((ID3D11Device*)device())
+#define _context ((ID3D11DeviceContext*)context())
 
 #include <d3dcompiler.h>
 
-PixelShader::PixelShader(Graphics& gfx, const wchar_t* path)
+struct PixelShaderInternals
 {
-	INFOMAN(gfx);
+	ComPtr<ID3D11PixelShader> pPixelShader;
+};
 
-	pCom<ID3DBlob> pBlob;
+PixelShader::PixelShader(const wchar_t* path)
+{
+	BindableData = new PixelShaderInternals;
+	PixelShaderInternals& data = *(PixelShaderInternals*)BindableData;
+
+	ComPtr<ID3DBlob> pBlob;
 	GFX_THROW_INFO(D3DReadFileToBlob(path, &pBlob));
-	GFX_THROW_INFO(GetDevice(gfx)->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, &pPixelShader));
+	GFX_THROW_INFO(_device->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, data.pPixelShader.GetAddressOf()));
 }
 
-void PixelShader::Bind(Graphics& gfx)
+PixelShader::~PixelShader()
 {
-	INFOMAN(gfx);
-	GFX_THROW_INFO_ONLY(GetContext(gfx)->PSSetShader(pPixelShader.Get(), NULL, 0u));
+	delete (PixelShaderInternals*)BindableData;
+}
+
+void PixelShader::Bind()
+{
+	PixelShaderInternals& data = *(PixelShaderInternals*)BindableData;
+
+	GFX_THROW_INFO_ONLY(_context->PSSetShader(data.pPixelShader.Get(), NULL, 0u));
 }

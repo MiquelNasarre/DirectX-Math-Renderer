@@ -6,32 +6,16 @@ class VertexBuffer : public Bindable
 public:
 
 	template<typename V>
-	VertexBuffer(Graphics& gfx, V* vertices, UINT size);
+	VertexBuffer(V* vertices, unsigned size)
+	{
+		_internal_constructor((void*)vertices, sizeof(V), size);
+	}
 
-	void Bind(Graphics& gfx) override;
+	~VertexBuffer() override;
 
-	void Deletion() override;
+	void Bind() override;
 
 private:
-	UINT stride;
-	pCom<ID3D11Buffer> pVertexBuffer;
+	void _internal_constructor(void* vertices, unsigned stride, unsigned size);
+	void* BindableData = nullptr;
 };
-
-template<typename V>
-inline VertexBuffer::VertexBuffer(Graphics& gfx, V* vertices, UINT size)
-	:stride(sizeof(V))
-{
-	//INFOMAN(gfx);
-
-	D3D11_BUFFER_DESC bd = {};
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.CPUAccessFlags = 0u;
-	bd.MiscFlags = 0u;
-	bd.ByteWidth = UINT(sizeof(V) * size);
-	bd.StructureByteStride = sizeof(V);
-	D3D11_SUBRESOURCE_DATA sd = {};
-	sd.pSysMem = vertices;
-	//GFX_THROW_INFO();
-	GetDevice(gfx)->CreateBuffer(&bd, &sd, &pVertexBuffer);
-}

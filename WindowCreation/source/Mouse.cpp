@@ -1,64 +1,49 @@
 #include "Mouse.h"
-#include <stdlib.h>
 
-// Definition of static variables
+/*
+--------------------------------------------------------------------------------------------
+ Mouse Internal Function Defintions
+--------------------------------------------------------------------------------------------
+*/
 
-bool*							Mouse::buttonStates = nullptr;
-Mouse::event**					Mouse::buttonBuffer = nullptr;
-Vector2i						Mouse::Position;
-Vector2i						Mouse::ScPosition;
-int								Mouse::deltaWheel = 0;
+// Internal function triggered by the MSG Handle to set a button as pressed.
 
-// Function implementations
-
-void Mouse::init()
+void Mouse::setButtonPressed(Button button)
 {
-	buttonBuffer = (event**)calloc(maxBuffer, sizeof(void*));
-	buttonStates = (bool*)calloc(nKeys, sizeof(bool));
-	resetWheel();
-	clearBuffer();
+	buttonStates[button] = true;
 }
 
-void Mouse::setButtonPressed(unsigned char buttonCode)
+// Internal function triggered by the MSG Handle to set a button as released.
+
+void Mouse::setButtonReleased(Button button)
 {
-	buttonStates[buttonCode] = true;
+	buttonStates[button] = false;
 }
 
-void Mouse::setButtonReleased(unsigned char buttonCode)
+// Internal function triggered by the MSG Handle to set the current position relative to the window.
+
+void Mouse::setPosition(Vector2i position)
 {
-	buttonStates[buttonCode] = false;
+	Position = position;
 }
 
-void Mouse::setPosition(Vector2i& position)
+// Internal function triggered by the MSG Handle to set the current position relative to the screen.
+
+void Mouse::setScPosition(Vector2i position)
 {
-	Position.x = position.x;
-	Position.y = position.y;
+	ScPosition = position;
 }
 
-void Mouse::setPosition(int x, int y)
-{
-	Position.x = x;
-	Position.y = y;
-}
-
-void Mouse::setScPosition(Vector2i& position)
-{
-	ScPosition.x = position.x;
-	ScPosition.y = position.y;
-}
-
-void Mouse::setScPosition(int x, int y)
-{
-	ScPosition.x = x;
-	ScPosition.y = y;
-}
+// Internal function triggered by the MSG Handle to add to the mouse wheel movement.
 
 void Mouse::increaseWheel(int delta)
 {
 	deltaWheel += delta;
 }
 
-void Mouse::pushEvent(event::Type type, unsigned char buttonCode, Vector2i position)
+// Internal function triggered by the MSG Handle to push an event to the buffer.
+
+void Mouse::pushEvent(event::Type type, Button button)
 {
 	unsigned int n = maxBuffer - 1u;
 	for (unsigned int i = 0; i < maxBuffer; i++)
@@ -77,15 +62,23 @@ void Mouse::pushEvent(event::Type type, unsigned char buttonCode, Vector2i posit
 			buttonBuffer[i] = buttonBuffer[i + 1];
 	}
 
-	buttonBuffer[n] = new event(type, buttonCode, position);
+	buttonBuffer[n] = new event(Position, type, button);
 }
 
-//	Client functions
+/*
+--------------------------------------------------------------------------------------------
+ Keyboard User Function Definitions
+--------------------------------------------------------------------------------------------
+*/
+
+// Sets the wheel movement back to 0. To be called after reading the wheel value.
 
 void Mouse::resetWheel()
 {
 	deltaWheel = 0;
 }
+
+// Returns the current mouse wheel movement value. Does not reset it.
 
 int Mouse::getWheel()
 {
@@ -94,20 +87,28 @@ int Mouse::getWheel()
 	return d;
 }
 
+// Returns the current mouse position in pixels relative to the window.
+
 Vector2i Mouse::getPosition()
 {
 	return Position;
 }
+
+// Returns the current mouse position in pixels relative to the screen.
 
 Vector2i Mouse::getScPosition()
 {
 	return ScPosition;
 }
 
-bool Mouse::isButtonPressed(unsigned char buttonCode)
+// Checks whether a button is being pressed.
+
+bool Mouse::isButtonPressed(Button button)
 {
-	return buttonStates[buttonCode];
+	return buttonStates[button];
 }
+
+// Clears the mouse event buffer.
 
 void Mouse::clearBuffer()
 {
@@ -121,12 +122,16 @@ void Mouse::clearBuffer()
 
 }
 
+// Checks whether the event buffer is empty.
+
 bool Mouse::eventIsEmpty()
 {
 	if (!buttonBuffer[0])
 		return true;
 	return false;
 }
+
+// Pops last event of the buffer. To be used by an application event manager.
 
 Mouse::event Mouse::popEvent()
 {

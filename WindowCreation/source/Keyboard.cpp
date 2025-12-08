@@ -1,38 +1,34 @@
 #include "Keyboard.h"
-#include <stdlib.h>
 
-// Definition of static variables
+/*
+--------------------------------------------------------------------------------------------
+ Keyboard Internal Function Defintions
+--------------------------------------------------------------------------------------------
+*/
 
-bool*							Keyboard::keyStates = nullptr;
-char**							Keyboard::charBuffer = nullptr;
-Keyboard::event**				Keyboard::keyBuffer = nullptr;
-bool							Keyboard::autoRepeat = false;
+// Internal function triggered by the MSG Handle to set a key as pressed.
 
-// Function implementations
-
-void Keyboard::init()
-{
-	keyStates = (bool*)calloc(nKeys, sizeof(bool));
-	keyBuffer = (event**)calloc(maxBuffer, sizeof(void*));
-	charBuffer = (char**)calloc(maxBuffer, sizeof(void*));
-	setAutorepeat(true);
-}
-
-void Keyboard::setKeyPressed(unsigned char keycode)
+void Keyboard::setKeyPressed(char keycode)
 {
 	keyStates[keycode] = true;
 }
 
-void Keyboard::setKeyReleased(unsigned char keycode)
+// Internal function triggered by the MSG Handle to set a key as released.
+
+void Keyboard::setKeyReleased(char keycode)
 {
 	keyStates[keycode] = false;
 }
+
+// Internal function triggered by the MSG Handle to clear all key states.
 
 void Keyboard::clearKeyStates()
 {
 	for (unsigned int i = 0; i < nKeys; i++)
 		keyStates[i] = false;
 }
+
+// Internal function triggered by the MSG Handle to push a character to the buffer.
 
 void Keyboard::pushChar(char character)
 {
@@ -56,7 +52,9 @@ void Keyboard::pushChar(char character)
 	charBuffer[n] = new char(character);
 }
 
-void Keyboard::pushEvent(event::Type type, unsigned char keyCode)
+// Internal function triggered by the MSG Handle to push an event to the buffer.
+
+void Keyboard::pushEvent(event::Type type, char keycode)
 {
 	unsigned int n = maxBuffer - 1u;
 	for (unsigned int i = 0; i < maxBuffer; i++)
@@ -75,18 +73,30 @@ void Keyboard::pushEvent(event::Type type, unsigned char keyCode)
 			keyBuffer[i] = keyBuffer[i + 1];
 	}
 
-	keyBuffer[n] = new event(type, keyCode);
+	keyBuffer[n] = new event(type, keycode);
 }
+
+/*
+--------------------------------------------------------------------------------------------
+ Keyboard User Function Definitions
+--------------------------------------------------------------------------------------------
+*/
+
+// Toggles the autorepeat behavior on or off as specified.
 
 void Keyboard::setAutorepeat(bool state)
 {
 	autoRepeat = state;
 }
 
+// Returns the current autorepeat behavior. (Default On)
+
 bool Keyboard::getAutorepeat()
 {
 	return autoRepeat;
 }
+
+// Clears the character and event buffers.
 
 void Keyboard::clearBuffers()
 {
@@ -107,6 +117,15 @@ void Keyboard::clearBuffers()
 	}
 }
 
+// Checks whether a key is being pressed.
+
+bool Keyboard::isKeyPressed(char keycode)
+{
+	return keyStates[keycode];
+}
+
+// Checks whether the char buffer is empty.
+
 bool Keyboard::charIsEmpty()
 {
 	if (!charBuffer[0])
@@ -114,10 +133,7 @@ bool Keyboard::charIsEmpty()
 	return false;
 }
 
-bool Keyboard::isKeyPressed(unsigned char keycode)
-{
-	return keyStates[keycode];
-}
+// Checks whether the event buffer is empty.
 
 bool Keyboard::eventIsEmpty()
 {
@@ -125,6 +141,8 @@ bool Keyboard::eventIsEmpty()
 		return true;
 	return false;
 }
+
+// Pops last character of the buffer. To be used by an application event manager.
 
 char Keyboard::popChar()
 {
@@ -140,6 +158,8 @@ char Keyboard::popChar()
 
 	return ev;
 }
+
+// Pops last event of the buffer. To be used by an application event manager.
 
 Keyboard::event Keyboard::popEvent()
 {

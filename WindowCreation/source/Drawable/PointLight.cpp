@@ -1,30 +1,37 @@
 #include "Drawable/PointLight.h"
+#include "Bindable/BindableBase.h"
 
-PointLight::PointLight(Graphics& gfx, Color color, Vector3f Position, float Radius, UINT circlePoints)
+#include "Graphics.h"
+#include "WinHeader.h"
+
+#include <math.h>
+#include <memory>
+
+PointLight::PointLight(Color color, Vector3f Position, float Radius, unsigned circlePoints)
 {
 	Vertex* vertexs = (Vertex*)calloc(circlePoints + 1, sizeof(Vertex));
 	vertexs[0].intensity = 1;
 	vertexs[0].reference = { 0,0 };
 
-	for (UINT i = 1; i <= circlePoints; i++)
+	for (unsigned i = 1; i <= circlePoints; i++)
 	{
 		vertexs[i].intensity = 0;
-		vertexs[i].reference = { cosf(2.f * pi * float(i) / circlePoints) , sinf(2.f * pi * float(i) / circlePoints) };
+		vertexs[i].reference = { cosf(2.f * MATH_PI * float(i) / circlePoints) , sinf(2.f * MATH_PI * float(i) / circlePoints) };
 	}
 
 	unsigned int* indexs = (unsigned int*)calloc(circlePoints * 3, sizeof(unsigned int));
-	for (UINT i = 1; i <= circlePoints; i++)
+	for (unsigned i = 1; i <= circlePoints; i++)
 	{
 		indexs[3 * (i - 1)] = 0;
 		indexs[3 * (i - 1) + 1] = i % circlePoints + 1;
 		indexs[3 * (i - 1) + 2] = i;
 	}
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, circlePoints + 1));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, circlePoints * 3));
+	AddBind(new VertexBuffer(vertexs, circlePoints + 1));
+	AddBind(new IndexBuffer(indexs, circlePoints * 3));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"PointLightVS.cso")));
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"PointLightPS.cso"));
+	VertexShader* pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"PointLightVS.cso"));
+	AddBind(new PixelShader(SHADERS_DIR L"PointLightPS.cso"));
 
 	D3D11_INPUT_ELEMENT_DESC ied[2] =
 	{
@@ -32,46 +39,46 @@ PointLight::PointLight(Graphics& gfx, Color color, Vector3f Position, float Radi
 		{ "Intensity",0,DXGI_FORMAT_R32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, 2u, pvs->GetBytecode()));
+	AddBind(new InputLayout(ied, 2u, pvs->GetBytecode()));
 
-	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+	AddBind(new Topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-	AddBind(std::make_unique<Rasterizer>(gfx, false));
+	AddBind(new Rasterizer(false));
 
-	AddBind(std::make_unique<Blender>(gfx, true));
+	AddBind(new Blender(true));
 
-	vscBuff = { Position.getVector4(), gfx.getObserver().getVector4(), { Radius, 0.f, 0.f, 0.f } };
+	vscBuff = { Position.getVector4(), _float4vector(), {Radius, 0.f, 0.f, 0.f}};
 	pscBuff = { color.getColor4() };
 
-	pVSCB = (ConstantBuffer<VSconstBuffer>*)AddBind(std::make_unique<ConstantBuffer<VSconstBuffer>>(gfx, vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
-	pPSCB = (ConstantBuffer<PSconstBuffer>*)AddBind(std::make_unique<ConstantBuffer<PSconstBuffer>>(gfx, pscBuff, PIXEL_CONSTANT_BUFFER_TYPE));
+	pVSCB = (ConstantBuffer*)AddBind(new ConstantBuffer(vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
+	pPSCB = (ConstantBuffer*)AddBind(new ConstantBuffer(pscBuff, PIXEL_CONSTANT_BUFFER_TYPE));
 }
 
-void PointLight::updateRadius(Graphics& gfx, float radius)
+void PointLight::updateRadius(float radius)
 {
 	vscBuff.radius = { radius, 0.f, 0.f, 0.f };
 
-	pVSCB->Update(gfx, vscBuff);
+	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 }
 
-void PointLight::updatePosition(Graphics& gfx, Vector3f position)
+void PointLight::updatePosition(Vector3f position)
 {
 	vscBuff.Position = position.getVector4();
 
-	pVSCB->Update(gfx, vscBuff);
+	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 }
 
-void PointLight::updateColor(Graphics& gfx, Color color)
+void PointLight::updateColor(Color color)
 {
 	pscBuff.color = color.getColor4();
 
-	pPSCB->Update(gfx, pscBuff);
+	((ConstantBuffer*)pPSCB)->Update(pscBuff);
 }
 
-void PointLight::Draw(Graphics& gfx)
+void PointLight::Draw(Window& _w)
 {
-	vscBuff.observer = gfx.getObserver().getVector4();
-	pVSCB->Update(gfx, vscBuff);
+	vscBuff.observer = _w.graphics().getObserver().getVector4();
+	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 
-	_draw(gfx);
+	_draw(_w);
 }

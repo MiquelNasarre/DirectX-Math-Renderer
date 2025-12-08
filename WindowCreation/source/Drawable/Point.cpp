@@ -1,8 +1,14 @@
 #include "Drawable/Point.h"
+#include "Bindable/BindableBase.h"
 
-Point::Point(Graphics& gfx, Vector3f position, float radius, Color color)
+#include "Graphics.h"
+#include "WinHeader.h"
+
+#include <math.h>
+
+Point::Point(Vector3f position, float radius, Color color)
 {
-	UINT depth = 4;
+	unsigned depth = 4;
 
 	unsigned int currentdepth = 0;
 	unsigned int V = 12u;
@@ -200,59 +206,48 @@ Point::Point(Graphics& gfx, Vector3f position, float radius, Color color)
 
 	for (unsigned int i = 0; i < V; i++) vertexs[i].normalize();
 
-	AddBind(std::make_unique<VertexBuffer>(gfx, vertexs, V));
-	AddBind(std::make_unique<IndexBuffer>(gfx, indexs, 3 * C));
+	AddBind(new VertexBuffer(vertexs, V));
+	AddBind(new IndexBuffer(indexs, 3 * C));
 
-	auto pvs = (VertexShader*)AddBind(std::move(std::make_unique<VertexShader>(gfx, SHADERS_DIR L"PointVS.cso")));
-	AddBind(std::make_unique<PixelShader>(gfx, SHADERS_DIR L"PointPS.cso"));
+	VertexShader* pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"PointVS.cso"));
+	AddBind(new PixelShader(SHADERS_DIR L"PointPS.cso"));
 
 	D3D11_INPUT_ELEMENT_DESC ied[1] =
 	{
 		{ "Normal",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
-	AddBind(std::make_unique<InputLayout>(gfx, ied, 1u, pvs->GetBytecode()));
-	AddBind(std::make_unique<Topology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
-	AddBind(std::make_unique<Rasterizer>(gfx, false));
-	AddBind(std::make_unique<Blender>(gfx, color.A != 255));
+	AddBind(new InputLayout(ied, 1u, pvs->GetBytecode()));
+	AddBind(new Topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+	AddBind(new Rasterizer(false));
+	AddBind(new Blender(color.A != 255));
 
-	vscBuff = { position.getVector4(), 1.f, radius, gfx.getScale() };
+	vscBuff = { position.getVector4(), 1.f, radius, 1.f };
 	pscBuff = { color.getColor4() };
 
-	pVSCB = (ConstantBuffer<VSconstBuffer>*)AddBind(std::make_unique<ConstantBuffer<VSconstBuffer>>(gfx, vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
-	pPSCB = (ConstantBuffer<PSconstBuffer>*)AddBind(std::make_unique<ConstantBuffer<PSconstBuffer>>(gfx, pscBuff, PIXEL_CONSTANT_BUFFER_TYPE));
+	pVSCB = AddBind(new ConstantBuffer(vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
+	pPSCB = AddBind(new ConstantBuffer(pscBuff, PIXEL_CONSTANT_BUFFER_TYPE));
 }
 
-void Point::updatePosition(Graphics& gfx, Vector3f position)
+void Point::updatePosition(Vector3f position)
 {
 	vscBuff.position = position.getVector4();
-	pVSCB->Update(gfx, &vscBuff);
+	((ConstantBuffer*)pVSCB)->Update(&vscBuff);
 }
 
-void Point::updateRadius(Graphics& gfx, float radius)
+void Point::updateRadius(float radius)
 {
 	vscBuff.radius = radius;
-	pVSCB->Update(gfx, &vscBuff);
+	((ConstantBuffer*)pVSCB)->Update(&vscBuff);
 }
 
-void Point::updateColor(Graphics& gfx, Color col)
+void Point::updateColor(Color col)
 {
 	pscBuff.color = col.getColor4();
-	pPSCB->Update(gfx, &pscBuff);
+	((ConstantBuffer*)pPSCB)->Update(&pscBuff);
 }
 
-void Point::updateRotation(Graphics& gfx, Vector3f axis, float angle, bool multiplicative)
-{
-	if (!multiplicative)
-		vscBuff.rotation = rotationQuaternion(axis, angle);
-	else
-		vscBuff.rotation *= rotationQuaternion(axis, angle);
-
-	vscBuff.rotation.normalize();
-	pVSCB->Update(gfx, vscBuff);
-}
-
-void Point::updateRotation(Graphics& gfx, Quaternion rotation, bool multiplicative)
+void Point::updateRotation(Quaternion rotation, bool multiplicative)
 {
 	if (!multiplicative)
 		vscBuff.rotation = rotation;
@@ -260,13 +255,13 @@ void Point::updateRotation(Graphics& gfx, Quaternion rotation, bool multiplicati
 		vscBuff.rotation *= rotation;
 
 	vscBuff.rotation.normalize();
-	pVSCB->Update(gfx, vscBuff);
+	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 }
 
-void Point::Draw(Graphics& gfx)
+void Point::Draw(Window& _w)
 {
-	vscBuff.scale = gfx.getScale();
-	pVSCB->Update(gfx, &vscBuff);
+	vscBuff.scale = _w.graphics().getScale();
+	((ConstantBuffer*)pVSCB)->Update(&vscBuff);
 
-	_draw(gfx);
+	_draw(_w);
 }

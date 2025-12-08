@@ -4,13 +4,13 @@
 class PointLight : public Drawable
 {
 public:
-	PointLight(Graphics& gfx, Color color, Vector3f Position, float Radius, UINT circlePoints = 40u);
+	PointLight(Color color, Vector3f Position, float Radius, unsigned circlePoints = 40u);
 
-	void updateRadius(Graphics& gfx, float radius);
-	void updatePosition(Graphics& gfx, Vector3f position);
-	void updateColor(Graphics& gfx, Color color);
+	void updateRadius(float radius);
+	void updatePosition(Vector3f position);
+	void updateColor(Color color);
 
-	void Draw(Graphics& gfx) override;
+	void Draw(Window& _w) override;
 
 private:
 
@@ -29,6 +29,6 @@ private:
 		float intensity;
 	};
 
-	ConstantBuffer<VSconstBuffer>* pVSCB;
-	ConstantBuffer<PSconstBuffer>* pPSCB;
+	void* pVSCB = nullptr;
+	void* pPSCB = nullptr;
 };

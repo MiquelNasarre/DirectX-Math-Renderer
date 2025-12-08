@@ -1,17 +1,28 @@
 #include "Bindable/Texture.h"
-#include "Exception/ExceptionMacros.h"
+#include "WinHeader.h"
+#include "Graphics.h"
+#include "Exception/_exGraphics.h"
 
-Texture::Texture(Graphics& gfx, const char* filename, UINT slot) : Slot{ slot }
+#define _device ((ID3D11Device*)device())
+#define _context ((ID3D11DeviceContext*)context())
+
+struct TextureInternals
 {
-	INFOMAN(gfx);
+	unsigned Slot;
+	ComPtr<ID3D11ShaderResourceView> pTextureView;
+};
 
-	Image image(filename);
+Texture::Texture(Image& image, unsigned slot)
+{
+	BindableData = new TextureInternals;
+	TextureInternals& data = *(TextureInternals*)BindableData;
+	data.Slot = slot;
 
 	//	Create texture resource
 
 	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width = image.width;
-	textureDesc.Height = image.height;
+	textureDesc.Width = image.width();
+	textureDesc.Height = image.height();
 	textureDesc.MipLevels = 1u;
 	textureDesc.ArraySize = 1u;
 	textureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -22,47 +33,11 @@ Texture::Texture(Graphics& gfx, const char* filename, UINT slot) : Slot{ slot }
 	textureDesc.CPUAccessFlags = 0u;
 	textureDesc.MiscFlags = 0u;
 	D3D11_SUBRESOURCE_DATA sd = {};
-	sd.pSysMem = image.Pixels;
-	sd.SysMemPitch = image.width * 4;
+	sd.pSysMem = image.pixels();
+	sd.SysMemPitch = image.width() * 4;
 
-	pCom<ID3D11Texture2D> pTexture;
-	GFX_THROW_INFO(GetDevice(gfx)->CreateTexture2D(&textureDesc, &sd, &pTexture));
-
-	//	Create the resource view on the texture
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = textureDesc.Format;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0u;
-	srvDesc.Texture2D.MipLevels = 1u;
-
-	GFX_THROW_INFO(GetDevice(gfx)->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
-}
-
-Texture::Texture(Graphics& gfx, Image& image, UINT slot)
-{
-	INFOMAN(gfx);
-
-	//	Create texture resource
-
-	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width = image.width;
-	textureDesc.Height = image.height;
-	textureDesc.MipLevels = 1u;
-	textureDesc.ArraySize = 1u;
-	textureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	textureDesc.SampleDesc.Count = 1u;
-	textureDesc.SampleDesc.Quality = 0u;
-	textureDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	textureDesc.CPUAccessFlags = 0u;
-	textureDesc.MiscFlags = 0u;
-	D3D11_SUBRESOURCE_DATA sd = {};
-	sd.pSysMem = image.Pixels;
-	sd.SysMemPitch = image.width * 4;
-
-	pCom<ID3D11Texture2D> pTexture;
-	GFX_THROW_INFO(GetDevice(gfx)->CreateTexture2D(&textureDesc, &sd, &pTexture));
+	ComPtr<ID3D11Texture2D> pTexture;
+	GFX_THROW_INFO(_device->CreateTexture2D(&textureDesc, &sd, &pTexture));
 
 	//	Create the resource view on the texture
 
@@ -72,22 +47,24 @@ Texture::Texture(Graphics& gfx, Image& image, UINT slot)
 	srvDesc.Texture2D.MostDetailedMip = 0u;
 	srvDesc.Texture2D.MipLevels = 1u;
 
-	GFX_THROW_INFO(GetDevice(gfx)->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
+	GFX_THROW_INFO(_device->CreateShaderResourceView(pTexture.Get(), &srvDesc, data.pTextureView.GetAddressOf()));
 }
 
-Texture::Texture(const Texture& other, UINT slot)
+Texture::~Texture()
 {
-	pTextureView = other.pTextureView;
-	Slot = slot;
+	delete (TextureInternals*)BindableData;
 }
 
-void Texture::Bind(Graphics& gfx)
+void Texture::Bind()
 {
-	INFOMAN(gfx);
-	GFX_THROW_INFO_ONLY(GetContext(gfx)->PSSetShaderResources(Slot, 1u, pTextureView.GetAddressOf()));
+	TextureInternals& data = *(TextureInternals*)BindableData;
+
+	GFX_THROW_INFO_ONLY(_context->PSSetShaderResources(data.Slot, 1u, data.pTextureView.GetAddressOf()));
 }
 
-void Texture::setSlot(UINT slot)
+void Texture::setSlot(unsigned slot)
 {
-	Slot = slot;
+	TextureInternals& data = *(TextureInternals*)BindableData;
+
+	data.Slot = slot;
 }

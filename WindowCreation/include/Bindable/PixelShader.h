@@ -4,8 +4,9 @@
 class PixelShader : public Bindable
 {
 public:
-	PixelShader(Graphics& gfx,const wchar_t* path);
-	void Bind(Graphics& gfx) override;
+	PixelShader(const wchar_t* path);
+	~PixelShader() override;
+	void Bind() override;
 private:
-	pCom<ID3D11PixelShader> pPixelShader;
+	void* BindableData = nullptr;
 };

@@ -1,20 +1,14 @@
 #include "Tester.h"
+#include "Exception/Exception.h"
 
-int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int __stdcall WinMain()
 {
 	try {
 
 		return Tester().Run();
 
 	}
-	catch (const ExceptionClass& exc) {
-		MessageBoxA(nullptr, exc.what(), exc.GetType(), MB_OK | MB_ICONEXCLAMATION);
-	}
-	catch (const std::exception& exc) {
-		MessageBoxA(nullptr, exc.what(), "Standard Exception", MB_OK | MB_ICONEXCLAMATION);
-	}
-	catch (...) {
-		MessageBoxA(nullptr, "No details available", "Unknown Exception", MB_OK | MB_ICONEXCLAMATION);
-	}
+	catch (const Exception& exc) { exc.PopMessageBox(); }
+
 	return -1;
 }

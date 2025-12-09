@@ -188,6 +188,33 @@ Graphics::Graphics(void* hWnd)
 --------------------------------------------------------------------------------------------
 */
 
+// Before issuing any draw calls to the window, for multiple window settings 
+// this function has to be called to bind the window as the render target.
+
+void Graphics::setRenderTarget()
+{
+	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
+
+	// Bind the render target
+
+	GFX_THROW_INFO_ONLY(_context->OMSetRenderTargets(1u, data.pTarget.GetAddressOf(), data.pDSV.Get()));
+
+	// Bind the viewport
+
+	CD3D11_VIEWPORT vp;
+	vp.Width = (float)WindowDim.x;
+	vp.Height = (float)WindowDim.y;
+	vp.MinDepth = 0.f;
+	vp.MaxDepth = 1.f;
+	vp.TopLeftX = 0.f;
+	vp.TopLeftY = 0.f;
+	GFX_THROW_INFO_ONLY(_context->RSSetViewports(1u, &vp));
+
+	// Bind the perspective
+
+	GFX_THROW_INFO_ONLY(_context->VSSetConstantBuffers(0u, 1u, data.pPerspective.GetAddressOf()));
+}
+
 // Swaps the current frame and shows the new frame to the window.
 
 void Graphics::pushFrame()
@@ -258,19 +285,13 @@ void Graphics::updatePerspective(Vector3f obs, Vector3f center, float scale)
 	Center = center;
 	Scale = scale;
 
+	Matrix Projections;
 	if (Observer == Vector3f(0.f, 0.f, -1.f))
-	{
-		Matrix Projections = ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * scale;
-		cbuff.perspective = Projections.transpose().getMatrix4();
-	}
-
+		Projections = ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * scale;
 	else
-	{
-		Matrix Projections = ProjectionMatrix(obs) * ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * scale;
-		cbuff.perspective = Projections.transpose().getMatrix4();
-	}
+		Projections = ProjectionMatrix(obs) * ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * scale;
 
-
+	cbuff.perspective = Projections.transpose().getMatrix4();
 	cbuff.traslation = center.getVector4();
 
 	GFX_THROW_INFO_ONLY(_context->UpdateSubresource(data.pPerspective.Get(), 0u, NULL, &cbuff, 0u, 0u));
@@ -350,9 +371,13 @@ void Graphics::setWindowDimensions(const Vector2i Dim)
 
 	//	Update perspective to match scaling
 
-	Matrix Projections = ProjectionMatrix(Observer) * ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * Scale;
+	Matrix Projections;
+	if (Observer == Vector3f(0.f, 0.f, -1.f))
+		Projections = ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * Scale;
+	else
+		Projections = ProjectionMatrix(Observer) * ScalingMatrix(1.f / WindowDim.x, 1.f / WindowDim.y, 1.f) * Scale;
+
 	cbuff.perspective = Projections.transpose().getMatrix4();
-	cbuff.traslation = Center.getVector4();
 
 	GFX_THROW_INFO_ONLY(_context->UpdateSubresource(data.pPerspective.Get(), 0u, NULL, &cbuff, 0u, 0u));
 

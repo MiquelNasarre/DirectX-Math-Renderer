@@ -1,18 +1,28 @@
 #include "Bindable/VertexShader.h"
+
 #include "WinHeader.h"
-#include "Graphics.h"
 #include "Exception/_exGraphics.h"
 
+// Handy helper pointers to the device and context.
 #define _device ((ID3D11Device*)device())
 #define _context ((ID3D11DeviceContext*)context())
 
-#include <d3dcompiler.h>
+#include <d3dcompiler.h> // For D3DReadFileToBlob()
 
+// Structure to manage the Vertex Shader internal data.
 struct VertexShaderInternals
 {
 	ComPtr<ID3DBlob>			pBytecodeBlob;
 	ComPtr<ID3D11VertexShader>	pVertexShader;
 };
+
+/*
+--------------------------------------------------------------------------------------------
+ Vertex Shader Functions
+--------------------------------------------------------------------------------------------
+*/
+
+// Given a (*.cso) file path it creates the bytecode and the vertex shader object.
 
 VertexShader::VertexShader(const wchar_t* path)
 {
@@ -28,10 +38,14 @@ VertexShader::VertexShader(const wchar_t* path)
 	) );
 }
 
+// Releases the pointers and deletes the internal data.
+
 VertexShader::~VertexShader()
 {
 	delete (VertexShaderInternals*)BindableData;
 }
+
+// Binds the Vertex Shader to the global context.
 
 void VertexShader::Bind()
 {
@@ -39,6 +53,8 @@ void VertexShader::Bind()
 
 	GFX_THROW_INFO_ONLY(_context->VSSetShader(data.pVertexShader.Get(), NULL, 0u));
 }
+
+// To be used by InputLayout. Returns the shader ID3DBlob* masked as a void*.
 
 void* VertexShader::GetBytecode() const noexcept
 {

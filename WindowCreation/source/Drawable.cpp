@@ -45,26 +45,26 @@ Drawable::~Drawable()
 
 // Copies of drawable objects are not allowed.
 
-void Drawable::Draw(Window& _w)
+void Drawable::Draw()
 {
 	if (!isInit)
 		throw INFO_EXCEPT("You cannot issue a draw call if the drawable has not been initialized");
 
-	_draw(_w);
+	_draw();
 }
 
 // Internal draw function, to be called by ahy overwriting of the
 // main Draw() function, iterates through the bindable objects
 // list and once all are bind, issues a draw call to the window.
 
-void Drawable::_draw(Window& _w) const
+void Drawable::_draw() const
 {
 	DrawableInternals& data = *((DrawableInternals*)DrawableData);
 
 	for (auto& b : data.binds)
 		b->Bind();
 
-	_w.graphics().drawIndexed(data.pIndexBuffer->GetCount());
+	Graphics::drawIndexed(data.pIndexBuffer->GetCount());
 }
 
 // Adds a new bindable to the bindable list of the object. For proper

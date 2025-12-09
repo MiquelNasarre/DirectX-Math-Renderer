@@ -4,5 +4,7 @@
 class IG_Tester : public iGManager
 {
 public:
-	static void render();
+	IG_Tester(Window& _w) : iGManager(_w) {}
+
+	void render();
 };

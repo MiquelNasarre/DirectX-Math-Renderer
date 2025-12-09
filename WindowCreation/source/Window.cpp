@@ -19,7 +19,11 @@
 --------------------------------------------------------------------------------------------
 */
 
-#define MAX_MSG 128 // The maximum amount of messages to be stored on queue
+// Custom message that signals a window close button pressed.
+#define WM_APP_WINDOW_CLOSE		(WM_APP + 1)
+
+// The maximum amount of messages to be stored on queue.
+#define MAX_MSG		128 
 
 using std::queue;
 using std::string;
@@ -27,19 +31,17 @@ using std::string;
 // This structure contains the internal data allocated by every window.
 struct WindowInternals
 {
-	Graphics* graphics; // Graphics object of the window.
-	Timer timer;		// Timer object to keep track of the framerate.
+	Graphics* graphics;			// Graphics object of the window.
+	static inline Timer timer;	// Timer object to keep track of the framerate.
 
 	Vector2i Dimensions = {};	// Dimensions of the window.
 	Vector2i Position = {};		// Position of the window.
 	string Name = {};			// Name of the window.
 	HWND hWnd = nullptr;		// Handle to the window.
 
-	queue<MSG> msgQueue = {};	// Stores the message queue
-
-	bool noFrameUpdate = false; // Schedules next frame time to be skipped.
-	float frame = 0;			// Stores the time of the last frame push.
-	float Frametime = 0;		// Stores the specified time for each frame.
+	static inline bool noFrameUpdate = false;	// Schedules next frame time to be skipped.
+	static inline float frame = 0.f;			// Stores the time of the last frame push.
+	static inline float Frametime = 0.f;		// Stores the specified time for each frame.
 };
 
 /*
@@ -65,8 +67,16 @@ public:
 		switch (msg)
 		{
 		case WM_CLOSE:
-			PostQuitMessage(0);
+		{
+			// Get the Window* for this HWND (you already do this in your thunk)
+			Window* pWnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+			if (!pWnd)
+				return DefWindowProc(hWnd, msg, wParam, lParam);
+
+			// Send a custom message to the thread's message queue
+			PostThreadMessage(GetCurrentThreadId(), WM_APP_WINDOW_CLOSE, (WPARAM)pWnd->getID(), 0);
 			return 0;
+		}
 
 		case WM_SIZE:
 			data.Dimensions.x = LOWORD(lParam);
@@ -268,29 +278,24 @@ Graphics& Window::graphics()
 }
 
 // Loops throgh the messages, pushes them to the queue and translates them.
+// It reuturns 0 unless a window close button is pressed, in that case it 
+// returns the window ID of that specific window.
 
-bool Window::processEvents()
+unsigned Window::processEvents()
 {
-	WindowInternals& data = *((WindowInternals*)WindowData);
-
 	//	Message Pump
 	MSG msg;
 
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-		if (msg.message == WM_QUIT)
-			return false;
-
-
-		data.msgQueue.push(msg);
-		if (data.msgQueue.size() > MAX_MSG)
-			data.msgQueue.pop();
+		if (msg.message == WM_APP_WINDOW_CLOSE)
+			return (unsigned)msg.wParam; // Close Window ID
 
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
 	handleFramerate();
-	return true;
+	return 0;
 }
 
 // Closes the window.
@@ -303,7 +308,7 @@ void Window::close()
 // Creates the window and its associated Graphics object with the
 // specified dimensions, title, icon and theme.
 
-Window::Window(Vector2i Dim, const char* Title, const char* IconFilename, bool darkTheme)
+Window::Window(Vector2i Dim, const char* Title, const char* IconFilename, bool darkTheme): w_id { next_id++ }
 {
 	//	Calculate window size based on desired client region size
 
@@ -369,6 +374,22 @@ Window::~Window()
 	DestroyWindow(data.hWnd);
 
 	delete &data;
+}
+
+// Returs the window ID. 
+// The one posted by process events when cluse button pressed.
+
+unsigned Window::getID() const
+{
+	return w_id;
+}
+
+// Checks whether the window has focus.
+
+bool Window::hasFocus() const
+{
+	WindowInternals& data = *((WindowInternals*)WindowData);
+	return (GetForegroundWindow() == data.hWnd);
 }
 
 // Set the title of the window, allows for formatted strings.
@@ -455,10 +476,8 @@ void Window::setPosition(Vector2i Pos)
 
 void Window::setFramerateLimit(int fps)
 {
-	WindowInternals& data = *((WindowInternals*)WindowData);
-
-	data.Frametime = 1.f / float(fps);
-	data.timer.setMax(fps);
+	WindowInternals::Frametime = 1.f / float(fps);
+	WindowInternals::timer.setMax(fps);
 }
 
 // Toggles the dark theme of the window on or off as specified.
@@ -534,11 +553,9 @@ Vector2i Window::getPosition() const
 
 // Returs the current framerate of the window.
 
-float Window::getFramerate() const
+float Window::getFramerate()
 {
-	WindowInternals& data = *((WindowInternals*)WindowData);
-
-	return 1.f / data.timer.average();
+	return 1.f / WindowInternals::timer.average();
 }
 
 // Returns the HWND of the window.
@@ -555,17 +572,15 @@ void* Window::getWindowHandle()
 
 void Window::handleFramerate()
 {
-	WindowInternals& data = *((WindowInternals*)WindowData);
-
-	if (data.noFrameUpdate) 
+	if (WindowInternals::noFrameUpdate)
 	{
-		data.noFrameUpdate = false;
-		data.frame = data.timer.skip();
+		WindowInternals::noFrameUpdate = false;
+		WindowInternals::frame = WindowInternals::timer.skip();
 		return;
 	}
 
-	if (data.timer.check() < data.Frametime)
-		Timer::sleep_for(unsigned long(1000 * (data.Frametime - data.timer.check())));
+	if (WindowInternals::timer.check() < WindowInternals::Frametime)
+		Timer::sleep_for(unsigned long(1000 * (WindowInternals::Frametime - WindowInternals::timer.check())));
 
-	data.frame = data.timer.mark();
+	WindowInternals::frame = WindowInternals::timer.mark();
 }

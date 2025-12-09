@@ -13,8 +13,8 @@ struct IG {
 
 //  Main class for running the Application
 
-class $safeprojectname$ {
-
+class $safeprojectname$ 
+{
 private:
 	Window window;
 	IG_$safeprojectname$ imGui;
@@ -35,11 +35,11 @@ private:
 
 	//  Drawables
 
-	Surface* example = nullptr;
-	Curve* curve = nullptr;
+	Surface* example;
 
 public:
 	$safeprojectname$();
+
 
 	int Run();
 

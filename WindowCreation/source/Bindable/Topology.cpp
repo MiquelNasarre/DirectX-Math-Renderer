@@ -1,15 +1,26 @@
 #include "Bindable/Topology.h"
+
 #include "WinHeader.h"
-#include "Graphics.h"
 #include "Exception/_exGraphics.h"
 
+// Handy helper pointers to the device and context.
 #define _device ((ID3D11Device*)device())
 #define _context ((ID3D11DeviceContext*)context())
 
-Topology::Topology(unsigned type)
+/*
+--------------------------------------------------------------------------------------------
+ Input Layout Functions
+--------------------------------------------------------------------------------------------
+*/
+
+// Stores the type in class memory.
+
+Topology::Topology(TOPOLOGY_TYPE type)
 	: type(type)
 {
 }
+
+// Sets the topology type in the global context.
 
 void Topology::Bind()
 {

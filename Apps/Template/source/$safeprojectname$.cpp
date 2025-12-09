@@ -39,19 +39,19 @@ void $safeprojectname$::drag_motion()
 
 //  Public
 
-$safeprojectname$::$safeprojectname$()
-	: window({ 640, 480 }, "$safeprojectname$"), imGui( window )
+$safeprojectname$::$safeprojectname$(): 
+	window({ 640, 480 }, "$safeprojectname$"), 
+	imGui( window )
 {
 	SURFACE_SHAPE ss(_EXPLICIT, exampleRadius);
 	example = new Surface(&ss);
-	curve = new Curve([](float t) { return Vector3f(sinf(t), cosf(t), sinf(t / 10)); }, Vector2f(0.f, 20 * MATH_PI), 1000u, [](float t) { return Color((unsigned char)(256 * (sinf(t) + 1.f) / 2.f), 0u, (unsigned char)(256 * (cosf(t) + 1.f) / 2.f)); });
 
 	window.setFramerateLimit(60);
 }
 
 int $safeprojectname$::Run()
 {
-	while (window.processEvents())
+	while (!window.processEvents())
 		doFrame();
 
 	delete example;
@@ -104,7 +104,6 @@ void $safeprojectname$::doFrame()
 	window.graphics().updatePerspective(observer, center, scale);
 
 	example->updateRotation(rotationQuaternion(axis, dangle), true);
-	curve->updateRotation(rotationQuaternion(axis, dangle), true);
 
 	window.setTitle("$safeprojectname$  -  %u fps", (unsigned)window.getFramerate());
 
@@ -112,14 +111,13 @@ void $safeprojectname$::doFrame()
 
 	window.graphics().clearBuffer(Color::Black);
 
-	example->Draw(window);
-	curve->Draw(window);
+	example->Draw();
 
-	//	ImGui crap
+	//	ImGui Rendering
 
 	imGui.render();
 
-	//	Push the frame to the scriin
+	//	Push the frame to the screen
 
 	window.graphics().pushFrame();
 }

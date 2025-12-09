@@ -26,12 +26,17 @@ class Window
 	// Class that handles the user updates to the window.
 	friend class MSGHandlePipeline;
 	friend class iGManager;
+private:
+	static inline unsigned next_id = 1u;	// Stores the next ID assigned to a window
+	const unsigned w_id;					// Stores the window ID.
 public:
 	// Returns a reference to the window internal Graphics object.
 	Graphics& graphics();
 
 	// Loops throgh the messages, pushes them to the queue and translates them.
-	bool processEvents();
+	// It reuturns 0 unless a window close button is pressed, in that case it 
+	// returns the window ID of that specific window.
+	static unsigned processEvents();
 
 	// Closes the window.
 	void close();
@@ -48,6 +53,13 @@ public:
 
 	// --- GETTERS / SETTERS ---
 
+	// Returs the window ID. 
+	// The one posted by process events when cluse button pressed.
+	unsigned getID() const;
+
+	// Checks whether the window has focus.
+	bool hasFocus() const;
+
 	// Set the title of the window, allows for formatted strings.
 	void setTitle(const char* name, ...);
 
@@ -59,9 +71,6 @@ public:
 
 	// Sets the position of the window to the one specified.
 	void setPosition(Vector2i Pos);
-
-	// Sets the maximum framerate of the widow to the one specified.
-	void setFramerateLimit(int fps);
 
 	// Toggles the dark theme of the window on or off as specified.
 	void setDarkTheme(bool DARK_THEME);
@@ -78,9 +87,11 @@ public:
 	// Returns the position vector of the window.
 	Vector2i getPosition() const;
 
-	// Returs the current framerate of the window.
-	float getFramerate() const;
+	// Sets the maximum framerate of the process to the one specified.
+	static void setFramerateLimit(int fps);
 
+	// Returs the current framerate of the process.
+	static float getFramerate();
 private:
 	// --- INTERNALS ---
 
@@ -89,12 +100,14 @@ private:
 
 	// Waits for a certain amount of time to keep the window
 	// running stable at the desired framerate.
-	void handleFramerate();
+	static void handleFramerate();
 
 	// Contains the internal data used by the window.
 	void* WindowData = nullptr;
 
 	// No Window copies are allowed
+	Window(Window&&) = delete;
+	Window& operator=(Window&&) = delete;
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
 };

@@ -10,7 +10,7 @@ public:
 	void updatePosition(Vector3f position);
 	void updateColor(Color color);
 
-	void Draw(Window& _w) override;
+	void Draw(Window& _w);
 
 private:
 

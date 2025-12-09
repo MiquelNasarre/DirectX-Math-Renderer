@@ -11,7 +11,7 @@ public:
 	void updateColor(Color col);
 	void updateRotation(Quaternion rotation, bool multiplicative = false);
 
-	void Draw(Window& _w) override;
+	void Draw(Window& _w);
 private:
 
 	struct VSconstBuffer {

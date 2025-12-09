@@ -65,6 +65,8 @@ private:
 	Graphics(void* hWnd);
 
 	// No copies of a graphics instance are allowed.
+	Graphics(Graphics&&) = delete;
+	Graphics& operator=(Graphics&&) = delete;
 	Graphics(const Graphics&) = delete;
 	Graphics& operator=(const Graphics&) = delete;
 
@@ -72,12 +74,16 @@ private:
 	void clearDepthBuffer();
 
 	// Calls to draw the objects as indexed in the index count.
-	void drawIndexed(unsigned IndexCount);
+	static void drawIndexed(unsigned IndexCount);
 
 	// Sets the window dimensions to the ones specified by the vector.
 	void setWindowDimensions(const Vector2i Dim);
 
 public:
+	// Before issuing any draw calls to the window, for multiple window settings 
+	// this function has to be called to bind the window as the render target.
+	void setRenderTarget();
+
 	// Swaps the current frame and shows the new frame to the window.
 	void pushFrame();
 
@@ -106,13 +112,14 @@ public:
 private:
 	void* GraphicsData = nullptr; // Stores the graphics object internal data.
 
-	struct {
+	struct // Constant buffer of the current graphics perspective, accessable to all vertex shaders.
+	{
 		_float4matrix perspective = {};
 		_float4vector traslation = {};
-	}cbuff;
+	}cbuff;		
 
-	Vector2i WindowDim;
-	Vector3f Observer = { 0.f , -1.f , 0.f };
-	Vector3f Center = { 0.f , 0.f , 0.f };
-	float Scale = 250.f;
+	Vector2i WindowDim;							// Stores the current window dimensions.
+	Vector3f Observer = { 0.f , -1.f , 0.f };	// Stores the current observer direction.
+	Vector3f Center = { 0.f , 0.f , 0.f };		// Stores the current center of the POV.
+	float Scale = 250.f;						// Stores the current view scale.
 };

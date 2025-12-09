@@ -28,30 +28,42 @@ class iGManager
 	friend class MSGHandlePipeline;
 
 protected:
-	// Constructor, initializes the ImGui context for the specific window and 
-	// initializes ImGui WIN32/DX11 in general if called for the first time.
-	// Important to call ImGui is to be used in the application.
-	iGManager(Window& _w);
+	// Constructor, initializes ImGui WIN32/DX11 for the specific instance and
+	// binds Win32 to the specified window, for user interface.
+	explicit iGManager(Window& _w);
+
+	// Constructor, initializes ImGui DX11 for the specific instance. Does not 
+	// bind user interface to any window. Bind must be called for interaction.
+	explicit iGManager();
 
 	// If it is the last class instance shuts down ImGui WIN32/DX11.
-	~iGManager();
+	virtual ~iGManager();
 
 	// Function to be called at the beggining of an ImGui render function.
 	// Calls new frame on Win32 and DX11 on the imGui API.
-	static void newFrame();
+	void newFrame();
 
 	// Function to be called at the end of an ImGui render function.
 	// Calls the rendering method of DX11 on the imGui API.
-	static void drawFrame();
+	void drawFrame();
+
+	// Binds the objects user interaction to the specified window.
+	void bind(Window& _w);
 
 private:
-	// Keeps track of how many instances of the class are currently active.
-	static unsigned int contextCount;
-
 	// Stores the pointer to the ImGui context of the specific window of the instance.
 	void* Context = nullptr;
+
+	// Stores the pointer to its corresponding window.
+	Window* pWindow = nullptr;
 
 	// Called by the MSGHandlePipeline lets ImGui handle the message flow
 	// if imGui is active and currently has focus on the window.
 	static bool WndProcHandler(void* hWnd, unsigned int msg, unsigned int wParam, unsigned int lParam);
+
+	// No copies are allowed. For proper context management.
+	iGManager(iGManager&&) = delete;
+	iGManager operator=(iGManager&&) = delete;
+	iGManager(const iGManager&) = delete;
+	iGManager operator=(const iGManager&) = delete;
 };

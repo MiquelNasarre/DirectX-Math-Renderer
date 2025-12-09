@@ -80,5 +80,5 @@ void PointLight::Draw(Window& _w)
 	vscBuff.observer = _w.graphics().getObserver().getVector4();
 	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 
-	_draw(_w);
+	_draw();
 }

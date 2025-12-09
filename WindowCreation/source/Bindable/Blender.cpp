@@ -1,23 +1,31 @@
 #include "Bindable/Blender.h"
+
 #include "WinHeader.h"
-#include "Graphics.h"
 #include "Exception/_exGraphics.h"
 
+// Handy helper pointers to the device and context.
 #define _device ((ID3D11Device*)device())
 #define _context ((ID3D11DeviceContext*)context())
 
+// Structure to manage the Blender internal data.
 struct BlenderInternals
 {
 	ComPtr<ID3D11BlendState> pBlender;
-	bool blending;
 	float* factors;
 };
 
-Blender::Blender(bool blending, float* factors)
+/*
+--------------------------------------------------------------------------------------------
+ Blender Functions
+--------------------------------------------------------------------------------------------
+*/
+
+// Takes the blending mode as an input and creates the blending state accordingly.
+
+Blender::Blender(BLEND_MODE mode)
 {
 	BindableData = new BlenderInternals;
 	BlenderInternals& data = *(BlenderInternals*)BindableData;
-	data.blending = blending;
 	data.factors = factors;
 
 	D3D11_BLEND_DESC blendDesc = {};
@@ -42,10 +50,14 @@ Blender::Blender(bool blending, float* factors)
 	GFX_THROW_INFO(_device->CreateBlendState(&blendDesc, data.pBlender.GetAddressOf()));
 }
 
+// Releases the GPU pointer and deletes the data.
+
 Blender::~Blender()
 {
 	delete (BlenderInternals*)BindableData;
 }
+
+// Binds the Blender to the global context.
 
 void Blender::Bind()
 {

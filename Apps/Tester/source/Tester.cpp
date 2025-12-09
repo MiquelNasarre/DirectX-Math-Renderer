@@ -4,24 +4,21 @@
 #include "Mouse.h"
 #include <string>
 
-float IG_DATA::THETA = pi / 2.f;
+float IG_DATA::THETA = MATH_PI / 2.f;
 float IG_DATA::PHI = 0.f;
 
 Tester::Tester()
-	:window(640, 480, "Plotter"),
-	surf(window.graphics, { _EXPLICIT_SPHERICAL, weirdRadius }),
-	light(window.graphics, Color::Black, { 3.f , 0.f , 2.f }, 1.f),
-	curve(window.graphics, curveF, { 0.f ,2 * pi }, 1000, { Color::Red / 3, Color::Yellow / 3, Color::Green / 3, Color::Cyan / 3, Color::Blue / 3, Color::Purple / 3, Color::Red / 3 }),
-	Klein(window.graphics, { _PARAMETRIC, KleinBottle, false, Vector2f(0, 0), Vector2f(pi, 2 * pi) }),
-	point(window.graphics, { 2.f,0.f,0.f }, 8.f),
-	impl(window.graphics, { _IMPLICIT, sphere }),
-	test(window.graphics, SURFACE_SHAPE(_EXPLICIT, returnX)),
-	shape(_EXPLICIT, SincFunction, var, false, { -5.f,-5.f }, { 5.f,5.f })
+	:window({ 640, 480 }, "Plotter"), imGui( window ),
+	surf(new SURFACE_SHAPE{ _EXPLICIT_ICOSPHERE, weirdRadius, 5 }),
+	light(Color::Black, { 3.f , 0.f , 2.f }, 1.f),
+	Klein(new SURFACE_SHAPE{ _PARAMETRIC, KleinBottle, Vector2f(0, 0), Vector2f(MATH_PI, 2 * MATH_PI) }),
+	point({ 2.f,0.f,0.f }, 8.f),
+	impl(new SURFACE_SHAPE{ _IMPLICIT, sphere }),
+	test(new SURFACE_SHAPE(_EXPLICIT, returnX))
 {
 	window.setFramerateLimit(60);
 	srand(143452);
-	surf.clearLights(window.graphics);
-	timer.reset();
+	surf.clearLights();
 
 	Vector3f vertexs[8] = {
 		Vector3f( 1.f, 1.f, 1.f),
@@ -49,13 +46,13 @@ Tester::Tester()
 		Vector3i(2, 5, 6),
 	};
 
-	torus.create(window.graphics, SURFACE_SHAPE(_PARAMETRIC, thorus, false, { 0.f,0.f }, { 2.f * pi,2.f * pi }));
-	poli.create(window.graphics, vertexs, triangles, 12);
+	torus.create(new SURFACE_SHAPE(_PARAMETRIC, thorus, { 0.f,0.f }, { 2.f * MATH_PI,2.f * MATH_PI }));
+	poli.create(vertexs, triangles, 12);
 }
 
 int Tester::Run()
 {
-	while (window.processEvents())
+	while (!Window::processEvents())
 		doFrame();
 	return 0;
 }
@@ -93,13 +90,13 @@ void Tester::eventManager()
 		theta = temp;
 		phi = initialDragAngles.y + 2.f * (float)movement.y / scale;
 
-		if (phi > pi / 2.f) {
-			phi = pi / 2.f - 0.0001f;
-			initialDrag.y = Mouse::getPosition().y - int((pi / 2.f - initialDragAngles.y) * scale / 2.f);
+		if (phi > MATH_PI / 2.f) {
+			phi = MATH_PI / 2.f - 0.0001f;
+			initialDrag.y = Mouse::getPosition().y - int((MATH_PI / 2.f - initialDragAngles.y) * scale / 2.f);
 		}
-		if (phi < -pi / 2.f) {
-			phi = -pi / 2.f + 0.0001f;
-			initialDrag.y = Mouse::getPosition().y - int((-pi / 2.f - initialDragAngles.y) * scale / 2.f);
+		if (phi < -MATH_PI / 2.f) {
+			phi = -MATH_PI / 2.f + 0.0001f;
+			initialDrag.y = Mouse::getPosition().y - int((-MATH_PI / 2.f - initialDragAngles.y) * scale / 2.f);
 		}
 
 		movement = Mouse::getPosition() - lastPos;
@@ -107,9 +104,9 @@ void Tester::eventManager()
 
 		if (!movement)
 		{
-			if (axis != window.graphics.getObserver())
+			if (axis != window.graphics().getObserver())
 			{
-				axis = window.graphics.getObserver();
+				axis = window.graphics().getObserver();
 				int wheel = Mouse::getWheel();
 				dangle = 0.f;
 			}
@@ -119,7 +116,7 @@ void Tester::eventManager()
 		}
 		else
 		{
-			Vector3f obs = window.graphics.getObserver();
+			Vector3f obs = window.graphics().getObserver();
 			Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 			Vector3f ey = (ex * obs).normalize();
 			axis = movement.y * ex - movement.x * ey;
@@ -158,33 +155,32 @@ void Tester::doFrame()
 {
 	eventManager();
 
-	window.setTitle("Plotter - " + std::to_string(int(window.getFramerate())) + "fps");
-	window.graphics.clearBuffer(Color::Black);
+	window.setTitle(("Plotter - " + std::to_string(int(window.getFramerate())) + "fps").c_str());
+	window.graphics().clearBuffer(Color::Black);
 
-	window.graphics.updatePerspective({ -cosf(IG_DATA::PHI) * cosf(IG_DATA::THETA), -cosf(IG_DATA::PHI) * sinf(IG_DATA::THETA), -sinf(IG_DATA::PHI) }, center, scale);
+	window.graphics().updatePerspective({-cosf(IG_DATA::PHI) * cosf(IG_DATA::THETA), -cosf(IG_DATA::PHI) * sinf(IG_DATA::THETA), -sinf(IG_DATA::PHI)}, center, scale);
 
 	static int count = 0;
 	if (!(++count % 100)) {
 		Color col(rand() % 255, rand() % 255, rand() % 255);
 		float rad = rand() / 32728.f;
-		light.updateColor(window.graphics, col);
-		light.updateRadius(window.graphics, rad);
-		surf.updateLight(window.graphics, 0, { 3 * rad, rad }, col, { 3.f , 0.f , 2.f });
+		light.updateColor(col);
+		light.updateRadius(rad);
+		surf.updateLight(0, { 3 * rad, rad }, col, { 3.f , 0.f , 2.f });
 	}
 
-	surf.updateRotation(window.graphics, -phi, 0.f, -theta);
-	curve.updateRotation(window.graphics, -phi, 0.f, -theta);
-	Klein.updateRotation(window.graphics, -phi, 0.f, -theta);
-	impl.updateRotation(window.graphics, -phi, 0.f, -theta);
-	test.updateRotation(window.graphics, -phi, 0.f, -theta);
-	poli.updateRotation(window.graphics, -phi, 0.f, -theta);
-	torus.updateRotation(window.graphics, axis, dangle, true);
-	surf.updateRotation(window.graphics, axis, dangle, true);
-	curve.updateRotation(window.graphics, axis, dangle, true);
-	Klein.updateRotation(window.graphics, axis, dangle, true);
-	impl.updateRotation(window.graphics, axis, dangle, true);
-	test.updateRotation(window.graphics, axis, dangle, true);
-	poli.updateRotation(window.graphics, axis, dangle, true);
+	//surf.updateRotation(-phi, 0.f, -theta);
+	//curve.updateRotation(-phi, 0.f, -theta);
+	//Klein.updateRotation(-phi, 0.f, -theta);
+	//impl.updateRotation(-phi, 0.f, -theta);
+	//test.updateRotation(-phi, 0.f, -theta);
+	//poli.updateRotation(-phi, 0.f, -theta);
+	torus.updateRotation(rotationQuaternion(axis, dangle), true);
+	surf.updateRotation(rotationQuaternion(axis, dangle), true);
+	Klein.updateRotation(rotationQuaternion(axis, dangle), true);
+	impl.updateRotation(rotationQuaternion(axis, dangle), true);
+	test.updateRotation(rotationQuaternion(axis, dangle), true);
+	poli.updateRotation(rotationQuaternion(axis, dangle), true);
 
 	//test.updateShape(window.graphics, shape);
 	//test.Draw(window.graphics);
@@ -193,18 +189,12 @@ void Tester::doFrame()
 	//curve.Draw(window.graphics);
 	//Klein.Draw(window.graphics);
 	//point.Draw(window.graphics);
-	//impl.Draw(window.graphics);
-	//poli.Draw(window.graphics);
-	torus.Draw(window.graphics);
+	impl.Draw();
+	poli.Draw();
+	torus.Draw();
 
-	var = 3.f * cosf(timer.check());
-	shape.param = var;
-
-
-
-
-	IG_Tester::render();
-	window.graphics.pushFrame();
+	imGui.render();
+	window.graphics().pushFrame();
 }
 
 //	Surface functions

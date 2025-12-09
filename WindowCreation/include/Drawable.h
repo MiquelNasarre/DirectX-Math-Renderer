@@ -33,7 +33,7 @@ public:
 
 	// Virtual drawing function, checks that the object is initialized
 	// and calls the internal draw function.
-	virtual void Draw(Window& _w);
+	virtual void Draw();
 
 protected:
 	// Boolean to make sure the drawable has been initialized.
@@ -42,7 +42,7 @@ protected:
 	// Internal draw function, to be called by ahy overwriting of the
 	// main Draw() function, iterates through the bindable objects
 	// list and once all are bind, issues a draw call to the window.
-	void _draw(Window& _w) const;
+	void _draw() const;
 
 	// Adds a new bindable to the bindable list of the object. For proper
 	// memory management the bindable sent to this function must be allocated

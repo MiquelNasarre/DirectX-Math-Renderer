@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include "IG_Tester.h"
 
 #include "Drawable/Surface.h"
 #include "Drawable/PointLight.h"
@@ -17,13 +18,11 @@ class Tester {
 
 private:
 	Window window;
-	Timer timer;
-
+	IG_Tester imGui;
 	//	Add drawables you want to test here
 
 	Surface surf;
 	PointLight light;
-	Curve curve;
 	Point point;
 
 	Surface impl;
@@ -54,7 +53,6 @@ private:
 	Vector2f initialDragAngles;
 
 	float var = 3.f;
-	PARAM_SURFACE_SHAPE<float> shape;
 
 public:
 	Tester();

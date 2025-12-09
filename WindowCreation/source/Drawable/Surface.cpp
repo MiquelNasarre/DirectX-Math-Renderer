@@ -2,13 +2,10 @@
 #include "Bindable/BindableBase.h"
 
 #include "Exception/_exDefault.h"
-#include "WinHeader.h"
-
-#include <memory>
 
 //	Surface shape
 
-SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, float(*_explicit)(float, float), Vector2f min, Vector2f max, UINT numX, UINT numY)
+SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, float(*_explicit)(float, float), Vector2f min, Vector2f max, unsigned numX, unsigned numY)
 	:Type{ Type }, Explicit{ _explicit }, minRect{ min }, maxRect{ max }, numU{ numX }, numV{ numY }
 {
 	switch (Type)
@@ -26,7 +23,7 @@ SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, float(*_explicit)(float, float),
 	}
 }
 
-SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, float(*_radius)(float, float), UINT depth)
+SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, float(*_radius)(float, float), unsigned depth)
 	:Type{ Type }, Explicit{ _radius }, ICOSPHERE_DEPHT{ depth }
 {
 	switch (Type)
@@ -44,7 +41,7 @@ SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, float(*_radius)(float, float), U
 	}
 }
 
-SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, Vector3f(*_pv)(float, float), Vector2f min, Vector2f max, UINT U, UINT V)
+SURFACE_SHAPE::SURFACE_SHAPE(SURFACE_TYPE Type, Vector3f(*_pv)(float, float), Vector2f min, Vector2f max, unsigned U, unsigned V)
 	:Type{ Type }, Parametric_V{ _pv }, minRect{ min }, maxRect{ max }, numU{ U }, numV{ V }
 {
 	switch (Type)
@@ -109,7 +106,7 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 	AddBind(vertex_buff);
 	AddBind(index_buff);
 
-	AddBind(new Topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+	AddBind(new Topology(TRIANGLE_LIST));
 	AddBind(new Rasterizer(true));
 	AddBind(new Blender(sc.transparency));
 
@@ -127,10 +124,10 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 		else
 			AddBind(new Texture(*sc.texture0, 1u));
 
-		VertexShader* pvs = NULL;
+		void* pvs = nullptr;
 		if (sc.Lighted)
 		{
-			pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"TexSurfaceVS.cso"));
+			pvs = AddBind(new VertexShader(SHADERS_DIR L"TexSurfaceVS.cso"));
 			AddBind(new PixelShader(SHADERS_DIR L"TexSurfacePS.cso"));
 
 
@@ -145,30 +142,30 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 		}
 		else
 		{
-			pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"UnlitSurfaceVS.cso"));
+			pvs = AddBind(new VertexShader(SHADERS_DIR L"UnlitSurfaceVS.cso"));
 			AddBind(new PixelShader(SHADERS_DIR L"UnlitSurfacePS.cso"));
 		}
 
 
-		D3D11_INPUT_ELEMENT_DESC ied[3] =
+		INPUT_ELEMENT_DESC ied[3] =
 		{
-			{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
-			{ "Normal",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
-			{ "TexCoord",0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
+			{ "Position", _4_FLOAT },
+			{ "Normal", _3_FLOAT },
+			{ "TexCoord", _2_FLOAT },
 		};
 
-		AddBind(new InputLayout(ied, 3u, pvs->GetBytecode()));
+		AddBind(new InputLayout(ied, 3u, (VertexShader*)pvs));
 
-		AddBind(new Sampler(D3D11_FILTER_MIN_MAG_MIP_LINEAR));
+		AddBind(new Sampler(SAMPLE_FILTER_LINEAR, SAMPLE_ADDRESS_WRAP));
 
 
 	}
 	else
 	{
-		VertexShader* pvs = NULL;
+		void* pvs = nullptr;
 		if (sc.Lighted)
 		{
-			pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"SurfaceVS.cso"));
+			pvs = AddBind(new VertexShader(SHADERS_DIR L"SurfaceVS.cso"));
 			AddBind(new PixelShader(SHADERS_DIR L"SurfacePS.cso"));
 
 			float unused = 0.f;
@@ -187,19 +184,18 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 		}
 		else
 		{
-			pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"UnlitUntexVS.cso"));
+			pvs = AddBind(new VertexShader(SHADERS_DIR L"UnlitUntexVS.cso"));
 			AddBind(new PixelShader(SHADERS_DIR L"UnlitUntexPS.cso"));
 		}
 
-		D3D11_INPUT_ELEMENT_DESC ied[2] =
+		INPUT_ELEMENT_DESC ied[2] =
 		{
-			{ "Position",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
-			{ "Normal",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
+			{ "Position",_3_FLOAT },
+			{ "Normal",_3_FLOAT },
 		};
 
-		AddBind(new InputLayout(ied, 2u, pvs->GetBytecode()));
+		AddBind(new InputLayout(ied, 2u, (VertexShader*)pvs));
 	}
-
 }
 
 //	Public
@@ -232,7 +228,7 @@ void Surface::updatePosition(Vector3f position, bool additive)
 	((ConstantBuffer*)pVSCB)->Update(vscBuff);
 }
 
-void Surface::updateTexture(UINT id, Image& image)
+void Surface::updateTexture(unsigned id, Image& image)
 {
 	if (!sc.Textured)
 		throw INFO_EXCEPT("You cannot call a texture update in a surface that wasn't initialized as textured");
@@ -251,7 +247,7 @@ void Surface::updateTextures(Image& image0, Image& image1)
 	changeBind(new Texture(image1, 1u), 5u);
 }
 
-void Surface::updateLight(UINT id, Vector2f intensity, Color color, Vector3f position)
+void Surface::updateLight(unsigned id, Vector2f intensity, Color color, Vector3f position)
 {
 	if(!pPSCB)
 		throw INFO_EXCEPT("You cannot call a light update in a surface that wasn't initialized as lighted");
@@ -322,8 +318,8 @@ void** Surface::getShapeBuffers(SURFACE_SHAPE* ss)
 			if (!sc.Textured) {
 				VertexArr vertexs((numX + 1) * (numY + 1));
 
-				for (UINT i = 0; i < numX + 1; i++) {
-					for (UINT j = 0; j < numY + 1; j++) {
+				for (unsigned i = 0; i < numX + 1; i++) {
+					for (unsigned j = 0; j < numY + 1; j++) {
 						float x = ((numX - i) * minRect.x + i * maxRect.x) / numX;
 						float y = ((numY - j) * minRect.y + j * maxRect.y) / numY;
 						vertexs.push_back(Vector3f(x, y, F(x, y)),
@@ -338,8 +334,8 @@ void** Surface::getShapeBuffers(SURFACE_SHAPE* ss)
 			else {
 				TexVertexArr vertexs((numX + 1) * (numY + 1));
 
-				for (UINT i = 0; i < numX + 1; i++) {
-					for (UINT j = 0; j < numY + 1; j++) {
+				for (unsigned i = 0; i < numX + 1; i++) {
+					for (unsigned j = 0; j < numY + 1; j++) {
 						float x = ((numX - i) * minRect.x + i * maxRect.x) / numX;
 						float y = ((numY - j) * minRect.y + j * maxRect.y) / numY;
 						vertexs.push_back(Vector3f(x, y, F(x, y)),
@@ -354,8 +350,8 @@ void** Surface::getShapeBuffers(SURFACE_SHAPE* ss)
 
 			IndexArr indexs(6 * numX * numY);
 
-			for (UINT i = 0; i < numX; i++) {
-				for (UINT j = 0; j < numY; j++) {
+			for (unsigned i = 0; i < numX; i++) {
+				for (unsigned j = 0; j < numY; j++) {
 					indexs.push_back(i * (numY + 1) + j);
 					indexs.push_back(i * (numY + 1) + j + 1);
 					indexs.push_back((i + 1) * (numY + 1) + j + 1);
@@ -410,7 +406,7 @@ void** Surface::getShapeBuffers(SURFACE_SHAPE* ss)
 
 			if (sc.Textured) {
 				TexVertex* texvertexs = (TexVertex*)calloc(nV, sizeof(TexVertex));
-				for (UINT i = 0; i < nV; i++)
+				for (unsigned i = 0; i < nV; i++)
 					texvertexs[i] = { vertexs[i].vector,vertexs[i].norm,texCoord[i] };
 				vertex_buff = new VertexBuffer(texvertexs, nV);
 			}
@@ -512,8 +508,8 @@ void** Surface::getShapeBuffers(SURFACE_SHAPE* ss)
 			if (!sc.Textured) {
 				VertexArr vertexs((numU + 1) * (numV + 1));
 
-				for (UINT i = 0; i < numU + 1; i++) {
-					for (UINT j = 0; j < numV + 1; j++) {
+				for (unsigned i = 0; i < numU + 1; i++) {
+					for (unsigned j = 0; j < numV + 1; j++) {
 						float u = ((numU - i) * minRect.x + i * maxRect.x) / numU;
 						float v = ((numV - j) * minRect.y + j * maxRect.y) / numV;
 						vertexs.push_back(
@@ -528,8 +524,8 @@ void** Surface::getShapeBuffers(SURFACE_SHAPE* ss)
 			else {
 				TexVertexArr vertexs((numU + 1) * (numV + 1));
 
-				for (UINT i = 0; i < numU + 1; i++) {
-					for (UINT j = 0; j < numV + 1; j++) {
+				for (unsigned i = 0; i < numU + 1; i++) {
+					for (unsigned j = 0; j < numV + 1; j++) {
 						float u = ((numU - i) * minRect.x + i * maxRect.x) / numU;
 						float v = ((numV - j) * minRect.y + j * maxRect.y) / numV;
 						vertexs.push_back(
@@ -545,8 +541,8 @@ void** Surface::getShapeBuffers(SURFACE_SHAPE* ss)
 
 			IndexArr indexs(6 * numU * numV);
 
-			for (UINT i = 0; i < numU; i++) {
-				for (UINT j = 0; j < numV; j++) {
+			for (unsigned i = 0; i < numU; i++) {
+				for (unsigned j = 0; j < numV; j++) {
 					indexs.push_back(i * (numV + 1) + j);
 					indexs.push_back(i * (numV + 1) + j + 1);
 					indexs.push_back((i + 1) * (numV + 1) + j + 1);
@@ -801,7 +797,7 @@ void Surface::addVertexsCube(_float4vector cube[8], VertexArr& vertexs, IndexArr
 		unsigned short v2 = 0u;
 
 		triangle() {}
-		triangle(UINT x, UINT y, UINT z)
+		triangle(unsigned x, unsigned y, unsigned z)
 		{
 			v0 = unsigned short(x);
 			v1 = unsigned short(y);

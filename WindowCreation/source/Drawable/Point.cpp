@@ -263,5 +263,5 @@ void Point::Draw(Window& _w)
 	vscBuff.scale = _w.graphics().getScale();
 	((ConstantBuffer*)pVSCB)->Update(&vscBuff);
 
-	_draw(_w);
+	_draw();
 }

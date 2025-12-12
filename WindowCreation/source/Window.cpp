@@ -31,8 +31,9 @@ using std::string;
 // This structure contains the internal data allocated by every window.
 struct WindowInternals
 {
-	Graphics* graphics;			// Graphics object of the window.
-	static inline Timer timer;	// Timer object to keep track of the framerate.
+	Graphics* graphics = nullptr;	// Graphics object of the window.
+	iGManager* imGui = nullptr;		// Pointer to the current iGManager.
+	static inline Timer timer;		// Timer object to keep track of the framerate.
 
 	Vector2i Dimensions = {};	// Dimensions of the window.
 	Vector2i Position = {};		// Position of the window.
@@ -369,6 +370,11 @@ Window::Window(Vector2i Dim, const char* Title, const char* IconFilename, bool d
 Window::~Window()
 {
 	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	// If an imgui instance is bound to the window unbind it.
+	if (data.imGui)
+		data.imGui->unbind();
+
 	delete data.graphics;
 
 	DestroyWindow(data.hWnd);
@@ -583,4 +589,14 @@ void Window::handleFramerate()
 		Timer::sleep_for(unsigned long(1000 * (WindowInternals::Frametime - WindowInternals::timer.check())));
 
 	WindowInternals::frame = WindowInternals::timer.mark();
+}
+
+// Returns adress to the pointer to the iGManager bound to the window.
+// This is to be accessed by the iGManager and set the data accordingly.
+
+void** Window::imGuiPtrAdress()
+{
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	return (void**)&data.imGui;
 }

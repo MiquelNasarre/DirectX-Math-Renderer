@@ -10,7 +10,7 @@ float IG_DATA::EARTH_PHI = 0.f;
 float IG_DATA::SPEED = 0.f;
 float IG_DATA::MOON_SPEED = 1.f;
 float IG_DATA::MOON_POS = 0.f;
-float IG_DATA::THETA = pi / 2.f;
+float IG_DATA::THETA = MATH_PI / 2.f;
 float IG_DATA::PHI = 0.f;
 float IG_DATA::FOV = 1.f;
 
@@ -20,10 +20,10 @@ Vector2i IG_DATA::UPDATE_TEXTURE = Vector2i(-1, -1);
 IG_DATA::lightsource* IG_DATA::LIGHTS = (IG_DATA::lightsource*)calloc(sizeof(IG_DATA::lightsource), 8);
 
 EarthDemo::EarthDemo()
-	: window(640, 480, "Hello World", "", true),
+	: window({ 640, 480 }, "Hello World", "", true),
 
-	TexEarth			(window.graphics,	"Resources/EarthDemo/earthTextures/default.jpg"			),
-	TexNEarth			(window.graphics,	"Resources/EarthDemo/earthTextures/defaultNight.jpg"	),
+	TexEarth(Image("Resources/EarthDemo/earthTextures/default.jpg")),
+	TexNEarth			("Resources/EarthDemo/earthTextures/defaultNight.jpg"	),
 	TexEarthInverted	(window.graphics,	"Resources/EarthDemo/earthTextures/inverted.jpg"		),
 	TexNEarthInverted	(window.graphics,	"Resources/EarthDemo/earthTextures/invertedNight.jpg"	),
 	TexEarthChalked		(window.graphics,	"Resources/EarthDemo/earthTextures/chalked.jpg"			),
@@ -31,14 +31,14 @@ EarthDemo::EarthDemo()
 	TexMoon				(window.graphics,	"Resources/EarthDemo/moonTextures/default.jpg"			),
 	TexMoonInverted		(window.graphics,	"Resources/EarthDemo/moonTextures/inverted.jpg"			),
 	TexMoonChalked		(window.graphics,	"Resources/EarthDemo/moonTextures/chalked.jpg"			),
-	TexBack				(window.graphics,	"Resources/EarthDemo/nightSky/highperformance.jpg"		),
-	TexBackInverted		(window.graphics,	"Resources/EarthDemo/nightSky/inverted.jpg"				),
-	TexBackEarth		(window.graphics,	"Resources/EarthDemo/earthTextures/projected.jpg"		),
-	TexBackMoon			(window.graphics,	"Resources/EarthDemo/moonTextures/projected.jpg"		),
+	TexBack				("Resources/EarthDemo/nightSky/highperformance.jpg"		),
+	TexBackInverted		("Resources/EarthDemo/nightSky/inverted.jpg"				),
+	TexBackEarth		("Resources/EarthDemo/earthTextures/projected.jpg"		),
+	TexBackMoon			("Resources/EarthDemo/moonTextures/projected.jpg"		),
 
-	Earth	(window.graphics, SURFACE_SHAPE(_EXPLICIT_SPHERICAL,EarthRadius), SURFACE_COLORING(TexEarth, TexNEarth).ptr()),
-	Moon	(window.graphics, SURFACE_SHAPE(_EXPLICIT_SPHERICAL, MoonRadius), SURFACE_COLORING(TexMoon).ptr()),
-	back	(window.graphics, TexBack, true, PT_AZIMUTHAL)
+	Earth	(SURFACE_SHAPE(_EXPLICIT_SPHERICAL,EarthRadius), SURFACE_COLORING(TexEarth, TexNEarth).ptr()),
+	Moon	(SURFACE_SHAPE(_EXPLICIT_SPHERICAL, MoonRadius), SURFACE_COLORING(TexMoon).ptr()),
+	back	(TexBack, true, PT_AZIMUTHAL)
 {
 
 	IG_DATA::LIGHTS[0].is_on = true;
@@ -190,23 +190,23 @@ void EarthDemo::doFrame()
 
 	//	Update objects
 
-	window.graphics.updatePerspective(observer, center, scale);
-	back.updateObserver(window.graphics, observer);
-	back.updateWideness(window.graphics, IG_DATA::FOV, (Vector2f)window.getDimensions());
+	window.graphics().updatePerspective(observer, center, scale);
+	back.updateObserver(observer);
+	back.updateWideness(IG_DATA::FOV, (Vector2f)window.getDimensions());
 
-	Earth.updateRotation(window.graphics, -IG_DATA::EARTH_PHI, 0.f, -IG_DATA::EARTH_THETA);
-	Moon.updateRotation(window.graphics, 0.f, 0.f, IG_DATA::MOON_POS);
-	Moon.updatePosition(window.graphics, Vector3f(10.f * cosf(IG_DATA::MOON_POS), 10.f * sinf(IG_DATA::MOON_POS), 0.f));
+	Earth.updateRotation(rotationQuaternion(Vector3f(1.f, 0.f, 0.f), -IG_DATA::EARTH_THETA) * rotationQuaternion(Vector3f(0.f,0.f,1.f), -IG_DATA::EARTH_PHI));
+	//Moon.updateRotation(0.f, 0.f, IG_DATA::MOON_POS);
+	Moon.updatePosition(Vector3f(10.f * cosf(IG_DATA::MOON_POS), 10.f * sinf(IG_DATA::MOON_POS), 0.f));
 
-	window.setTitle("Hello World  -  " + std::to_string(int(std::round(window.getFramerate()))) + "fps");
+	//window.setTitle("Hello World  -  " + std::to_string(int(std::round(window.getFramerate()))) + "fps");
 
 	//	Rendering
 
-	window.graphics.clearDepthBuffer();
-	back.Draw(window.graphics);
+	window.graphics().clearBuffer(Color::Black);
+	back.Draw();
 
-	Earth.Draw(window.graphics);
-	Moon.Draw(window.graphics);
+	Earth.Draw();
+	Moon.Draw();
 
 	//	ImGui crap
 
@@ -214,7 +214,7 @@ void EarthDemo::doFrame()
 
 	//	Push the frame to the scriin
 
-	window.graphics.pushFrame();
+	window.graphics().pushFrame();
 }
 
 //	Surface functions

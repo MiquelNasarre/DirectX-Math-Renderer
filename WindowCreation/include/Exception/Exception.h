@@ -9,6 +9,9 @@ entire app call in try/catch and catch this exception type.
 
 The what() and GetType() functions are virtual and will describe the 
 specifics of the thrown exception.
+
+If you simply want a message box to pop and explain the exception I 
+recommend calling the PopMessageBox function upon catch.
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
 */

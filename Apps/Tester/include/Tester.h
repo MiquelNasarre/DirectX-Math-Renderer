@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "IG_Tester.h"
 
+#include "Drawable/Background.h"
 #include "Drawable/Surface.h"
 #include "Drawable/PointLight.h"
 #include "Drawable/Curve.h"
@@ -24,6 +25,8 @@ private:
 	Surface surf;
 	PointLight light;
 	Point point;
+
+	Background* back;
 
 	Surface impl;
 

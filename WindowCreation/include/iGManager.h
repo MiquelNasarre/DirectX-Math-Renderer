@@ -47,8 +47,17 @@ protected:
 	// Calls the rendering method of DX11 on the imGui API.
 	void drawFrame();
 
+public:
 	// Binds the objects user interaction to the specified window.
 	void bind(Window& _w);
+
+	// If it's bound to a window it unbinds it.
+	void unbind();
+
+	// InGui rendering function, needs to be implemented by inheritance and will be 
+	// called by the bounded window just before pushing a frame. For custom behavior 
+	// just leave it blank and create your onw rendering functions.
+	virtual void render() = 0;
 
 private:
 	// Stores the pointer to the ImGui context of the specific window of the instance.

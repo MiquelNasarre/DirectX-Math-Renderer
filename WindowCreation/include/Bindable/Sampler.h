@@ -26,7 +26,7 @@ https://learn.microsoft.com/en-us/windows/win32/api/d3d11/ns-d3d11-d3d11_sampler
 
 // Sample filter enumerator mimquing D3D11_FILTER. Decides how the texture 
 // color will be interpolated from the neighboring pixels in the shader.
-typedef enum SAMPLE_FILTER 
+enum SAMPLE_FILTER 
 {
     SAMPLE_FILTER_POINT = 0,            // Nearest pixel
     SAMPLE_FILTER_LINEAR = 0x1,         // interpole pixels
@@ -35,7 +35,7 @@ typedef enum SAMPLE_FILTER
 
 // Sample address mode filter enumerator mimiquing D3D11_TEXTURE_ADDRESS_MODE.
 // Decides how the texture coordinate will be assinged when it gets out of bounds.
-typedef enum SAMPLE_ADDRESS_MODE 
+enum SAMPLE_ADDRESS_MODE 
 {
     SAMPLE_ADDRESS_WRAP = 1,            // Repeating pattern
     SAMPLE_ADDRESS_MIRROR = 2,          // Repeating pattern mirrored

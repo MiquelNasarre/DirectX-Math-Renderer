@@ -16,7 +16,7 @@ https://learn.microsoft.com/en-us/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_p
 */
 
 // Topology type enumerator mimiquing D3D_PRIMITIVE_TOPOLOGY.
-typedef enum TOPOLOGY_TYPE: unsigned
+enum TOPOLOGY_TYPE: unsigned
 {
 	POINT_LIST = 1,			// All vertex are treated as single points
 	LINE_LIST = 2,			// Vertexs are joined by pairs to form lines (no repetition)

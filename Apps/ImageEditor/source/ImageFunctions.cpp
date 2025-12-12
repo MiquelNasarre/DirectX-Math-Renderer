@@ -6,15 +6,13 @@
 
 typedef unsigned int UINT;
 
-#define _pos(i,j)	(((i) * image.width + (j))%(image.width * image.height))
-
 Image gradient()
 {
 	Image image(2560, 1440, Color::Black);
 
 	for (int i = 0; i < 2560; i++) {
 		for (int j = 0; j < 1440; j++)
-			image.Pixels[_pos(j, i)] = Color(unsigned char(256 * (i / 2560.f)), unsigned char(256 * (j / 1440.f)), 0);
+			image(j, i) = Color(unsigned char(256 * (i / 2560.f)), unsigned char(256 * (j / 1440.f)), 0);
 	}
 	return image;
 }
@@ -30,7 +28,7 @@ Image EarthDiagram()
 	for (UINT i = 0; i < height; i++) {
 		for (UINT j = 0; j < width; j++) {
 			if (!(i % (height/lines)) || !(j % (width/lines)))
-				image.Pixels[_pos(i, j)] = Color::Black;
+				image(i, j) = Color::Black;
 		}
 	}
 	return image;
@@ -45,54 +43,54 @@ Image createNightSky(unsigned int width, unsigned int height)
 
 	for (int n = 0; n < 100000; n++) {
 
-		UINT i = rand() % image.height;
-		UINT j = rand() % image.width;
+		UINT i = rand() % image.height();
+		UINT j = rand() % image.width();
 
-		image.Pixels[_pos(i, j)] = Color(rand() % 255, rand() % 255, rand() % 255) + Color::Gray - Color(rand() % 255, rand() % 255, rand() % 255);
+		image(i, j) = Color(rand() % 255, rand() % 255, rand() % 255) + Color::Gray - Color(rand() % 255, rand() % 255, rand() % 255);
 
 	}
 
 	for (int n = 0; n < 10000; n++) {
 
-		UINT i = rand() % image.height;
-		UINT j = rand() % image.width;
+		UINT i = rand() % image.height();
+		UINT j = rand() % image.width();
 
 		for (int m = 0; m < 10; m++)
-			image.Pixels[_pos(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 3 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 3 + 1)))] = Color(rand() % 255, rand() % 255, rand() % 255) + Color::Gray - Color(rand() % 255, rand() % 255, rand() % 255);
+			image(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 3 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 3 + 1)) = Color(rand() % 255, rand() % 255, rand() % 255) + Color::Gray - Color(rand() % 255, rand() % 255, rand() % 255);
 	}
 
 	for (int n = 0; n < 500; n++) {
 
-		UINT i = rand() % image.height;
-		UINT j = rand() % image.width;
+		UINT i = rand() % image.height();
+		UINT j = rand() % image.width();
 
 		for (int m = 0; m < 15; m++)
-			image.Pixels[_pos(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 4 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 4 + 1)))] = Color(rand() % 255, rand() % 255, rand() % 255) + Color::Gray - Color(rand() % 255, rand() % 255, rand() % 255);
+			image(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 4 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 4 + 1)) = Color(rand() % 255, rand() % 255, rand() % 255) + Color::Gray - Color(rand() % 255, rand() % 255, rand() % 255);
 	}
 
 	for (int n = 0; n < 250; n++) {
 
-		UINT i = rand() % image.height;
-		UINT j = rand() % image.width;
+		UINT i = rand() % image.height();
+		UINT j = rand() % image.width();
 
 		for (int m = 0; m < 100; m++)
-			image.Pixels[_pos(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 7 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 7 + 1)))] = Color::White - Color(rand() % 255, rand() % 255, rand() % 255);
+			image(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 7 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 7 + 1)) = Color::White - Color(rand() % 255, rand() % 255, rand() % 255);
 	}
 
 	for (int n = 0; n < 150; n++) {
 
-		UINT i = rand() % image.height;
-		UINT j = rand() % image.width;
+		UINT i = rand() % image.height();
+		UINT j = rand() % image.width();
 
 		for (int m = 0; m < 150; m++)
-			image.Pixels[_pos(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 10 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 10 + 1)))] = Color::White - Color(rand() % 255, rand() % 255, rand() % 255);
+			image(i + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 10 + 1)), j + (1 - 2 * (rand() % 2)) * (rand() % (rand() % 10 + 1)) = Color::White - Color(rand() % 255, rand() % 255, rand() % 255);
 	}
 
-	for (UINT i = 0; i < image.height; i++) {
-		for (UINT j = 0; j < image.width; j++) {
+	for (UINT i = 0; i < image.height(); i++) {
+		for (UINT j = 0; j < image.width(); j++) {
 
-			if (image.Pixels[_pos(i, j)] != Color::Transparent)
-				image.Pixels[_pos(i, j)] = (image.Pixels[_pos(i, j)] / (rand() % 10 + 1) + Color::White / (rand() % 20 + 1)) / (rand() % 3 + 2.f);
+			if (image(i, j) != Color::Transparent)
+				image(i, j) = (image(i, j) / (rand() % 10 + 1) + Color::White / (rand() % 20 + 1)) / (rand() % 3 + 2.f);
 
 
 
@@ -103,20 +101,20 @@ Image createNightSky(unsigned int width, unsigned int height)
 
 	Image galaxy("nightsky/MlkyWay.jpg");
 
-	for (UINT j = image.width * 4 / 8; j < image.width * 7 / 8; j++) {
-		UINT i = UINT(image.height * (-cosf(2 * 3.14159f * j / image.width)) / 2.f) / 2 + image.height / 2;
+	for (UINT j = image.width() * 4 / 8; j < image.width() * 7 / 8; j++) {
+		UINT i = UINT(image.height() * (-cosf(2 * 3.14159f * j / image.width())) / 2.f) / 2 + image.height() / 2;
 
 		for (int n = 0; n < (sqrt(j * (11000 - j)) - 5200) / 2; n++) {
 			UINT ir = i + (2 * (rand() % 2) - 1) * (rand() % (rand() % 500 + 1));
 			UINT jr = j + (2 * (rand() % 2) - 1) * (rand() % (rand() % 500 + 1));
-			int ig = int(1.5f * (ir - image.height / 4.f) * galaxy.height / image.height);
-			int jg = int(1.5f * (jr - image.width / 4.f) * galaxy.width / image.width);
+			int ig = int(1.5f * (ir - image.height() / 4.f) * galaxy.height() / image.height());
+			int jg = int(1.5f * (jr - image.width() / 4.f) * galaxy.width() / image.width());
 
-			if (ig < 0 || ig >= (int)galaxy.height || jg < 0 || jg >= (int)galaxy.width) {
-				ig = rand() % galaxy.height;
-				jg = rand() % galaxy.width;
+			if (ig < 0 || ig >= (int)galaxy.height() || jg < 0 || jg >= (int)galaxy.width()) {
+				ig = rand() % galaxy.height();
+				jg = rand() % galaxy.width();
 			}
-			image.Pixels[_pos(ir, jr)] = galaxy.Pixels[ig * galaxy.width + jg] / 3;
+			image(ir, jr) = galaxy.pixels()[ig * galaxy.width() + jg] / 3;
 		}
 
 	}

@@ -4,10 +4,11 @@
 class IG_QuaternionMotion : public iGManager
 {
 private:
-	static void saveLightState(int id);
-	static void loadLightState(int id);
-	static void doLightEditor(int& id);
+	void saveLightState(int id);
+	void loadLightState(int id);
+	void doLightEditor(int& id);
 
 public:
-	static void render();
+	IG_QuaternionMotion() : iGManager() {}
+	void render() override;
 };

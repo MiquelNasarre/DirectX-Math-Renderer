@@ -11,7 +11,7 @@
 struct BlenderInternals
 {
 	ComPtr<ID3D11BlendState> pBlender;
-	float* factors;
+	BLEND_MODE mode;
 };
 
 /*
@@ -26,26 +26,51 @@ Blender::Blender(BLEND_MODE mode)
 {
 	BindableData = new BlenderInternals;
 	BlenderInternals& data = *(BlenderInternals*)BindableData;
-	data.factors = factors;
+	data.mode = mode;
 
 	D3D11_BLEND_DESC blendDesc = {};
 	auto& brt = blendDesc.RenderTarget[0];
-	if (blending)
+
+	switch (mode)
 	{
-		brt.BlendEnable = false;
-		brt.SrcBlend = D3D11_BLEND_ONE;
-		brt.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-		brt.BlendOp = D3D11_BLEND_OP_ADD;
-		brt.SrcBlendAlpha = D3D11_BLEND_ZERO;
-		brt.DestBlendAlpha = D3D11_BLEND_ZERO;
-		brt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		brt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	}
-	else
-	{
-		brt.BlendEnable = false;
-		brt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	}
+	case BLEND_MODE_OPAQUE:
+		brt.BlendEnable				= false;
+		brt.RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALL;
+		break;
+
+	case BLEND_MODE_ALPHA:
+		brt.BlendEnable				= true;
+		brt.RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		// Color: C_out = C_src * A_src + C_dst * (1 - A_src)
+		brt.SrcBlend				= D3D11_BLEND_SRC_ALPHA;
+		brt.DestBlend				= D3D11_BLEND_INV_SRC_ALPHA;
+		brt.BlendOp					= D3D11_BLEND_OP_ADD;
+
+		// Alpha: Source alpha
+		brt.SrcBlendAlpha			= D3D11_BLEND_ONE;
+		brt.DestBlendAlpha			= D3D11_BLEND_ZERO;
+		brt.BlendOpAlpha			= D3D11_BLEND_OP_ADD;
+		break;
+
+	case BLEND_MODE_ADDITIVE:
+		brt.BlendEnable				= true;
+		brt.RenderTargetWriteMask	= D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		// Color: C_out = C_src + C_dst
+		brt.SrcBlend				= D3D11_BLEND_ONE;
+		brt.DestBlend				= D3D11_BLEND_ONE;
+		brt.BlendOp					= D3D11_BLEND_OP_ADD;
+
+		// Alpha: Keep destination alpha.
+		brt.SrcBlendAlpha			= D3D11_BLEND_ZERO;
+		brt.DestBlendAlpha			= D3D11_BLEND_ONE;
+		brt.BlendOpAlpha			= D3D11_BLEND_OP_ADD;
+		break;
+
+	case BLEND_MODE_OIT_WEIGHTED:
+		return; // Graphics takes care of all the OIT pipeline.
+	};
 
 	GFX_THROW_INFO(_device->CreateBlendState(&blendDesc, data.pBlender.GetAddressOf()));
 }
@@ -63,5 +88,17 @@ void Blender::Bind()
 {
 	BlenderInternals& data = *(BlenderInternals*)BindableData;
 
-	GFX_THROW_INFO_ONLY(_context->OMSetBlendState(data.pBlender.Get(), data.factors, 0xFFFFFFFFu));
+	if (data.mode == BLEND_MODE_OIT_WEIGHTED)
+		return;	// Graphics will take care of the rest.
+
+	GFX_THROW_INFO_ONLY(_context->OMSetBlendState(data.pBlender.Get(), nullptr, 0xFFFFFFFFu));
+}
+
+// To be called by the draw call to check for OIT.
+
+BLEND_MODE Blender::getMode()
+{
+	BlenderInternals& data = *(BlenderInternals*)BindableData;
+
+	return data.mode;
 }

@@ -7,24 +7,25 @@
 #define DO(call) shape_0.call;shape_1.call;shape_2.call;shape_3.call
 
 QuaternionMotion::QuaternionMotion()
-	: window(640, 480, "QuaternionMotion", "", true)
+	: window({ 640, 480 }, "QuaternionMotion", "", true)
 {
 	window.setFramerateLimit(60);
+	imGui.bind(window);
 
 	IG_DATA::LIGHTS[0].is_on = true;
-	IG_DATA::LIGHTS[0].color = Color(255, 51, 51, 255).getColor4();
+	IG_DATA::LIGHTS[0].color = Color(255, 51, 51, 255);
 	IG_DATA::LIGHTS[0].intensities = { 60.f,10.f };
 	IG_DATA::LIGHTS[0].position = { 0.f,8.f,8.f };
 	IG_DATA::LIGHTS[1].is_on = true;
-	IG_DATA::LIGHTS[1].color = Color(0, 255, 0, 255).getColor4();
+	IG_DATA::LIGHTS[1].color = Color(0, 255, 0, 255);
 	IG_DATA::LIGHTS[1].intensities = { 60.f,10.f };
 	IG_DATA::LIGHTS[1].position = { 0.f,-8.f,8.f };
 	IG_DATA::LIGHTS[2].is_on = true;
-	IG_DATA::LIGHTS[2].color = Color(127, 0, 255, 255).getColor4();
+	IG_DATA::LIGHTS[2].color = Color(127, 0, 255, 255);
 	IG_DATA::LIGHTS[2].intensities = { 60.f,10.f };
 	IG_DATA::LIGHTS[2].position = { -8.f,0.f,-8.f };
 	IG_DATA::LIGHTS[3].is_on = true;
-	IG_DATA::LIGHTS[3].color = Color(255, 255, 0, 255).getColor4();
+	IG_DATA::LIGHTS[3].color = Color(255, 255, 0, 255);
 	IG_DATA::LIGHTS[3].intensities = { 60.f,10.f };
 	IG_DATA::LIGHTS[3].position = { 8.f,0.f,8.f };
 
@@ -55,18 +56,34 @@ QuaternionMotion::QuaternionMotion()
 	};
 
 	Color colors[12] = {
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
-		Color(255,255,255, 200),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+		Color(255,255,255, 128),
+	};
+
+	Color colors0[12] =
+	{
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
+		Color(255,255,255,255),
 	};
 
 	Vector3f vertexs0[8] = {
@@ -95,28 +112,31 @@ QuaternionMotion::QuaternionMotion()
 		Vector3i(7, 6, 1),
 	};
 
-	SURFACE_SHAPE ss0 = { _EXPLICIT_SPHERICAL, exampleRadius };
+	SURFACE_SHAPE ss0 = { _EXPLICIT_ICOSPHERE, exampleRadius, 5u };
 	ss0.numU = 200u;
 	ss0.numV = 200u;
 
 	SURFACE_COLORING sc = {};
 
 	sc.color = Color(255, 255, 255, 127);
-	sc.transparency = true;
+	sc.transparency = false;
 
-	SURFACE_SHAPE ss1 = { _PARAMETRIC, KleinBottle, false, Vector2f(0, 0), Vector2f(pi, 2 * pi) };
-	ss1.numU = 200u;
-	ss1.numV = 200u;
+	SURFACE_SHAPE ss1 = { _PARAMETRIC, KleinBottle, Vector2f(0, 0), Vector2f(MATH_PI, 2 * MATH_PI)};
+	ss1.grid_type = true;
+	ss1.numU = 50u;
+	ss1.numV = 50u;
 	
-	shape_0.create(window.graphics, ss0, &sc);
-	shape_1.create(window.graphics, vertexs, triangles, 12, colors);
-	shape_2.create(window.graphics, vertexs0, triangles0, 12, colors);
-	shape_3.create(window.graphics, ss1, &sc);
+	shape_0.create(&ss0, &sc);
+	shape_1.create(vertexs, triangles, 12, colors);
+	shape_2.create(vertexs0, triangles0, 12, colors, false, true);
+	shape_3.create(&ss1, &sc);
+
+	window.graphics().enableOITransparency();
 }
 
 int QuaternionMotion::Run()
 {
-	while (window.processEvents())
+	while (!window.processEvents())
 		doFrame();
 	return 0;
 }
@@ -183,12 +203,12 @@ void QuaternionMotion::eventManager()
 	int l = IG_DATA::UPDATE_LIGHT;
 	if (l == -2) {
 		for (int i = 0; i < 8; i++) {
-			DO(updateLight(window.graphics, i, IG_DATA::LIGHTS[i].intensities, IG_DATA::LIGHTS[i].color, IG_DATA::LIGHTS[i].position));
+			DO(updateLight(i, IG_DATA::LIGHTS[i].intensities, IG_DATA::LIGHTS[i].color, IG_DATA::LIGHTS[i].position));
 		}
 		IG_DATA::UPDATE_LIGHT = -1;
 	}
 	if (l > -1) {
-		DO(updateLight(window.graphics, l, IG_DATA::LIGHTS[l].intensities, IG_DATA::LIGHTS[l].color, IG_DATA::LIGHTS[l].position));
+		DO(updateLight(l, IG_DATA::LIGHTS[l].intensities, IG_DATA::LIGHTS[l].color, IG_DATA::LIGHTS[l].position));
 		IG_DATA::UPDATE_LIGHT = -1;
 	}
 }
@@ -199,43 +219,39 @@ void QuaternionMotion::doFrame()
 
 	//	Update objects
 
-	window.graphics.updatePerspective(observer, center, scale);
+	window.graphics().updatePerspective(observer, center, scale);
 
-	DO(updateRotation(window.graphics, axis, dangle, true));
+	DO(updateRotation(rotationQuaternion(axis, dangle), true));
 
 	const char* rot = shape_0.getRotation().str();
-	window.setTitle(std::string(rot) + "  -  " + std::to_string(int(std::round(window.getFramerate()))) + "fps");
+	window.setTitle("%s  -  %u fps", rot, (unsigned)window.getFramerate());
 	free((void*)rot);
 
 	//	Rendering
 
-	window.graphics.clearBuffer(Color::Black);
+	window.graphics().clearBuffer(Color::Black);
+	window.graphics().setRenderTarget();
 
 	switch (IG_DATA::FIGURE)
 	{
 	case SQUARE:
-		shape_1.Draw(window.graphics);
+		shape_1.Draw();
 		break;
 	case WEIRD_SHAPE:
-		shape_0.Draw(window.graphics);
+		shape_0.Draw();
 		break;
 	case OCTAHEDRON:
-		shape_2.Draw(window.graphics);
+		shape_2.Draw();
 		break;
 	case KLEIN:
-		shape_3.Draw(window.graphics);
+		shape_3.Draw();
 	default:
 		break;
 	}
-	
-
-	//	ImGui crap
-
-	IG_QuaternionMotion::render();
 
 	//	Push the frame to the scriin
 
-	window.graphics.pushFrame();
+	window.graphics().pushFrame();
 }
 
 //	Movement functions
@@ -256,15 +272,15 @@ void QuaternionMotion::magneticReturn()
 		newRot = rotationQuaternion(axisRot, -angle / 40.f) * rotationQuaternion(axis, dangle);
 
 	axis = newRot.getVector();
-	dangle = 2 * acos(newRot.r);
+	dangle = 2.f * acosf(newRot.r);
 
 	dangle *= 0.95f;
 
 	if (fabs(angle) < 0.01f && fabs(dangle) < 0.005f)
 	{
-		shape_0.updateRotation(window.graphics, Vector3f(), 0.f);
-		shape_1.updateRotation(window.graphics, Vector3f(), 0.f);
-		shape_2.updateRotation(window.graphics, Vector3f(), 0.f);
+		shape_0.updateRotation(Vector3f(), 0.f);
+		shape_1.updateRotation(Vector3f(), 0.f);
+		shape_2.updateRotation( Vector3f(), 0.f);
 		returning = false;
 		dangle = 0.f;
 	}
@@ -285,9 +301,9 @@ void QuaternionMotion::strictReturn()
 
 	if (fabs(angle) < 0.01f)
 	{
-		shape_0.updateRotation(window.graphics, Vector3f(), 0.f);
-		shape_1.updateRotation(window.graphics, Vector3f(), 0.f);
-		shape_2.updateRotation(window.graphics, Vector3f(), 0.f);
+		shape_0.updateRotation(Vector3f(), 0.f);
+		shape_1.updateRotation(Vector3f(), 0.f);
+		shape_2.updateRotation(Vector3f(), 0.f);
 		strict = false;
 		dangle = 0.f;
 	}
@@ -295,7 +311,7 @@ void QuaternionMotion::strictReturn()
 
 void QuaternionMotion::drag_rigid_plane()
 {
-	Vector3f obs = window.graphics.getObserver();
+	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -321,7 +337,7 @@ void QuaternionMotion::drag_rigid_plane()
 
 void QuaternionMotion::drag_rigid_space()
 {
-	Vector3f obs = window.graphics.getObserver();
+	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -348,7 +364,7 @@ void QuaternionMotion::drag_rigid_space()
 
 void QuaternionMotion::drag_dynamic_plane()
 {
-	Vector3f obs = window.graphics.getObserver();
+	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -382,7 +398,7 @@ void QuaternionMotion::drag_dynamic_plane()
 
 void QuaternionMotion::drag_dynamic_space()
 {
-	Vector3f obs = window.graphics.getObserver();
+	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -399,9 +415,9 @@ void QuaternionMotion::drag_dynamic_space()
 
 	constexpr float s = 1.f / 1.5f;
 
-	Quaternion newRot = rotationQuaternion(newMouse, Mouse::getWheel() / 18000.f) * rotationQuaternion(axis0, dangle0) * rotationQuaternion(axis, (dangle * (1 - s + fabs(axis ^ newMouse) * s)));
+	Quaternion newRot = rotationQuaternion(newMouse, Mouse::getWheel() / 18000.f) * rotationQuaternion(axis0, dangle0) * rotationQuaternion(axis, (dangle * (1.f - s + fabsf(axis ^ newMouse) * s)));
 	
-	dangle = 2 * acosf(newRot.r);
+	dangle = 2.f * acosf(newRot.r);
 	axis = newRot.getVector();
 	if (!axis)axis = newMouse;
 	axis.normalize();
@@ -409,7 +425,7 @@ void QuaternionMotion::drag_dynamic_space()
 
 void QuaternionMotion::drag_magnetic_mouse()
 {
-	Vector3f obs = window.graphics.getObserver();
+	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -462,7 +478,7 @@ Vector3f KleinBottle(float u, float v)
 	float s_v = sinf(v);
 
 	float x = -2.f / 15.f * c_u * (3 * c_v - 30 * s_u + 90 * powf(c_u, 4.f) * s_u - 60 * powf(c_u, 6.f) * s_u + 5 * c_u * c_v * s_u);
-	float y = -1.f / 15.f * s_u * (3 * c_v - 3 * c_u * c_u * c_v - 48 * powf(c_u, 4.f) * c_v + 48 * powf(c_u, 6.f) * c_v - 60 * s_u + 5 * c_u * c_v * s_u - 5 * powf(c_u, 3) * c_v * s_u - 80 * powf(c_u, 7.f) * c_v * s_u) - 1;
+	float y = -1.f / 15.f * s_u * (3 * c_v - 3 * c_u * c_u * c_v - 48 * powf(c_u, 4.f) * c_v + 48 * powf(c_u, 6.f) * c_v - 60 * s_u + 5 * c_u * c_v * s_u - 5 * powf(c_u, 3) * c_v * s_u - 80 * powf(c_u, 7.f) * c_v * s_u) - 2;
 	float z = 2.f / 15.f * (3 + 5 * c_u * s_u) * s_v;
 	return Vector3f(x, y, z);
 }

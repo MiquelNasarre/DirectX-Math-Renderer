@@ -5,8 +5,8 @@
 /* INPUT LAYOUT BINDABLE CLASS
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
-This bindable is used to match the type of data collected by the vertex shaders
-in the GPU and the data that is actually sent by the CPU.
+This bindable is used to match the type of data collected by the Vertex Shaders
+in the GPU and the data that is actually sent by the CPU from the Vertex Buffer.
 
 For that reason the basic elements it needs is the format of the data sent and the
 name associated to it that will be picked up by the vertex shader.
@@ -46,7 +46,7 @@ D3D11_INPUT_ELEMENT_DESC* and create the ID3D11InputLayout object with it.
 
 // Enumerator mimiquing the DXGI_FORMAT enum. Each format specified expects
 // to find the same format inside the vertex shader bytecode.
-typedef enum DATA_FORMAT: unsigned
+enum DATA_FORMAT : unsigned
 {
     _4_FLOAT = 2,
     _4_UINT = 3,
@@ -66,6 +66,7 @@ typedef enum DATA_FORMAT: unsigned
 
     _4_UCHAR = 30,
     _4_CHAR = 32,
+    _4_BGRA_COLOR = 87,
 
     _2_SHORT_FLOAT = 34,
     _2_SHORT_UINT = 36,

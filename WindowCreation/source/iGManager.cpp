@@ -10,11 +10,6 @@
 // Declares the use of the ImGui message procedure.
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// Map each HWND to its iGManager instance
-namespace {
-	std::unordered_map<HWND, iGManager*> g_imguiInstances;
-}
-
 /*
 --------------------------------------------------------------------------------------------
  iGManager Function Definitions
@@ -41,31 +36,43 @@ iGManager::iGManager()
 	// If the global device are still not created create them.
 	GlobalDevice::set_global_device();
 
+	// Store the current imGui context if exists
+	ImGuiContext* current = ImGui::GetCurrentContext();
+
 	// Create a unique context for this window
 	Context = ImGui::CreateContext();
 	ImGui::SetCurrentContext((ImGuiContext*)Context);
 	ImGui::StyleColorsDark();
 
+	// Initialize directX 11 for this context.
 	ImGui_ImplDX11_Init(
 		(ID3D11Device*)GlobalDevice::get_device_ptr(),
 		(ID3D11DeviceContext*)GlobalDevice::get_context_ptr()
 	);
+
+	// Go back to previous context if existed.
+	if (current)
+		ImGui::SetCurrentContext(current);
 }
 
 // If it is the last class instance shuts down ImGui WIN32/DX11.
 
 iGManager::~iGManager()
 {
-	HWND hWnd = (HWND)pWindow->getWindowHandle();
-	g_imguiInstances.erase(hWnd);
+	// Unbind yourself from the window.
+	unbind();
+
+	// Store current context.
+	ImGuiContext* current = ImGui::GetCurrentContext();
 
 	// Destroy this ImGui context
 	ImGui::SetCurrentContext((ImGuiContext*)Context);
-
 	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-
 	ImGui::DestroyContext((ImGuiContext*)Context);
+
+	// If existed go back to previous context.
+	if (current)
+		ImGui::SetCurrentContext(current);
 }
 
 // Function to be called at the beggining of an ImGui render function.
@@ -93,26 +100,44 @@ void iGManager::drawFrame()
 
 void iGManager::bind(Window& _w)
 {
-	ImGui::SetCurrentContext((ImGuiContext*)Context);
-
-	// If a window is bind already delete that bind.
-	if (pWindow)
-	{
-		g_imguiInstances.erase((HWND)pWindow->getWindowHandle());
-		ImGui_ImplWin32_Shutdown();
-	}
+	// If it's bound to a window unbind it.
+	unbind();
 
 	// If another iGManager is bound to this window throw exception.
-	auto it = g_imguiInstances.find((HWND)_w.getWindowHandle());
-	if (it != g_imguiInstances.end())
-		throw INFO_EXCEPT("You cannot have multiple ImGui context bound to the same window at the same time.");
+	if (*_w.imGuiPtrAdress())
+		throw INFO_EXCEPT("You cannot have multiple ImGui contexts bound to the same window at the same time.");
+
+	// Set your context as current
+	ImGuiContext* current = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext((ImGuiContext*)Context);
 
 	ImGui_ImplWin32_Init(_w.getWindowHandle());
 
-	// Register this instance for its HWND
-	g_imguiInstances[(HWND)_w.getWindowHandle()] = this;
+	// Return to the previous context.
+	if (current)
+		ImGui::SetCurrentContext(current);
 
+	// Add yourself to the window pointer.
+	*_w.imGuiPtrAdress() = this;
 	pWindow = &_w;
+}
+
+// If it's bound to a window it unbinds it.
+
+void iGManager::unbind()
+{
+	ImGuiContext* current = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext((ImGuiContext*)Context);
+
+	// If a window is bound delete that bind.
+	if (pWindow)
+	{
+		*pWindow->imGuiPtrAdress() = nullptr;
+		ImGui_ImplWin32_Shutdown();
+	}
+
+	if (current)
+		ImGui::SetCurrentContext(current);
 }
 
 // Called by the MSGHandlePipeline lets ImGui handle the message flow
@@ -120,24 +145,31 @@ void iGManager::bind(Window& _w)
 
 bool iGManager::WndProcHandler(void* hWnd, unsigned int msg, unsigned int wParam, unsigned int lParam)
 {
-	HWND hwnd = (HWND)hWnd;
+	// Extract the imGui instance through the window
+	Window* pWnd = reinterpret_cast<Window*>(GetWindowLongPtr((HWND)hWnd, GWLP_USERDATA));
+	iGManager* pImGui = (iGManager*)*pWnd->imGuiPtrAdress();
 
-	auto it = g_imguiInstances.find(hwnd);
-	if (it == g_imguiInstances.end())
-		return false;
-
-	iGManager* mgr = it->second;
-	if (!mgr->Context)
+	// If no ImGui is associated with this window return false.
+	if (!pImGui)
 		return false;
 
 	// Switch to the correct ImGui context for this window
-	ImGui::SetCurrentContext((ImGuiContext*)mgr->Context);
+	ImGuiContext* current = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext((ImGuiContext*)pImGui->Context);
 
-	ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+	// Pass the proc to the ImGui Win32 WndProcHandler
+	ImGui_ImplWin32_WndProcHandler((HWND)hWnd, msg, wParam, lParam);
 	const auto& imio = ImGui::GetIO();
+
+	// Return to other context if existed.
+	if (current)
+		ImGui::SetCurrentContext(current);
+
+	// If ImGui wants to capture the procedures return true.
 	if (imio.WantCaptureKeyboard || imio.WantCaptureMouse)
 		return true;
 
+	// Otherwise return false.
 	return false;
 }
 

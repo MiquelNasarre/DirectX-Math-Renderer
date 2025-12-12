@@ -31,7 +31,8 @@ Tester::Tester()
 		Vector3f( 1.f,-1.f,-1.f),
 	};
 
-	Vector3i triangles[12] = {
+	Vector3i triangles[12] = 
+	{
 		Vector3i(0, 1, 2),
 		Vector3i(2, 3, 0),
 		Vector3i(4, 5, 6),
@@ -46,8 +47,32 @@ Tester::Tester()
 		Vector3i(2, 5, 6),
 	};
 
+	Color colors[12] =
+	{
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+		Color(255,255,255,128),
+	};
+
 	torus.create(new SURFACE_SHAPE(_PARAMETRIC, thorus, { 0.f,0.f }, { 2.f * MATH_PI,2.f * MATH_PI }));
-	poli.create(vertexs, triangles, 12);
+	poli.create(vertexs, triangles, 12, colors, false, true);
+
+	Image image(256, 256, Color::Green);
+	
+
+
+	back = new Background(image);
+
+	window.graphics().enableOITransparency();
 }
 
 int Tester::Run()
@@ -104,9 +129,9 @@ void Tester::eventManager()
 
 		if (!movement)
 		{
-			if (axis != window.graphics().getObserver())
+			if (axis/* != window.graphics().getObserver()*/)
 			{
-				axis = window.graphics().getObserver();
+				axis = { 0.f,1.f, 0.f };// window.graphics().getObserver();
 				int wheel = Mouse::getWheel();
 				dangle = 0.f;
 			}
@@ -116,7 +141,7 @@ void Tester::eventManager()
 		}
 		else
 		{
-			Vector3f obs = window.graphics().getObserver();
+			Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
 			Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 			Vector3f ey = (ex * obs).normalize();
 			axis = movement.y * ex - movement.x * ey;
@@ -189,9 +214,10 @@ void Tester::doFrame()
 	//curve.Draw(window.graphics);
 	//Klein.Draw(window.graphics);
 	//point.Draw(window.graphics);
+	back->Draw();
 	impl.Draw();
-	poli.Draw();
 	torus.Draw();
+	poli.Draw();
 
 	imGui.render();
 	window.graphics().pushFrame();

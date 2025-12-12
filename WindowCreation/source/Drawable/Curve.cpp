@@ -1,7 +1,6 @@
 #include "Drawable/Curve.h"
 #include "Bindable/BindableBase.h"
 
-#include "WinHeader.h"
 #include "Exception/_exDefault.h"
 
 //	Constructors
@@ -12,7 +11,7 @@ Curve::Curve(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*colo
 
 	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
-	for (UINT i = 0; i <= Npoints; i++) {
+	for (unsigned i = 0; i <= Npoints; i++) {
 		float t = rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x);
 
 		vertexs[i].position = F(t).getVector4();
@@ -21,7 +20,7 @@ Curve::Curve(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*colo
 
 	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
 
-	for (UINT i = 0; i <= Npoints; i++)
+	for (unsigned i = 0; i <= Npoints; i++)
 		indexs[i] = i;
 
 	AddBind(new VertexBuffer(vertexs, Npoints + 1));
@@ -30,7 +29,20 @@ Curve::Curve(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*colo
 	free(vertexs);
 	free(indexs);
 
-	addDefaultBinds(transparency);
+	VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"CurveVS.cso"));
+	AddBind(new PixelShader(SHADERS_DIR L"CurvePS.cso"));
+
+	INPUT_ELEMENT_DESC ied[2] =
+	{
+		{ "Position",	_4_FLOAT },
+		{ "Color",		_4_FLOAT },
+	};
+
+	AddBind(new InputLayout(ied, 2u, pvs));
+	AddBind(new Topology(LINE_STRIP));
+	AddBind(new Blender(transparency ? BLEND_MODE_OIT_WEIGHTED : BLEND_MODE_OPAQUE));
+
+	pVSCB = AddBind(new ConstantBuffer(&vscBuff, VERTEX_CONSTANT_BUFFER));
 }
 
 void Curve::updateShape(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*color)(float))
@@ -40,7 +52,7 @@ void Curve::updateShape(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, 
 
 	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
 
-	for (UINT i = 0; i <= Npoints; i++) {
+	for (unsigned i = 0; i <= Npoints; i++) {
 		float t = rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x);
 
 		vertexs[i].position = F(t).getVector4();
@@ -49,7 +61,7 @@ void Curve::updateShape(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, 
 
 	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
 
-	for (UINT i = 0; i <= Npoints; i++)
+	for (unsigned i = 0; i <= Npoints; i++)
 		indexs[i] = i;
 
 	changeBind(new VertexBuffer(vertexs, Npoints + 1), 0u);
@@ -69,7 +81,7 @@ void Curve::updateRotation(Quaternion rotation, bool multiplicative)
 		vscBuff.rotation *= rotation;
 
 	vscBuff.rotation.normalize();
-	((ConstantBuffer*)pVSCB)->Update(vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 }
 
 void Curve::updatePosition(Vector3f position, bool additive)
@@ -83,7 +95,7 @@ void Curve::updatePosition(Vector3f position, bool additive)
 		vscBuff.translation.z += position.z;
 	}
 
-	((ConstantBuffer*)pVSCB)->Update(vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 }
 
 Quaternion Curve::getRotation()
@@ -94,24 +106,4 @@ Quaternion Curve::getRotation()
 Vector3f Curve::getPosition()
 {
 	return Vector3f(vscBuff.translation.x, vscBuff.translation.y, vscBuff.translation.z);
-}
-
-//	Private
-
-void Curve::addDefaultBinds(bool transparency)
-{
-	VertexShader* pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"CurveVS.cso"));
-	AddBind(new PixelShader(SHADERS_DIR L"CurvePS.cso"));
-
-	D3D11_INPUT_ELEMENT_DESC ied[2] =
-	{
-		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
-		{ "Color",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0 },
-	};
-
-	AddBind(new InputLayout(ied, 2u, pvs->GetBytecode()));
-	AddBind(new Topology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
-	AddBind(new Blender(transparency));
-
-	pVSCB = AddBind(new ConstantBuffer(vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
 }

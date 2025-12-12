@@ -28,12 +28,13 @@ struct SURFACE_SHAPE
 
 	//	Coordinates
 
-	Vector2f minRect, maxRect;
-	unsigned numU, numV;
+	Vector2f minRect = {}, maxRect = {};
+	unsigned numU = 0u, numV = 0u;
 
-	unsigned ICOSPHERE_DEPHT;
+	unsigned ICOSPHERE_DEPHT = 0u;
+	bool grid_type = false;
 
-	Vector3f minCube, maxCube;
+	Vector3f minCube = {}, maxCube = {};
 
 	//	Constructors
 

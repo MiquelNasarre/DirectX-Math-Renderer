@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "Drawable/Surface.h"
 #include "Drawable/Background.h"
+#include "Timer.h"
 
 struct IG_DATA {
 	static float EARTH_THETA;

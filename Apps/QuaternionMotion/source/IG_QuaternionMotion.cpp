@@ -6,7 +6,7 @@
 DRAG_TYPE	IG_DATA::TYPE			= DYNAMIC_SPACE;
 SHAPE		IG_DATA::FIGURE			= SQUARE;
 int			IG_DATA::UPDATE_LIGHT	= -1;
-float		IG_DATA::THETA			= pi / 2.f;
+float		IG_DATA::THETA			= MATH_PI / 2.f;
 float		IG_DATA::PHI			= 0.f;
 
 IG_DATA::lightsource* IG_DATA::LIGHTS = (IG_DATA::lightsource*)calloc(sizeof(IG_DATA::lightsource), 8);
@@ -48,9 +48,9 @@ void IG_QuaternionMotion::doLightEditor(int& id)
 		ImGui::SetCursorPos(ImVec2(290, 340));
 		if (ImGui::Button("Delete", ImVec2(80, 45))) {
 			IG_DATA::LIGHTS[id].is_on = false;
-			IG_DATA::LIGHTS[id].position = { 0.f,0.f,0.f,0.f };
-			IG_DATA::LIGHTS[id].intensities = { 0.f,0.f,0.f,0.f };
-			IG_DATA::LIGHTS[id].color = { 0.f,0.f,0.f,0.f };
+			IG_DATA::LIGHTS[id].position = {};
+			IG_DATA::LIGHTS[id].intensities = {};
+			IG_DATA::LIGHTS[id].color = {};
 			IG_DATA::UPDATE_LIGHT = id;
 			id = -1;
 		}
@@ -140,19 +140,19 @@ void IG_QuaternionMotion::render()
 					free(IG_DATA::LIGHTS);
 					IG_DATA::LIGHTS = (IG_DATA::lightsource*)calloc(8, sizeof(IG_DATA::lightsource));
 					IG_DATA::LIGHTS[0].is_on = true;
-					IG_DATA::LIGHTS[0].color = Color(255,51,51,255).getColor4();
+					IG_DATA::LIGHTS[0].color = Color(255,51,51,255);
 					IG_DATA::LIGHTS[0].intensities = { 60.f,10.f };
 					IG_DATA::LIGHTS[0].position = { 0.f,8.f,8.f };
 					IG_DATA::LIGHTS[1].is_on = true;
-					IG_DATA::LIGHTS[1].color = Color(0, 255, 0, 255).getColor4();
+					IG_DATA::LIGHTS[1].color = Color(0, 255, 0, 255);
 					IG_DATA::LIGHTS[1].intensities = { 60.f,10.f };
 					IG_DATA::LIGHTS[1].position = { 0.f,-8.f,8.f };
 					IG_DATA::LIGHTS[2].is_on = true;
-					IG_DATA::LIGHTS[2].color = Color(127, 0, 255, 255).getColor4();
+					IG_DATA::LIGHTS[2].color = Color(127, 0, 255, 255);
 					IG_DATA::LIGHTS[2].intensities = { 60.f,10.f };
 					IG_DATA::LIGHTS[2].position = { -8.f,0.f,-8.f };
 					IG_DATA::LIGHTS[3].is_on = true;
-					IG_DATA::LIGHTS[3].color = Color(255, 255, 0, 255).getColor4();
+					IG_DATA::LIGHTS[3].color = Color(255, 255, 0, 255);
 					IG_DATA::LIGHTS[3].intensities = { 60.f,10.f };
 					IG_DATA::LIGHTS[3].position = { 8.f,0.f,8.f };
 

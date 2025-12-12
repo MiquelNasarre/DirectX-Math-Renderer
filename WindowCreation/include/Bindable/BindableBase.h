@@ -9,7 +9,7 @@ To be included in any drawable that might use most or all of them.
 -------------------------------------------------------------------------------------------------------
 */
 
-#include "Bindable/ConstantBuffers.h"	// Constant buffers for pixel or vertex shaders
+#include "Bindable/ConstantBuffer.h"	// Constant buffers for pixel or vertex shaders
 #include "Bindable/VertexBuffer.h"		// Vertex buffer bindable
 #include "Bindable/IndexBuffer.h"		// Index buffer bindable
 #include "Bindable/VertexShader.h"		// Vertex Shader bindable

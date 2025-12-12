@@ -1,7 +1,6 @@
 #include "Drawable/Background.h"
 #include "Bindable/BindableBase.h"
 
-#include "WinHeader.h"
 #include "Exception/_exGraphics.h"
 
 Background::Background(Image& texture, bool MakeDynamic, PROJECTION_TYPES ProjectionType)
@@ -13,7 +12,7 @@ Background::Background(Image& texture, bool MakeDynamic, PROJECTION_TYPES Projec
 
 	AddBind(new Texture(texture));
 
-	AddBind(new Sampler(D3D11_FILTER_MIN_MAG_MIP_LINEAR));
+	AddBind(new Sampler(SAMPLE_FILTER_LINEAR, SAMPLE_ADDRESS_WRAP));
 
 	_float4vector vertexs[4] = {
 		{ -1.f,-1.f,1.f,1.f },
@@ -31,13 +30,14 @@ Background::Background(Image& texture, bool MakeDynamic, PROJECTION_TYPES Projec
 	VertexShader* pvs;
 
 	if (!MakeDynamic) {
-		pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"BackgroundVS.cso"));
+		pvs = AddBind(new VertexShader(SHADERS_DIR L"BackgroundVS.cso"));
 		AddBind(new PixelShader(SHADERS_DIR L"BackgroundPS.cso"));
 
-		vscBuff = AddBind(new ConstantBuffer(_float4vector{ 0.f,0.f,1.f,1.f }, VERTEX_CONSTANT_BUFFER_TYPE));
+		_float4vector initial{ 0.f,0.f,1.f,1.f };
+		vscBuff = AddBind(new ConstantBuffer(&initial, VERTEX_CONSTANT_BUFFER));
 	}
 	else {
-		pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"DynamicBgVS.cso"));
+		pvs = AddBind(new VertexShader(SHADERS_DIR L"DynamicBgVS.cso"));
 
 		if (ProjectionType == PT_MERCATOR)
 			AddBind(new PixelShader(SHADERS_DIR L"DyBgMercatorPS.cso"));
@@ -46,22 +46,23 @@ Background::Background(Image& texture, bool MakeDynamic, PROJECTION_TYPES Projec
 		else
 			throw INFO_EXCEPT("This Projection Type is not suported by the dynamic bacground");
 
-		pscBuff0 = AddBind(new ConstantBuffer(pscBuff0, PIXEL_CONSTANT_BUFFER_TYPE));
-		pscBuff1 = AddBind(new ConstantBuffer(_float4vector(), PIXEL_CONSTANT_BUFFER_TYPE, 1u));
+		_float4vector v = {};
+		pscBuff0 = AddBind(new ConstantBuffer(&pscBuff0, PIXEL_CONSTANT_BUFFER));
+		pscBuff1 = AddBind(new ConstantBuffer(&v, PIXEL_CONSTANT_BUFFER, 1u));
 	}
 
-	AddBind(new Topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+	AddBind(new Topology(TRIANGLE_LIST));
 
-	D3D11_INPUT_ELEMENT_DESC ied[1] =
+	INPUT_ELEMENT_DESC ied[1] =
 	{
-		{ "Position",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "Position", _4_FLOAT },
 	};
 
-	AddBind(new InputLayout(ied, 1u, pvs->GetBytecode()));
+	AddBind(new InputLayout(ied, 1u, pvs));
 
 	AddBind(new Rasterizer(false));
 
-	AddBind(new Blender(false));
+	AddBind(new Blender(BLEND_MODE_OPAQUE));
 }
 
 void Background::updateTexture(Image& texture)
@@ -77,7 +78,7 @@ void Background::updateObserver(Vector3f obs)
 	cBuff0.obs = obs.normalize().getVector4();
 	cBuff0.ei = Vector3f(obs.y, -obs.x, 0.f).normalize().getVector4();
 	cBuff0.zp = (obs * Vector3f(obs.y, -obs.x, 0.f)).normalize().getVector4();
-	((ConstantBuffer*)pscBuff0)->Update(cBuff0);
+	((ConstantBuffer*)pscBuff0)->update(&cBuff0);
 }
 
 void Background::updateWideness(float FOV, Vector2f WindowDimensions)
@@ -85,7 +86,8 @@ void Background::updateWideness(float FOV, Vector2f WindowDimensions)
 	if (!pscBuff1)
 		throw INFO_EXCEPT("Not possible to call updateWideness() on a non dynamic background!!");
 
-	((ConstantBuffer*)pscBuff1)->Update(Vector3f(FOV, WindowDimensions.x, WindowDimensions.y).getVector4());
+	_float4vector wideness = Vector3f(FOV, WindowDimensions.x, WindowDimensions.y).getVector4();
+	((ConstantBuffer*)pscBuff1)->update(&wideness);
 }
 
 void Background::updateRectangle(_float4vector rectangle)
@@ -93,5 +95,5 @@ void Background::updateRectangle(_float4vector rectangle)
 	if (!vscBuff)
 		throw INFO_EXCEPT("Not possible to call updateRectangle() on a dynamic background!!");
 
-	((ConstantBuffer*)vscBuff)->Update(rectangle);
+	((ConstantBuffer*)vscBuff)->update(&rectangle);
 }

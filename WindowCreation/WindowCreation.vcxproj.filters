@@ -60,7 +60,7 @@
     <ClCompile Include="source\Window.cpp">
       <Filter>Sources\Private</Filter>
     </ClCompile>
-    <ClCompile Include="source\Bindable\ConstantBuffers.cpp">
+    <ClCompile Include="source\Bindable\ConstantBuffer.cpp">
       <Filter>Sources\Private\Bindable</Filter>
     </ClCompile>
     <ClCompile Include="source\Bindable\IndexBuffer.cpp">
@@ -149,7 +149,7 @@
     <ClInclude Include="include\Bindable\BindableBase.h">
       <Filter>Sources\Public\Bindable</Filter>
     </ClInclude>
-    <ClInclude Include="include\Bindable\ConstantBuffers.h">
+    <ClInclude Include="include\Bindable\ConstantBuffer.h">
       <Filter>Sources\Public\Bindable</Filter>
     </ClInclude>
     <ClInclude Include="include\Bindable\IndexBuffer.h">
@@ -220,16 +220,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\TriangleVS.hlsl">
+    <FxCompile Include="Shaders\PolihedronVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\TrianglePS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\SpherePS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\SphereVS.hlsl">
+    <FxCompile Include="Shaders\PolihedronPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\SurfacePS.hlsl">
@@ -289,6 +283,15 @@
     <FxCompile Include="Shaders\PointVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\OITresolveVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\OITresolvePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\oitPolihedronPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\Icon.ico">
@@ -297,6 +300,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Quaternion.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Perspective.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

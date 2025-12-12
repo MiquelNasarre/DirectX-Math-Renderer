@@ -12,16 +12,19 @@ according to the colors distances and alpha value.
 */
 
 // Enumerator that defines the blending mode used by the blender.
-typedef enum BLEND_MODE
+enum BLEND_MODE
 {
-	BLEND_MODE_OPAQUE = 0,			// Opaque surfaces
-	BLEND_MODE_ALPHA = 1,			// Standard alpha blending
-	BLEND_MODE_ADDITIVE = 2,		// Additive blending
-	BLEND_MODE_OIT_WEIGHTED = 3,	// Order Independent Transparency
+	BLEND_MODE_OPAQUE,			// Opaque surfaces
+	BLEND_MODE_ALPHA,			// Standard alpha blending
+	BLEND_MODE_ADDITIVE,		// Additive blending
+	BLEND_MODE_OIT_WEIGHTED,	// Order Independent Transparency
 };
 
+// Blender bindable, decides how the colors are blended in the screen by the current drawable.
 class Blender : public Bindable
 {
+	// Needs to acces the blending mode.
+	friend class Drawable;
 public:
 	// Takes the blending mode as an input and creates the blending state accordingly.
 	Blender(BLEND_MODE mode);
@@ -33,6 +36,9 @@ public:
 	void Bind() override;
 
 private:
+	// To be called by the draw call to check for OIT.
+	BLEND_MODE getMode();
+
 	// Pointer to the internal Blender data.
 	void* BindableData = nullptr;
 };

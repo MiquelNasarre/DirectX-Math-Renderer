@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "Drawable/Surface.h"
 #include "Drawable/Polihedron.h"
+#include "IG_QuaternionMotion.h"
 
 enum DRAG_TYPE
 {
@@ -31,9 +32,9 @@ struct IG_DATA {
 
 	struct lightsource {
 		bool is_on;
-		_float4vector intensities;
-		_float4color color;
-		_float4vector position;
+		Vector2f intensities;
+		Color color;
+		Vector3f position;
 	};
 
 	static lightsource* LIGHTS;
@@ -43,6 +44,7 @@ struct IG_DATA {
 class QuaternionMotion {
 private:
 	Window window;
+	IG_QuaternionMotion imGui;
 
 	float scale = 280.f;
 	Vector3f center   = { 0.f, 0.f, 0.f };
@@ -51,8 +53,8 @@ private:
 	Vector3f axis = Vector3f(1.f, -1.f, 1.f);
 	float dangle = 0.01f;
 
-	Vector2i lastPos;
-	bool dragging;
+	Vector2i lastPos = {};
+	bool dragging = false;
 
 	//	Forced return
 

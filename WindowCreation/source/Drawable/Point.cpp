@@ -1,11 +1,6 @@
 #include "Drawable/Point.h"
 #include "Bindable/BindableBase.h"
 
-#include "Graphics.h"
-#include "WinHeader.h"
-
-#include <math.h>
-
 Point::Point(Vector3f position, float radius, Color color)
 {
 	unsigned depth = 4;
@@ -26,11 +21,11 @@ Point::Point(Vector3f position, float radius, Color color)
 		int a2;
 	};
 
-	Vector3f* vertexs = (Vector3f*)calloc(V, sizeof(Vector3f));
-	arista* aristas = (arista*)calloc(A, sizeof(arista));
-	triangle* triangles = (triangle*)calloc(C, sizeof(triangle));
+	Vector3f* vertexs = new Vector3f[V];
+	arista* aristas = new arista[A];
+	triangle* triangles = new triangle[C];
 
-	float gold = (1.f + sqrtf(5)) / 2.f;
+	float gold = (1.f + 2.2360679775f) / 2.f; // Golden Ratio
 
 	vertexs[0] = { 0.f, 1.f, gold };
 	vertexs[1] = { 0.f, 1.f,-gold };
@@ -102,15 +97,15 @@ Point::Point(Vector3f position, float radius, Color color)
 	unsigned int pV;
 	unsigned int pC;
 	unsigned int pA;
-	triangle* ptriangles = NULL;
-	arista* paristas = NULL;
-	Vector3f* pvertexs = NULL;
+	triangle* ptriangles = nullptr;
+	arista* paristas = nullptr;
+	Vector3f* pvertexs = nullptr;
 
 	while (currentdepth < depth)
 	{
-		if (ptriangles) free(ptriangles);
-		if (paristas)	free(paristas);
-		if (pvertexs)	free(pvertexs);
+		if (ptriangles) delete[] ptriangles;
+		if (paristas)	delete[] paristas;
+		if (pvertexs)	delete[] pvertexs;
 
 		pV = V;
 		pC = C;
@@ -124,28 +119,28 @@ Point::Point(Vector3f position, float radius, Color color)
 		A *= 4;
 		C *= 4;
 
-		vertexs = (Vector3f*)calloc(V, sizeof(Vector3f));
-		aristas = (arista*)calloc(A, sizeof(arista));
-		triangles = (triangle*)calloc(C, sizeof(triangle));
+		vertexs = new Vector3f[V];
+		aristas = new arista[A];
+		triangles = new triangle[C];
 
-		for (unsigned int i = 0; i < pV; i++)
+		for (unsigned i = 0; i < pV; i++)
 			vertexs[i] = pvertexs[i];
 
-		for (unsigned int i = 0; i < pA; i++)
+		for (unsigned i = 0; i < pA; i++)
 		{
 			vertexs[pV + i] = (vertexs[paristas[i].v0] + vertexs[paristas[i].v1]) / 2.f;
 			aristas[2 * i] = { paristas[i].v0, pV + i };
 			aristas[2 * i + 1] = { pV + i, paristas[i].v1 };
 		}
 
-		for (unsigned int i = 0; i < pC; i++)
+		for (unsigned i = 0; i < pC; i++)
 		{
-			unsigned int aris0 = abs(ptriangles[i].a0) - 1;
-			bool ornt0 = (ptriangles[i].a0 > 0) ? true : false;
-			unsigned int aris1 = abs(ptriangles[i].a1) - 1;
-			bool ornt1 = (ptriangles[i].a1 > 0) ? true : false;
-			unsigned int aris2 = abs(ptriangles[i].a2) - 1;
-			bool ornt2 = (ptriangles[i].a2 > 0) ? true : false;
+			unsigned aris0 = (ptriangles[i].a0 > 0) ? ptriangles[i].a0 - 1 : -ptriangles[i].a0 - 1;
+			bool ornt0 = (ptriangles[i].a0 > 0);
+			unsigned aris1 = (ptriangles[i].a1 > 0) ? ptriangles[i].a1 - 1 : -ptriangles[i].a1 - 1;
+			bool ornt1 = (ptriangles[i].a1 > 0);
+			unsigned aris2 = (ptriangles[i].a2 > 0) ? ptriangles[i].a2 - 1 : -ptriangles[i].a2 - 1;
+			bool ornt2 = (ptriangles[i].a2 > 0);
 
 			aristas[2 * pA + 3 * i] = { aristas[2 * aris0].v1, aristas[2 * aris1].v1 };
 			aristas[2 * pA + 3 * i + 1] = { aristas[2 * aris1].v1, aristas[2 * aris2].v1 };
@@ -183,20 +178,20 @@ Point::Point(Vector3f position, float radius, Color color)
 		}
 	}
 
-	if (ptriangles) free(ptriangles);
-	if (paristas)	free(paristas);
-	if (pvertexs)	free(pvertexs);
+	if (ptriangles) delete[] ptriangles;
+	if (paristas)	delete[] paristas;
+	if (pvertexs)	delete[] pvertexs;
 
-	unsigned int* indexs = (unsigned int*)calloc(3 * C, sizeof(unsigned int));
+	unsigned* indexs = new unsigned[3 * C];
 
 	for (unsigned int i = 0; i < C; i++)
 	{
-		unsigned int aris0 = abs(triangles[i].a0) - 1;
-		bool ornt0 = (triangles[i].a0 > 0) ? true : false;
-		unsigned int aris1 = abs(triangles[i].a1) - 1;
-		bool ornt1 = (triangles[i].a1 > 0) ? true : false;
-		unsigned int aris2 = abs(triangles[i].a2) - 1;
-		bool ornt2 = (triangles[i].a2 > 0) ? true : false;
+		unsigned aris0 = (triangles[i].a0 > 0) ? triangles[i].a0 - 1 : -triangles[i].a0 - 1;
+		bool ornt0 = (triangles[i].a0 > 0);
+		unsigned aris1 = (triangles[i].a1 > 0) ? triangles[i].a1 - 1 : -triangles[i].a1 - 1;
+		bool ornt1 = (triangles[i].a1 > 0);
+		unsigned aris2 = (triangles[i].a2 > 0) ? triangles[i].a2 - 1 : -triangles[i].a2 - 1;
+		bool ornt2 = (triangles[i].a2 > 0);
 
 		indexs[3 * i] = ornt0 ? aristas[aris0].v0 : aristas[aris0].v1;
 		indexs[3 * i + 1] = ornt1 ? aristas[aris1].v0 : aristas[aris1].v1;
@@ -209,42 +204,45 @@ Point::Point(Vector3f position, float radius, Color color)
 	AddBind(new VertexBuffer(vertexs, V));
 	AddBind(new IndexBuffer(indexs, 3 * C));
 
-	VertexShader* pvs = (VertexShader*)AddBind(new VertexShader(SHADERS_DIR L"PointVS.cso"));
+	delete[] vertexs;
+	delete[] indexs;
+
+	VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"PointVS.cso"));
 	AddBind(new PixelShader(SHADERS_DIR L"PointPS.cso"));
 
-	D3D11_INPUT_ELEMENT_DESC ied[1] =
+	INPUT_ELEMENT_DESC ied[1] =
 	{
-		{ "Normal",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "Normal", _4_FLOAT },
 	};
 
-	AddBind(new InputLayout(ied, 1u, pvs->GetBytecode()));
-	AddBind(new Topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+	AddBind(new InputLayout(ied, 1u, pvs));
+	AddBind(new Topology(TRIANGLE_LIST));
 	AddBind(new Rasterizer(false));
-	AddBind(new Blender(color.A != 255));
+	AddBind(new Blender(color.A != 255 ? BLEND_MODE_OIT_WEIGHTED : BLEND_MODE_OPAQUE));
 
 	vscBuff = { position.getVector4(), 1.f, radius, 1.f };
 	pscBuff = { color.getColor4() };
 
-	pVSCB = AddBind(new ConstantBuffer(vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
-	pPSCB = AddBind(new ConstantBuffer(pscBuff, PIXEL_CONSTANT_BUFFER_TYPE));
+	pVSCB = AddBind(new ConstantBuffer(&vscBuff, VERTEX_CONSTANT_BUFFER));
+	pPSCB = AddBind(new ConstantBuffer(&pscBuff, PIXEL_CONSTANT_BUFFER));
 }
 
 void Point::updatePosition(Vector3f position)
 {
 	vscBuff.position = position.getVector4();
-	((ConstantBuffer*)pVSCB)->Update(&vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 }
 
 void Point::updateRadius(float radius)
 {
 	vscBuff.radius = radius;
-	((ConstantBuffer*)pVSCB)->Update(&vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 }
 
 void Point::updateColor(Color col)
 {
 	pscBuff.color = col.getColor4();
-	((ConstantBuffer*)pPSCB)->Update(&pscBuff);
+	((ConstantBuffer*)pPSCB)->update(&pscBuff);
 }
 
 void Point::updateRotation(Quaternion rotation, bool multiplicative)
@@ -255,13 +253,13 @@ void Point::updateRotation(Quaternion rotation, bool multiplicative)
 		vscBuff.rotation *= rotation;
 
 	vscBuff.rotation.normalize();
-	((ConstantBuffer*)pVSCB)->Update(vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 }
 
 void Point::Draw(Window& _w)
 {
 	vscBuff.scale = _w.graphics().getScale();
-	((ConstantBuffer*)pVSCB)->Update(&vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 
 	_draw();
 }

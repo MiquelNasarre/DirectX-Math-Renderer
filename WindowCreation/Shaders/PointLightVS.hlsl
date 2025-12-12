@@ -1,3 +1,4 @@
+#include "Quaternion.hlsli"
 
 struct VSOut
 {
@@ -25,8 +26,8 @@ VSOut main(float2 pos : Reference, float intensity : Intensity)
     
     VSOut vso;
     vso.intensity = intensity;
-    float4 test = mul(position + (e1 * pos.x + e2 * pos.y) * radius - center, projection);
-    vso.SCpos = float4(test.x, test.y, test.z / 10000000.f + 0.5f, 1.f);
+    float4 obs = mul(position + (e1 * pos.x + e2 * pos.y) * radius - center, projection);
+    vso.SCpos = float4(obs.x, obs.y, z_trans(obs.z), 1.f);
     
     return vso;
 }

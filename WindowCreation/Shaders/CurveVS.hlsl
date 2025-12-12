@@ -1,10 +1,4 @@
-#include "Quaternion.hlsli"
-
-cbuffer Cbuff0 : register(b0)
-{
-    matrix projection;
-    float4 center;
-};
+#include "Perspective.hlsli"
 
 cbuffer Cbuff1 : register(b1)
 {
@@ -23,7 +17,7 @@ VSOut main( float3 pos : Position, float4 color : Color)
     VSOut vso;
     vso.color = color;
     float4 R3Pos = Q2V(qRot(quaternion, float4(0, pos))) + traslation;
-    float4 test = mul(R3Pos - center, projection);
-    vso.SCpos = float4(test.x, test.y, test.z / 10000000.f + 0.5, 1.f);
+    
+    vso.SCpos = R3toScreenPos(R3Pos);
 	return vso;
 }

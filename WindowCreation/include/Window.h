@@ -25,6 +25,7 @@ class Window
 {
 	// Class that handles the user updates to the window.
 	friend class MSGHandlePipeline;
+	friend class Graphics;
 	friend class iGManager;
 private:
 	static inline unsigned next_id = 1u;	// Stores the next ID assigned to a window
@@ -101,6 +102,10 @@ private:
 	// Waits for a certain amount of time to keep the window
 	// running stable at the desired framerate.
 	static void handleFramerate();
+
+	// Returns adress to the pointer to the iGManager bound to the window.
+	// This is to be accessed by the iGManager and set the data accordingly.
+	void** imGuiPtrAdress();
 
 	// Contains the internal data used by the window.
 	void* WindowData = nullptr;

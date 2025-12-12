@@ -107,13 +107,13 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 	AddBind(index_buff);
 
 	AddBind(new Topology(TRIANGLE_LIST));
-	AddBind(new Rasterizer(true));
-	AddBind(new Blender(sc.transparency));
+	AddBind(new Rasterizer(true, ss->grid_type));
+	AddBind(new Blender(sc.transparency ? BLEND_MODE_OIT_WEIGHTED : BLEND_MODE_OPAQUE));
 
-	pVSCB = AddBind(new ConstantBuffer(vscBuff, VERTEX_CONSTANT_BUFFER_TYPE));
+	pVSCB = AddBind(new ConstantBuffer(&vscBuff, VERTEX_CONSTANT_BUFFER));
 
 	pscBuffc.color = sc.color.getColor4();
-	pPSCBc = AddBind(new ConstantBuffer(pscBuffc, PIXEL_CONSTANT_BUFFER_TYPE, 1u));
+	pPSCBc = AddBind(new ConstantBuffer(&pscBuffc, PIXEL_CONSTANT_BUFFER, 1u));
 
 	if (sc.Textured)
 	{
@@ -138,7 +138,7 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 				for (int i = 0; i < 8; i++)
 					pscBuff.lightsource[i] = sc.lightsource[i];
 			}
-			pPSCB = AddBind(new ConstantBuffer(pscBuff, PIXEL_CONSTANT_BUFFER_TYPE));
+			pPSCB = AddBind(new ConstantBuffer(&pscBuff, PIXEL_CONSTANT_BUFFER));
 		}
 		else
 		{
@@ -180,7 +180,7 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 				for (int i = 0; i < 8; i++)
 					pscBuff.lightsource[i] = sc.lightsource[i];
 			}
-			pPSCB = AddBind(new ConstantBuffer(pscBuff, PIXEL_CONSTANT_BUFFER_TYPE));
+			pPSCB = AddBind(new ConstantBuffer(&pscBuff, PIXEL_CONSTANT_BUFFER));
 		}
 		else
 		{
@@ -211,7 +211,7 @@ void Surface::updateRotation(Quaternion rotation, bool multiplicative)
 		vscBuff.rotation *= rotation;
 
 	vscBuff.rotation.normalize();
-	((ConstantBuffer*)pVSCB)->Update(vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 }
 
 void Surface::updatePosition(Vector3f position, bool additive)
@@ -225,7 +225,7 @@ void Surface::updatePosition(Vector3f position, bool additive)
 		vscBuff.translation.z += position.z;
 	}
 
-	((ConstantBuffer*)pVSCB)->Update(vscBuff);
+	((ConstantBuffer*)pVSCB)->update(&vscBuff);
 }
 
 void Surface::updateTexture(unsigned id, Image& image)
@@ -253,13 +253,13 @@ void Surface::updateLight(unsigned id, Vector2f intensity, Color color, Vector3f
 		throw INFO_EXCEPT("You cannot call a light update in a surface that wasn't initialized as lighted");
 
 	pscBuff.lightsource[id] = { intensity.getVector4() , color.getColor4() , position.getVector4() };
-	((ConstantBuffer*)pPSCB)->Update(pscBuff);
+	((ConstantBuffer*)pPSCB)->update(&pscBuff);
 }
 
 void Surface::clearLights()
 {
 	pscBuff = {};
-	((ConstantBuffer*)pPSCB)->Update(pscBuff);
+	((ConstantBuffer*)pPSCB)->update(&pscBuff);
 }
 
 void Surface::updateShape(SURFACE_SHAPE* ss)
@@ -282,7 +282,7 @@ void Surface::updateColor(Color color)
 	sc.color = color;
 	pscBuffc.color = color.getColor4();
 
-	((ConstantBuffer*)pPSCBc)->Update(pscBuffc);
+	((ConstantBuffer*)pPSCBc)->update(&pscBuffc);
 }
 
 Quaternion Surface::getRotation()

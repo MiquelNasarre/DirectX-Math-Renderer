@@ -39,10 +39,20 @@ protected:
 	// Boolean to make sure the drawable has been initialized.
 	bool isInit = false;
 
-	// Internal draw function, to be called by ahy overwriting of the
+	// Internal draw function, to be called by any overwriting of the
 	// main Draw() function, iterates through the bindable objects
 	// list and once all are bind, issues a draw call to the window.
 	void _draw() const;
+
+	// Templated AddBind, helper to return the original class pointer.
+	// Adds a new bindable to the bindable list of the object. For proper
+	// memory management the bindable sent to this function must be allocated
+	// using new(), and the deletion must be left to the drawable management.
+	template <class BindableType>
+	inline BindableType* AddBind(BindableType* bind)
+	{
+		return (BindableType*)AddBind((Bindable*)bind);
+	}
 
 	// Adds a new bindable to the bindable list of the object. For proper
 	// memory management the bindable sent to this function must be allocated

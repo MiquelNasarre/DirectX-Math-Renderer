@@ -16,8 +16,6 @@ public:
 
 private:
 
-	void addDefaultBinds(bool transparency);
-
 	struct Vertex {
 		_float4vector position;
 		_float4color color;

@@ -80,6 +80,9 @@ struct POLIHEDRON_DESC
 
 	// IF true renders only the aristas of the Polihedron.
 	bool wire_frame_topology = false;
+
+	// Uses a nearest point sampler instead of a linear one.
+	bool pixelated_texture = false;
 };
 
 class Polihedron : public Drawable
@@ -110,7 +113,7 @@ public:
 	// current vertex texture coordinates for the new ones specified. It expects a valid 
 	// pointer with a list of pixels containing one coordinates per every vertex of every
 	// triangle. Three times the triangle count.
-	void undateTextureCoordinates(const Vector2i* texture_coordinates_list);
+	void updateTextureCoordinates(const Vector2i* texture_coordinates_list);
 
 	// If the coloring is set to global, updates the global Polihedron color.
 	void updateGlobalColor(Color color);

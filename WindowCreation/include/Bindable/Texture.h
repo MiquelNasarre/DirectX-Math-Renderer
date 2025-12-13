@@ -23,13 +23,21 @@ https://learn.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11
 -------------------------------------------------------------------------------------------------------
 */
 
+// Usage specifier, if the Drawable intends to update the Texture, this can be done from 
+// the Texture class itself without needing to replace it, set to dynamic if intended.
+enum TEXTURE_USAGE
+{
+	TEXTURE_USAGE_DEFAULT,
+	TEXTURE_USAGE_DYNAMIC,
+};
+
 // Texture bindable class, from an Image it creates a texture and sends it to the GPU to 
 // be red by the Pixel Shader at the specified slot.
 class Texture : public Bindable
 {
 public:
-	// Takes the Images reference and creates the texture in the GPU.
-	Texture(Image& image, unsigned slot = 0u);
+	// Expects a valid image pointer and creates the texture in the GPU.
+	Texture(Image* image, TEXTURE_USAGE usage = TEXTURE_USAGE_DEFAULT, unsigned slot = 0u);
 
 	// Releases the GPU pointer and deletes the data.
 	~Texture() override;
@@ -39,6 +47,10 @@ public:
 
 	// Sets the slot at which the Texture will be bound.
 	void setSlot(unsigned slot);
+
+	// If usage is dynamic updates the texture with the new image.
+	// Dimensions must match the initial image dimensions.
+	void update(Image* image);
 
 private:
 	// Pointer to the internal Texture data.

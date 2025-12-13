@@ -10,7 +10,7 @@ VSOut main(float2 pos : Position)
     VSOut vso;
 
     vso.TXpos = float4((pos.x + 1.f) / 2.f, (-pos.y + 1.f) / 2.f, 0.f, 0.5f);
-    vso.SCpos = float4(pos.x, pos.y, 0.f, 1.f);
+    vso.SCpos = float4(pos.xy, 0.f, 1.f);
     
     return vso;
 }

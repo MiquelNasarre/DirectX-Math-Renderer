@@ -1,7 +1,7 @@
 
 cbuffer cBuff : register(b1)
 {
-    float4 tex;
+    float4 rect;
 }
 
 struct VSOut
@@ -10,20 +10,13 @@ struct VSOut
     float4 pos : SV_Position;
 };
 
-VSOut main(float2 pos : Position)
+VSOut main(float4 pos : Position)
 {
     VSOut vso;
     
-    if (pos.x == -1.f)
-        vso.tex.x = tex.r;
-    else 
-        vso.tex.x = tex.b;
+    vso.tex.x = (pos.x == -1.f) ? rect.r : rect.b;
+    vso.tex.y = (pos.y == +1.f) ? rect.g : rect.a;
     
-    if (pos.y == 1.f)
-        vso.tex.y = tex.g;
-    else
-        vso.tex.y = tex.a;
-    
-    vso.pos = float4(pos, 1.f, 1.f);
+    vso.pos = pos;
     return vso;
 }

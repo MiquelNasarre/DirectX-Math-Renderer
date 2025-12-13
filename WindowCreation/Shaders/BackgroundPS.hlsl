@@ -1,9 +1,8 @@
 
-Texture2D tex : register(t0);
+Texture2D backgrd : register(t0);
+SamplerState splr : register(s0);
 
-SamplerState splr;
-
-float4 main(float2 tc : TexCoord) : SV_Target
+float4 main(float2 tex : TexCoord) : SV_Target
 {
-    return tex.Sample(splr, tc);
+    return backgrd.Sample(splr, tex);
 }

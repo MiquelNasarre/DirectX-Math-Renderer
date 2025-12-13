@@ -24,6 +24,9 @@
     <ClInclude Include="include\IG_QuaternionMotion.h">
       <Filter>Sources\Public</Filter>
     </ClInclude>
+    <ClInclude Include="include\chatGPTmeshes.h">
+      <Filter>Sources\Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\WinMain.cpp">

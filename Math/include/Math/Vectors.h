@@ -102,6 +102,7 @@ struct Vector2i {
 	Vector2i(double x, double y);
 	Vector2i(float x, float y);
 	Vector2i(int x, int y);
+	Vector2i(unsigned x, unsigned y) { this->x = x; this->y = y; }
 	Vector2i(const Vector2f& other);
 	Vector2i(const Vector2d& other);
 
@@ -242,6 +243,7 @@ struct Vector3i {
 	Vector3i(double x, double y, double z);
 	Vector3i(float x, float y, float z);
 	Vector3i(int x, int y, int z);
+	Vector3i(unsigned x, unsigned y, unsigned z) { this->x = x; this->y = y; this->z = z; }
 	Vector3i(const Vector3f& other);
 	Vector3i(const Vector3d& other);
 

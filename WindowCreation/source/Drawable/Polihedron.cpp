@@ -112,10 +112,10 @@ Polihedron::~Polihedron()
 void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 {
 	if (!pDesc)
-		throw INFO_EXCEPT("Trying to initialize a Polihedron with an invalid descriptor pointer");
+		throw INFO_EXCEPT("Trying to initialize a Polihedron with an invalid descriptor pointer.");
 
 	if (isInit)
-		throw INFO_EXCEPT("Trying to initialize a Polihedron that has already been initialized");
+		throw INFO_EXCEPT("Trying to initialize a Polihedron that has already been initialized.");
 	else
 		isInit = true;
 
@@ -125,10 +125,10 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 	data.desc = *pDesc;
 
 	if (!data.desc.vertex_list)
-		throw INFO_EXCEPT("Found nullptr when trying to acces a vertex list to create a Polihedron.");
+		throw INFO_EXCEPT("Found nullptr when trying to access a vertex list to create a Polihedron.");
 
 	if (!data.desc.triangle_list)
-		throw INFO_EXCEPT("Found nullptr when trying to acces a triangle list to create a Polihedron.");
+		throw INFO_EXCEPT("Found nullptr when trying to access a triangle list to create a Polihedron.");
 
 	switch (data.desc.coloring)
 	{
@@ -165,12 +165,12 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
-				AddBind(new PixelShader(SHADERS_DIR L"OITGlobalColorPS.cso"));
+				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITGlobalColorPS.cso" : SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
-				AddBind(new PixelShader(SHADERS_DIR L"GlobalColorPS.cso"));
+				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"GlobalColorPS.cso" : SHADERS_DIR L"UnlitGlobalColorPS.cso"));
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout
@@ -190,7 +190,7 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 		case POLIHEDRON_DESC::PER_VERTEX_COLORING:
 		{
 			if (!data.desc.color_list)
-				throw INFO_EXCEPT("Found nullptr when trying to acces a color list to create a vertex colored Polihedron.");
+				throw INFO_EXCEPT("Found nullptr when trying to access a color list to create a vertex colored Polihedron.");
 
 			data.ColVertices = new PolihedronInternals::ColorVertex[3 * data.desc.triangle_count];
 
@@ -227,12 +227,12 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
-				AddBind(new PixelShader(SHADERS_DIR L"OITVertexColorPS.cso"));
+				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
-				AddBind(new PixelShader(SHADERS_DIR L"VertexColorPS.cso"));
+				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout
@@ -249,10 +249,10 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 		case POLIHEDRON_DESC::TEXTURED_COLORING:
 		{
 			if (!data.desc.texture_image)
-				throw INFO_EXCEPT("Found nullptr when trying to acces an Image to create a textured Polihedron.");
+				throw INFO_EXCEPT("Found nullptr when trying to access an Image to create a textured Polihedron.");
 
 			if (!data.desc.texture_coordinates_list)
-				throw INFO_EXCEPT("Found nullptr when trying to acces a texture coordinate list to create a textured Polihedron.");
+				throw INFO_EXCEPT("Found nullptr when trying to access a texture coordinate list to create a textured Polihedron.");
 
 			data.TexVertices = new PolihedronInternals::TextureVertex[3 * data.desc.triangle_count];
 
@@ -303,12 +303,12 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
-				AddBind(new PixelShader(SHADERS_DIR L"OITVertexTexturePS.cso"));
+				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexTexturePS.cso" : SHADERS_DIR L"OITUnlitVertexTexturePS.cso"));
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
-				AddBind(new PixelShader(SHADERS_DIR L"VertexTexturePS.cso"));
+				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexTexturePS.cso" : SHADERS_DIR L"UnlitVertexTexturePS.cso"));
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout
@@ -321,12 +321,15 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 			AddBind(new InputLayout(ied, 3u, pvs));
 
 			// Create the texture from the image
-			AddBind(new Texture(*data.desc.texture_image));
+			AddBind(new Texture(data.desc.texture_image));
 
 			// Set the sampler as linear for the texture
-			AddBind(new Sampler(SAMPLE_FILTER_LINEAR, SAMPLE_ADDRESS_WRAP));
+			AddBind(new Sampler(data.desc.pixelated_texture ? SAMPLE_FILTER_POINT : SAMPLE_FILTER_LINEAR, SAMPLE_ADDRESS_WRAP));
 			break;
 		}
+
+		default:
+			throw INFO_EXCEPT("Found an unrecognized coloring mode when trying to create a Polihedron.");
 	}
 
 	// If update enabled save a copy to update vertices
@@ -369,7 +372,7 @@ void Polihedron::updateVertices(const Vector3f* vertex_list)
 		throw INFO_EXCEPT("Trying to update the vertices on an uninitialized Polihedron");
 
 	if (!vertex_list)
-		throw INFO_EXCEPT("Trying to update the vertices with an ivalid vertex list");
+		throw INFO_EXCEPT("Trying to update the vertices with an invalid vertex list");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
@@ -457,7 +460,7 @@ void Polihedron::updateColors(const Color* color_list)
 		throw INFO_EXCEPT("Trying to update the colors on an uninitialized Polihedron");
 
 	if (!color_list)
-		throw INFO_EXCEPT("Trying to update the colors with an ivalid color list");
+		throw INFO_EXCEPT("Trying to update the colors with an invalid color list");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
@@ -478,13 +481,13 @@ void Polihedron::updateColors(const Color* color_list)
 // pointer with a list of pixels containing one coordinates per every vertex of every
 // triangle. Three times the triangle count.
 
-void Polihedron::undateTextureCoordinates(const Vector2i* texture_coordinates_list)
+void Polihedron::updateTextureCoordinates(const Vector2i* texture_coordinates_list)
 {
 	if (!isInit)
 		throw INFO_EXCEPT("Trying to update the texture coordinates on an uninitialized Polihedron");
 
 	if (!texture_coordinates_list)
-		throw INFO_EXCEPT("Trying to update the texture coordinates with an ivalid texture coordinate list");
+		throw INFO_EXCEPT("Trying to update the texture coordinates with an invalid texture coordinate list");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
@@ -530,7 +533,7 @@ void Polihedron::updateRotation(Quaternion rotation, bool multiplicative)
 
 	if (!rotation)
 		throw INFO_EXCEPT(
-			"Invalid quaternion found when trying to update rotation.\n"
+			"Invalid quaternion found when trying to update rotation on a Polihedron.\n"
 			"Quaternion 0 can not be normalized and therefore can not describe an objects rotation."
 		);
 

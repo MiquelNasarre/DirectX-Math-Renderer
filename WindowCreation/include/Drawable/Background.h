@@ -1,31 +1,36 @@
 #pragma once
 #include "Drawable.h"
-#include "Bindable/Texture.h"
 
-enum PROJECTION_TYPES {
-	PT_MERCATOR,
-	PT_AZIMUTHAL
+struct BACKGROUND_DESC
+{
+	Image* image = nullptr;
+
+	bool texture_updates = false;
+	bool make_dynamic = false;
+	bool pixelated_texture = false;
+
+	enum PROJECTION_TYPES 
+	{
+		PT_MERCATOR,
+		PT_AZIMUTHAL
+	} projection_type = PT_MERCATOR;
 };
 
 class Background : public Drawable
 {
 public:
-	Background(Image& texture, bool MakeDynamic = false, PROJECTION_TYPES ProjectionType = PT_MERCATOR);
+	Background(const BACKGROUND_DESC* pDesc = nullptr);
+	~Background();
 
-	void updateTexture(Image& texture);
-	void updateObserver(Vector3f obs);
+	void initialize(const BACKGROUND_DESC* pDesc);
+
+	void updateTexture(Image* image);
+	void updateObserver(Quaternion observer);
 	void updateWideness(float FOV, Vector2f WindowDimensions);
-	void updateRectangle(_float4vector X0_Y0_X1_Y1);
+	void updateRectangle(Vector2i min_coords, Vector2i max_coords);
+
+	Vector2i getImageDim() const;
 
 private:
-
-	struct PSconstBuffer {
-		_float4vector obs;
-		_float4vector ei;
-		_float4vector zp;
-	}cBuff0;
-
-	void* pscBuff0 = nullptr;
-	void* pscBuff1 = nullptr;
-	void* vscBuff = nullptr;
+	void* backgroundData = nullptr;
 };

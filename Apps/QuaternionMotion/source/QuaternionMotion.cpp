@@ -55,37 +55,6 @@ QuaternionMotion::QuaternionMotion()
 		Vector3i(2, 5, 6),
 	};
 
-	Color colors[12] = {
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-		Color(255,255,255, 128),
-	};
-
-	Color colors0[12] =
-	{
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-		Color(255,255,255,255),
-	};
-
 	Vector3f vertexs0[8] = {
 		Vector3f(0.f, 0.f, 1.f),
 		Vector3f(cosf(2 * 3.14159f * 0 / 6) ,-sinf(2 * 3.14159f * 0 / 6), 0.f),
@@ -112,24 +81,84 @@ QuaternionMotion::QuaternionMotion()
 		Vector3i(7, 6, 1),
 	};
 
+	Color colors[36] = {};
+
+	for (Color& c : colors)
+		c = Color(rand() % 256, rand() % 256, rand() % 256, 128);
+
 	SURFACE_SHAPE ss0 = { _EXPLICIT_ICOSPHERE, exampleRadius, 5u };
 	ss0.numU = 200u;
 	ss0.numV = 200u;
 
 	SURFACE_COLORING sc = {};
-
 	sc.color = Color(255, 255, 255, 127);
 	sc.transparency = false;
+
+	shape_0.create(&ss0, &sc);
 
 	SURFACE_SHAPE ss1 = { _PARAMETRIC, KleinBottle, Vector2f(0, 0), Vector2f(MATH_PI, 2 * MATH_PI)};
 	ss1.grid_type = true;
 	ss1.numU = 50u;
 	ss1.numV = 50u;
-	
-	shape_0.create(&ss0, &sc);
-	shape_1.create(vertexs, triangles, 12, colors);
-	shape_2.create(vertexs0, triangles0, 12, colors, false, true);
+
 	shape_3.create(&ss1, &sc);
+	
+	Image grass_tex("resources/grass_block.bmp");
+
+	Vector2i texture_coord[36] =
+	{
+		{ 16, 00 }, { 16, 16 }, { 32, 16 },
+		{ 32, 16 }, { 32, 00 }, { 16, 00 },
+
+		{ 32, 00 }, { 32, 16 }, { 48, 16 },
+		{ 48, 16 }, { 48, 00 }, { 32, 00 },
+
+		{ 00, 00 }, { 16, 00 }, { 00, 16 },
+		{ 00, 16 }, { 16, 16 }, { 16, 00 },
+
+		{ 00, 00 }, { 16, 00 }, { 00, 16 },
+		{ 00, 16 }, { 16, 16 }, { 16, 00 },
+
+		{ 00, 00 }, { 16, 00 }, { 00, 16 },
+		{ 16, 00 }, { 00, 16 }, { 16, 16 },
+
+		{ 00, 00 }, { 16, 00 }, { 00, 16 },
+		{ 16, 00 }, { 00, 16 }, { 16, 16 },
+	};
+
+#include "chatGPTmeshes.h"
+
+	//Image imageGPTv2(textureGPTv2);
+
+	POLIHEDRON_DESC desc = {};
+	desc.coloring = POLIHEDRON_DESC::TEXTURED_COLORING;
+	desc.pixelated_texture = true;
+	desc.texture_image = &grass_tex;
+	desc.texture_coordinates_list = texture_coord;
+	desc.color_list = colors;
+	desc.triangle_count = 12;
+	desc.triangle_list = triangles;
+	desc.enable_iluminated = false;
+	desc.vertex_list = vertexs;
+
+	shape_1.initialize(&desc);
+
+	POLIHEDRON_DESC desc0 = {};
+	desc0.global_color = Color(255, 255, 255, 128);
+	desc0.triangle_count = 12;
+	desc0.triangle_list = triangles0;
+	desc0.vertex_list = vertexs0;
+	desc0.enable_transparency = true;
+
+	shape_2.initialize(&desc0);
+
+	BACKGROUND_DESC backDesc = {};
+	backDesc.image = &grass_tex;
+	backDesc.pixelated_texture = true;
+	backDesc.texture_updates = false;
+
+	back.initialize(&backDesc);
+	back.updateRectangle({ 0,0 }, { 16,16 });
 
 	window.graphics().enableOITransparency();
 }
@@ -235,6 +264,7 @@ void QuaternionMotion::doFrame()
 	switch (IG_DATA::FIGURE)
 	{
 	case SQUARE:
+		back.Draw();
 		shape_1.Draw();
 		break;
 	case WEIRD_SHAPE:

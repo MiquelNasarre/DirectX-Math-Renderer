@@ -391,12 +391,12 @@ void Graphics::drawIndexed(unsigned IndexCount, bool isOIT)
 
 		// 4) Restore backbuffer as RT and default depth/blend state
 		GFX_THROW_INFO_ONLY(_context->OMSetRenderTargets(1u, data.pTarget.GetAddressOf(), data.pDSV.Get()));
-
-		// We never set a custom depth state elsewhere, so restore to default (nullptr)
-		GFX_THROW_INFO_ONLY(_context->OMSetDepthStencilState(nullptr, 0u));
 	}
 
 	else GFX_THROW_INFO_ONLY(_context->DrawIndexed(IndexCount, 0u, 0u));
+
+	// Back to default Depth Stencil State if it was changed.
+	GFX_THROW_INFO_ONLY(_context->OMSetDepthStencilState(nullptr, 0u));
 }
 
 // Simple conversion from a pixel position on screen to a (-1.0,1.0)x(-1.0,1.0) c R^2 position.
@@ -587,7 +587,7 @@ void Graphics::updatePerspective(Quaternion obs, Vector3f center, float scale)
 
 	cbuff.observer = obs.normalize();
 	cbuff.center = center.getVector4();
-	cbuff.scaling = { 1.f / WindowDim.x * scale, 1.f / WindowDim.y * scale, 1.f, 1.f };
+	cbuff.scaling = { scale / WindowDim.x, scale / WindowDim.y, scale, 0.f };
 
 	data.Perspective->update(&cbuff);
 }
@@ -640,7 +640,7 @@ void Graphics::setWindowDimensions(const Vector2i Dim)
 
 	//	Update perspective to match scaling
 
-	cbuff.scaling = { 1.f / Dim.x * Scale, 1.f / Dim.y * Scale, Scale, 0.f };
+	cbuff.scaling = { Scale / Dim.x, Scale / Dim.y, Scale, 0.f };
 
 	data.Perspective->update(&cbuff);
 
@@ -699,13 +699,6 @@ void Graphics::setWindowDimensions(const Vector2i Dim)
 	// If I was the render target reset me.
 	if (currentRenderTarget == this)
 		currentRenderTarget->setRenderTarget();
-}
-
-// Returns the current window dimensions as an interger vector.
-
-Vector2i Graphics::getWindowDimensions() const
-{
-	return WindowDim;
 }
 
 // Returns the current observer direction vector.

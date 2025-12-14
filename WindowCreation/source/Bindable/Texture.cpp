@@ -15,6 +15,7 @@ struct TextureInternals
 	Vector2i dimensions;
 	unsigned slot;
 	TEXTURE_USAGE usage;
+	TEXTURE_TYPE type;
 };
 
 /*
@@ -25,7 +26,7 @@ struct TextureInternals
 
 // Takes the Images reference and creates the texture in the GPU.
 
-Texture::Texture(Image* image, TEXTURE_USAGE usage, unsigned slot)
+Texture::Texture(Image* image, TEXTURE_USAGE usage, TEXTURE_TYPE type, unsigned slot)
 {
 	if (!image)
 		throw INFO_EXCEPT("Found nullptr when expecting an Image to create a Texture.");
@@ -34,37 +35,94 @@ Texture::Texture(Image* image, TEXTURE_USAGE usage, unsigned slot)
 	TextureInternals& data = *(TextureInternals*)BindableData;
 	data.slot = slot;
 	data.usage = usage;
+	data.type = type;
 	data.dimensions = { image->width(), image->height() };
 
-	//	Create texture resource
+	switch (type)
+	{
+	case TEXTURE_TYPE_IMAGE:
+	{
+		// Create texture resource 
 
-	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width				= image->width();
-	textureDesc.Height				= image->height();
-	textureDesc.Usage				= (usage == TEXTURE_USAGE_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
-	textureDesc.CPUAccessFlags		= (usage == TEXTURE_USAGE_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE	: 0u;
-	textureDesc.MipLevels			= 1u;
-	textureDesc.ArraySize			= 1u;
-	textureDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
-	textureDesc.SampleDesc.Count	= 1u;
-	textureDesc.SampleDesc.Quality	= 0u;
-	textureDesc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
-	textureDesc.MiscFlags			= 0u;
-	D3D11_SUBRESOURCE_DATA sd = {};
-	sd.pSysMem		= image->pixels();
-	sd.SysMemPitch	= image->width() * sizeof(Color);
+		D3D11_TEXTURE2D_DESC textureDesc = {};
+		textureDesc.Width				= image->width();
+		textureDesc.Height				= image->height();
+		textureDesc.Usage				= (usage == TEXTURE_USAGE_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+		textureDesc.CPUAccessFlags		= (usage == TEXTURE_USAGE_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0u;
+		textureDesc.MipLevels			= 1u;
+		textureDesc.ArraySize			= 1u;
+		textureDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+		textureDesc.SampleDesc.Count	= 1u;
+		textureDesc.SampleDesc.Quality	= 0u;
+		textureDesc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.MiscFlags			= 0u;
+		D3D11_SUBRESOURCE_DATA sd = {};
+		sd.pSysMem = image->pixels();
+		sd.SysMemPitch = image->width() * sizeof(Color);
 
-	GFX_THROW_INFO(_device->CreateTexture2D(&textureDesc, &sd, data.pTexture.GetAddressOf()));
+		GFX_THROW_INFO(_device->CreateTexture2D(&textureDesc, &sd, data.pTexture.GetAddressOf()));
 
-	//	Create the resource view on the texture
+		// Create the resource view on the texture
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = textureDesc.Format;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MostDetailedMip = 0u;
-	srvDesc.Texture2D.MipLevels = 1u;
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = textureDesc.Format;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MostDetailedMip = 0u;
+		srvDesc.Texture2D.MipLevels = 1u;
 
-	GFX_THROW_INFO(_device->CreateShaderResourceView(data.pTexture.Get(), &srvDesc, data.pTextureView.GetAddressOf()));
+		GFX_THROW_INFO(_device->CreateShaderResourceView(data.pTexture.Get(), &srvDesc, data.pTextureView.GetAddressOf()));
+		break;
+	}
+
+	case TEXTURE_TYPE_CUBEMAP:
+	{
+		if (image->width() * 6u != image->height())
+			throw INFO_EXCEPT(
+				"Invalid image dimensions found when trying to create a cubemap Texture.\n"
+				"To create a cubemap Texture the 6 sides must be stacked on top of each other.\n"
+				"Image dimensions must be (width, height = 6 * width)."
+			);
+
+		// Create cubemap texture resource
+
+		D3D11_TEXTURE2D_DESC textureDesc = {};
+		textureDesc.Width				= image->width();
+		textureDesc.Height				= image->width();
+		textureDesc.Usage				= (usage == TEXTURE_USAGE_DYNAMIC) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
+		textureDesc.CPUAccessFlags		= (usage == TEXTURE_USAGE_DYNAMIC) ? D3D11_CPU_ACCESS_WRITE : 0u;
+		textureDesc.MipLevels			= 1u;
+		textureDesc.ArraySize			= 6u;
+		textureDesc.Format				= DXGI_FORMAT_B8G8R8A8_UNORM;
+		textureDesc.SampleDesc.Count	= 1u;
+		textureDesc.SampleDesc.Quality	= 0u;
+		textureDesc.BindFlags			= D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.MiscFlags			= D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+		D3D11_SUBRESOURCE_DATA psd[6] = {};
+		const unsigned faceBytes = image->width() * image->width() * sizeof(Color);
+		for (unsigned face = 0u; face < 6; face++)
+		{
+			psd[face].pSysMem = (uint8_t*)image->pixels() + face * faceBytes;
+			psd[face].SysMemPitch = image->width() * sizeof(Color);
+		}
+		GFX_THROW_INFO(_device->CreateTexture2D(&textureDesc, psd, data.pTexture.GetAddressOf()));
+
+		// Create the resource view on the texture
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = textureDesc.Format;
+		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.TextureCube.MostDetailedMip = 0u;
+		srvDesc.TextureCube.MipLevels = 1u;
+
+		GFX_THROW_INFO(_device->CreateShaderResourceView(data.pTexture.Get(), &srvDesc, data.pTextureView.GetAddressOf()));
+		break;
+	}
+
+	default:
+		throw INFO_EXCEPT("Unknown texture type found when trying to create a Texture.");
+	}
+
 }
 
 // Releases the GPU pointer and deletes the data.
@@ -111,15 +169,42 @@ void Texture::update(Image* image)
 	if (data.dimensions != Vector2i{ image->width(), image->height() })
 		throw INFO_EXCEPT("Trying to update a texture with an image of different dimensions to the one used in the constructor.");
 
-	// Create the mapping
-	D3D11_MAPPED_SUBRESOURCE msr;
-	GFX_THROW_INFO(_context->Map(data.pTexture.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr));
+	switch (data.type)
+	{
+	case TEXTURE_TYPE_IMAGE:
+	{
+		// Create the mapping to the image data
+		D3D11_MAPPED_SUBRESOURCE msr;
+		GFX_THROW_INFO(_context->Map(data.pTexture.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr));
 
-	// Copy the new image pixels
-	const unsigned rowBytes = image->width() * sizeof(Color);
-	for (unsigned y = 0; y < image->height(); y++)
-		memcpy((uint8_t*)msr.pData + y * msr.RowPitch, (uint8_t*)image->pixels() + y * rowBytes, rowBytes);
+		// Copy the new image pixels
+		const unsigned rowBytes = image->width() * sizeof(Color);
+		for (unsigned y = 0; y < image->height(); y++)
+			memcpy((uint8_t*)msr.pData + y * msr.RowPitch, (uint8_t*)image->pixels() + y * rowBytes, rowBytes);
 
-	// Unmap the data
-	GFX_THROW_INFO_ONLY(_context->Unmap(data.pTexture.Get(), 0u));
+		// Unmap the data
+		GFX_THROW_INFO_ONLY(_context->Unmap(data.pTexture.Get(), 0u));
+		break;
+	}
+
+	case TEXTURE_TYPE_CUBEMAP:
+	{
+		const unsigned faceBytes = image->width() * image->width() * sizeof(Color);
+		const unsigned rowBytes = image->width() * sizeof(Color);
+		for (unsigned face = 0u; face < 6u; face++)
+		{
+			// Create the mapping to the face data
+			D3D11_MAPPED_SUBRESOURCE msr;
+			GFX_THROW_INFO(_context->Map(data.pTexture.Get(), face, D3D11_MAP_WRITE_DISCARD, 0u, &msr));
+
+			// Copy the new cube face pixels
+			for (unsigned y = 0; y < image->height() / 6u; y++)
+				memcpy((uint8_t*)msr.pData + y * msr.RowPitch, (uint8_t*)image->pixels() + face * faceBytes + y * rowBytes, rowBytes);
+
+			// Unmap the data
+			GFX_THROW_INFO_ONLY(_context->Unmap(data.pTexture.Get(), face));
+		}
+		break;
+	}
+	}
 }

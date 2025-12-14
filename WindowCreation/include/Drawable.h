@@ -23,11 +23,15 @@ protected:
 	// Constructor, allocates space to store the bindables.
 	Drawable();
 
+	// Helper for inheritance to access current render target.
+	Graphics* currentTarget() { return Graphics::currentRenderTarget; }
 public:
 	// Destructor, deletes allovated storage space.
 	virtual ~Drawable();
 
-	// Copies of drawable objects are not allowed.
+	// Drawable copies or move operations are not allowed.
+	Drawable(const Drawable&) = delete;
+	Drawable operator=(const Drawable&) = delete;
 	Drawable(Drawable&&) = delete;
 	Drawable& operator=(Drawable&&) = delete;
 
@@ -62,7 +66,7 @@ protected:
 	// Changes an existing bindable from the bindable list of the object. For proper
 	// memory management the bindable sent to this function must be allocated
 	// using new(), and the deletion must be left to the drawable management.
-	Bindable* changeBind(Bindable* bind, unsigned N);
+	Bindable* changeBind(Bindable* bind, unsigned N, bool delete_replaced = true);
 
 private:
 	void* DrawableData; // Stores the internal data of the drawable.

@@ -5,7 +5,7 @@ cbuffer Perspective : register(b0)
 {
     float4 observer;    // Quaternion defining observer
     float4 center;      // Center of the scene
-    float4 scaling;     // Scaling data (1 / WindowDim * scale, scale, 0)
+    float4 scaling;     // Scaling data (scale / WindowDim, scale, 0)
 };
 
 // Sigmoid transformation to clip z between 0 and 1.

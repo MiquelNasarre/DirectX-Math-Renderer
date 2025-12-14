@@ -93,7 +93,7 @@
     <ClCompile Include="source\Drawable\Curve.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>
-    <ClCompile Include="source\Drawable\PointLight.cpp">
+    <ClCompile Include="source\Drawable\Light.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>
     <ClCompile Include="source\Drawable\Surface.cpp">
@@ -105,9 +105,6 @@
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp">
       <Filter>Sources\Private\Exception</Filter>
     </ClCompile>
-    <ClCompile Include="source\Drawable\Point.cpp">
-      <Filter>Sources\Private\Drawable</Filter>
-    </ClCompile>
     <ClCompile Include="source\Bindable\Rasterizer.cpp">
       <Filter>Sources\Private\Bindable</Filter>
     </ClCompile>
@@ -116,6 +113,9 @@
     </ClCompile>
     <ClCompile Include="source\Exception\Exception.cpp">
       <Filter>Sources\Private\Exception</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Bindable\DepthStencil.cpp">
+      <Filter>Sources\Private\Bindable</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -182,7 +182,7 @@
     <ClInclude Include="include\Drawable\Curve.h">
       <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
-    <ClInclude Include="include\Drawable\PointLight.h">
+    <ClInclude Include="include\Drawable\Light.h">
       <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
     <ClInclude Include="include\Drawable\Surface.h">
@@ -196,9 +196,6 @@
     </ClInclude>
     <ClInclude Include="include\Exception\Exception.h">
       <Filter>Sources\Public\Exception</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Drawable\Point.h">
-      <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
     <ClInclude Include="include\Bindable\Rasterizer.h">
       <Filter>Sources\Public\Bindable</Filter>
@@ -217,6 +214,9 @@
     </ClInclude>
     <ClInclude Include="include\Exception\_exDefault.h">
       <Filter>Sources\Public\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Bindable\DepthStencil.h">
+      <Filter>Sources\Public\Bindable</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -247,22 +247,16 @@
     <FxCompile Include="Shaders\DynamicBgVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\DyBgAzimuthPS.hlsl">
+    <FxCompile Include="Shaders\DynamicBgPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\DyBgMercatorPS.hlsl">
+    <FxCompile Include="Shaders\LightPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PointLightPS.hlsl">
+    <FxCompile Include="Shaders\LightVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PointLightVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\CurveVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\CurvePS.hlsl">
+    <FxCompile Include="Shaders\ColorCurveVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\UnlitSurfacePS.hlsl">
@@ -272,15 +266,6 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\UnlitUntexVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\UnlitUntexPS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\PointPS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\PointVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\OITresolveVS.hlsl">
@@ -326,6 +311,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\OITUnlitVertexTexturePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\CurveVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\OITLightPS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

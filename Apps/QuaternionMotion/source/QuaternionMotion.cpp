@@ -104,6 +104,7 @@ QuaternionMotion::QuaternionMotion()
 	shape_3.create(&ss1, &sc);
 	
 	Image grass_tex("resources/grass_block.bmp");
+	Image cube_map("resources/cube_park.bmp");
 
 	Vector2i texture_coord[36] =
 	{
@@ -153,12 +154,26 @@ QuaternionMotion::QuaternionMotion()
 	shape_2.initialize(&desc0);
 
 	BACKGROUND_DESC backDesc = {};
-	backDesc.image = &grass_tex;
-	backDesc.pixelated_texture = true;
+	backDesc.image = &cube_map;
+	backDesc.pixelated_texture = false;
 	backDesc.texture_updates = false;
+	backDesc.type = BACKGROUND_DESC::DYNAMIC_BACKGROUND;
 
 	back.initialize(&backDesc);
-	back.updateRectangle({ 0,0 }, { 16,16 });
+
+	CURVE_DESC curveDesc = {};
+	curveDesc.coloring = CURVE_DESC::FUNCTION_COLORING;
+	curveDesc.curve_function = [](float t) { return Vector3f(cosf(10 * t), sinf(10 * t), t); };
+	curveDesc.color_function = [](float t) { return Color((unsigned char)((cosf(10 * t) + 1) * 128), (unsigned char)((sinf(10 * t) + 1) * 128), (unsigned char)((t + 1) * 128)); };
+
+	curve.initialize(&curveDesc);
+
+	LIGHT_DESC lightDesc = {};
+	lightDesc.color = Color::Blue;
+	lightDesc.intensity = 2.f;
+	lightDesc.position = { 2.f, 0.f, 0.f };
+
+	light.initialize(&lightDesc);
 
 	window.graphics().enableOITransparency();
 }
@@ -251,6 +266,8 @@ void QuaternionMotion::doFrame()
 	window.graphics().updatePerspective(observer, center, scale);
 
 	DO(updateRotation(rotationQuaternion(axis, dangle), true));
+	back.updateRotation(rotationQuaternion(axis, dangle), true);
+	curve.updateRotation(rotationQuaternion(axis, dangle), true);
 
 	const char* rot = shape_0.getRotation().str();
 	window.setTitle("%s  -  %u fps", rot, (unsigned)window.getFramerate());
@@ -259,7 +276,6 @@ void QuaternionMotion::doFrame()
 	//	Rendering
 
 	window.graphics().clearBuffer(Color::Black);
-	window.graphics().setRenderTarget();
 
 	switch (IG_DATA::FIGURE)
 	{
@@ -268,10 +284,12 @@ void QuaternionMotion::doFrame()
 		shape_1.Draw();
 		break;
 	case WEIRD_SHAPE:
-		shape_0.Draw();
+		curve.Draw();
+		light.Draw();
 		break;
 	case OCTAHEDRON:
 		shape_2.Draw();
+		light.Draw();
 		break;
 	case KLEIN:
 		shape_3.Draw();

@@ -81,9 +81,6 @@ private:
 	// Sets the window dimensions to the ones specified by the vector.
 	void setWindowDimensions(const Vector2i Dim);
 
-	// Returns the current window dimensions.
-	Vector2i getWindowDimensions() const;
-
 public:
 	// Before issuing any draw calls to the window, for multiple window settings 
 	// this function has to be called to bind the window as the render target.

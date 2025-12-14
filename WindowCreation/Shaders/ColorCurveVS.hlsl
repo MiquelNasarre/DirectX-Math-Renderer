@@ -9,11 +9,12 @@ cbuffer Cbuff1 : register(b1)
 
 struct VSOut
 {
+    float4 color : Color;
     float4 R3pos : PointPos;
     float4 SCpos : SV_Position;
 };
 
-VSOut main(float4 pos : Position)
+VSOut main(float4 pos : Position, float4 color : Color)
 {
     VSOut vso;
     
@@ -25,6 +26,9 @@ VSOut main(float4 pos : Position)
     
     // Add screen displacement
     vso.SCpos.rg += screenDisplacement;
+    
+    // Forward color
+    vso.color = color;
     
     return vso;
 }

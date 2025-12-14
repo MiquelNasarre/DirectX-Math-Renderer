@@ -26,9 +26,19 @@ public:
 	virtual ~Bindable() = default;
 
 protected:
+	// Pure virtual class.
+	Bindable() = default;
+
 	// Helper function that returns the pointer to the global device.
 	static void* device() { return GlobalDevice::get_device_ptr(); }
 
 	// Helper function that returns the pointer to the global context.
 	static void* context() { return GlobalDevice::get_context_ptr(); }
+
+private:
+	// Bindable copies or move operations are not allowed.
+	Bindable(const Bindable&) = delete;
+	Bindable operator=(const Bindable&) = delete;
+	Bindable(Bindable&&) = delete;
+	Bindable operator=(Bindable&&) = delete;
 };

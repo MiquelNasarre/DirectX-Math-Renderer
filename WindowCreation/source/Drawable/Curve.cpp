@@ -3,107 +3,451 @@
 
 #include "Exception/_exDefault.h"
 
-//	Constructors
+/*
+-----------------------------------------------------------------------------------------------------------
+ Curve Internals
+-----------------------------------------------------------------------------------------------------------
+*/
 
-Curve::Curve(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*color)(float), bool transparency)
+// Struct that stores the internal data for a given Curve object.
+struct CurveInternals
 {
-	isInit = true;
+	_float4vector* Vertices = nullptr;
 
-	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
-
-	for (unsigned i = 0; i <= Npoints; i++) {
-		float t = rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x);
-
-		vertexs[i].position = F(t).getVector4();
-		vertexs[i].color = color(t).getColor4();
-	}
-
-	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
-
-	for (unsigned i = 0; i <= Npoints; i++)
-		indexs[i] = i;
-
-	AddBind(new VertexBuffer(vertexs, Npoints + 1));
-	AddBind(new IndexBuffer(indexs, Npoints + 1));
-
-	free(vertexs);
-	free(indexs);
-
-	VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"CurveVS.cso"));
-	AddBind(new PixelShader(SHADERS_DIR L"CurvePS.cso"));
-
-	INPUT_ELEMENT_DESC ied[2] =
+	struct ColVertex 
 	{
-		{ "Position",	_4_FLOAT },
-		{ "Color",		_4_FLOAT },
-	};
+		_float4vector position;
+		_float4color color;
+	}*ColVertices = nullptr;
 
-	AddBind(new InputLayout(ied, 2u, pvs));
-	AddBind(new Topology(LINE_STRIP));
-	AddBind(new Blender(transparency ? BLEND_MODE_OIT_WEIGHTED : BLEND_MODE_OPAQUE));
+	struct VSconstBuffer
+	{
+		Quaternion rotation			= 1.f;
+		_float4vector position		= { 0.f, 0.f, 0.f, 0.f };
+		_float4vector displacement	= { 0.f, 0.f, 0.f, 0.f };
+	}vscBuff;
 
-	pVSCB = AddBind(new ConstantBuffer(&vscBuff, VERTEX_CONSTANT_BUFFER));
+	VertexBuffer* pUpdateVB = nullptr;
+
+	ConstantBuffer* pVSCB = nullptr;
+	ConstantBuffer* pGlobalColorCB = nullptr;
+
+	CURVE_DESC desc = {};
+};
+
+/*
+-----------------------------------------------------------------------------------------------------------
+ Constructors / Destructors
+-----------------------------------------------------------------------------------------------------------
+*/
+
+// Curve constructor, if the pointer is valid it will call the initializer.
+
+Curve::Curve(const CURVE_DESC* pDesc)
+{
+	if (pDesc)
+		initialize(pDesc);
 }
 
-void Curve::updateShape(Vector3f(*F)(float), Vector2f rangeT, unsigned Npoints, Color(*color)(float))
+// Frees the GPU pointers and all the stored data.
+
+Curve::~Curve()
 {
 	if (!isInit)
-		throw INFO_EXCEPT("You cannot update the shape of a curve if you havent initialized it first");
+		return;
 
-	Vertex* vertexs = (Vertex*)calloc(Npoints + 1, sizeof(Vertex));
+	CurveInternals& data = *(CurveInternals*)curveData;
 
-	for (unsigned i = 0; i <= Npoints; i++) {
-		float t = rangeT.x + float(i) / Npoints * (rangeT.y - rangeT.x);
+	if (data.Vertices)
+		delete[] data.Vertices;
 
-		vertexs[i].position = F(t).getVector4();
-		vertexs[i].color = color(t).getColor4();
-	}
+	if (data.ColVertices)
+		delete[] data.ColVertices;
 
-	unsigned int* indexs = (unsigned int*)calloc(Npoints + 1, sizeof(unsigned int));
-
-	for (unsigned i = 0; i <= Npoints; i++)
-		indexs[i] = i;
-
-	changeBind(new VertexBuffer(vertexs, Npoints + 1), 0u);
-	changeBind(new IndexBuffer(indexs, Npoints + 1), 1u);
-
-	free(vertexs);
-	free(indexs);
+	delete& data;
 }
 
-//	Public
+// Initializes the Curve object, it expects a valid pointer to a descriptor
+// and will initialize everything as specified, can only be called once per object.
+
+void Curve::initialize(const CURVE_DESC* pDesc)
+{
+	if (!pDesc)
+		throw INFO_EXCEPT("Trying to initialize a Curve with an invalid descriptor pointer.");
+
+	if (isInit)
+		throw INFO_EXCEPT("Trying to initialize a Curve that has already been initialized.");
+	else
+		isInit = true;
+
+	curveData = new CurveInternals;
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	data.desc = *pDesc;
+
+	if (!data.desc.curve_function)
+		throw INFO_EXCEPT("Found nullptr when trying to access a curve function to create a Curve.");
+
+	if (data.desc.vertex_count < 2u)
+		throw INFO_EXCEPT(
+			"Found vertex count smaller than two when trying to create a Curve.\n"
+			"You need at least a vertex count of two to initialize a Curve."
+		);
+
+	// Define the t_values where the generator function will be evaluated.
+	float dt = data.desc.border_points_included ?
+		(data.desc.range.y - data.desc.range.x) / (data.desc.vertex_count - 1.f) :
+		(data.desc.range.y - data.desc.range.x) / (data.desc.vertex_count + 1.f);
+
+	float t_i = data.desc.border_points_included ? data.desc.range.x : data.desc.range.x + dt;
+
+	switch (data.desc.coloring)
+	{
+		case CURVE_DESC::GLOBAL_COLORING:
+		{
+			data.Vertices = new _float4vector[data.desc.vertex_count];
+
+			for (unsigned n = 0u; n < data.desc.vertex_count; n++)
+				data.Vertices[n] = data.desc.curve_function(t_i + n * dt).getVector4();
+
+			data.pUpdateVB = AddBind(new VertexBuffer(data.Vertices, data.desc.vertex_count, data.desc.enable_updates ? VB_USAGE_DYNAMIC : VB_USAGE_DEFAULT));
+
+			// If updates disabled delete the vertices
+			if (!data.desc.enable_updates)
+			{
+				delete[] data.Vertices;
+				data.Vertices = nullptr;
+			}
+			// Create the corresponding Vertex Shader
+			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"CurveVS.cso"));
+			// Create the corresponding Pixel Shader and Blender
+			if (data.desc.enable_transparency)
+			{
+				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
+			}
+			else
+			{
+				AddBind(new PixelShader(SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+				AddBind(new Blender(BLEND_MODE_OPAQUE));
+			}
+			// Create the corresponding input layout
+			INPUT_ELEMENT_DESC ied[1] =
+			{
+				{ "Position",	_4_FLOAT },
+			};
+			AddBind(new InputLayout(ied, 1u, pvs));
+
+			// Create the constant buffer for the global color.
+			_float4color col = data.desc.global_color.getColor4();
+			data.pGlobalColorCB = AddBind(new ConstantBuffer(&col, PIXEL_CONSTANT_BUFFER, 1u /*Slot*/));
+			break;
+		}
+
+		case CURVE_DESC::LIST_COLORING:
+		{
+			if (!data.desc.color_list)
+				throw INFO_EXCEPT("Found nullptr when trying to access a color list to create a Curve.");
+
+			data.ColVertices = new CurveInternals::ColVertex[data.desc.vertex_count];
+
+			for (unsigned n = 0u; n < data.desc.vertex_count; n++)
+			{
+				data.ColVertices[n].position = data.desc.curve_function(t_i + n * dt).getVector4();
+				data.ColVertices[n].color = data.desc.color_list[n].getColor4();
+			}
+
+			data.pUpdateVB = AddBind(new VertexBuffer(data.ColVertices, data.desc.vertex_count, data.desc.enable_updates ? VB_USAGE_DYNAMIC : VB_USAGE_DEFAULT));
+
+			// If updates disabled delete the vertices
+			if (!data.desc.enable_updates)
+			{
+				delete[] data.ColVertices;
+				data.ColVertices = nullptr;
+			}
+			// Create the corresponding Vertex Shader
+			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"ColorCurveVS.cso"));
+			// Create the corresponding Pixel Shader and Blender
+			if (data.desc.enable_transparency)
+			{
+				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
+			}
+			else
+			{
+				AddBind(new PixelShader(SHADERS_DIR L"UnlitVertexColorPS.cso"));
+				AddBind(new Blender(BLEND_MODE_OPAQUE));
+			}
+			// Create the corresponding input layout
+			INPUT_ELEMENT_DESC ied[2] =
+			{
+				{ "Position",	_4_FLOAT },
+				{ "Color",		_4_FLOAT },
+			};
+			AddBind(new InputLayout(ied, 2u, pvs));
+			break;
+		}
+
+		case CURVE_DESC::FUNCTION_COLORING:
+		{
+			if (!data.desc.color_function)
+				throw INFO_EXCEPT("Found nullptr when trying to access a color function to create a Curve.");
+
+			data.ColVertices = new CurveInternals::ColVertex[data.desc.vertex_count];
+
+			for (unsigned n = 0u; n < data.desc.vertex_count; n++)
+			{
+				data.ColVertices[n].position = data.desc.curve_function(t_i + n * dt).getVector4();
+				data.ColVertices[n].color = data.desc.color_function(t_i + n * dt).getColor4();
+			}
+
+			data.pUpdateVB = AddBind(new VertexBuffer(data.ColVertices, data.desc.vertex_count, data.desc.enable_updates ? VB_USAGE_DYNAMIC : VB_USAGE_DEFAULT));
+
+			// If updates disabled delete the vertices
+			if (!data.desc.enable_updates)
+			{
+				delete[] data.ColVertices;
+				data.ColVertices = nullptr;
+			}
+			// Create the corresponding Vertex Shader
+			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"ColorCurveVS.cso"));
+			// Create the corresponding Pixel Shader and Blender
+			if (data.desc.enable_transparency)
+			{
+				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
+			}
+			else
+			{
+				AddBind(new PixelShader(SHADERS_DIR L"UnlitVertexColorPS.cso"));
+				AddBind(new Blender(BLEND_MODE_OPAQUE));
+			}
+			// Create the corresponding input layout
+			INPUT_ELEMENT_DESC ied[2] =
+			{
+				{ "Position",	_4_FLOAT },
+				{ "Color",		_4_FLOAT },
+			};
+			AddBind(new InputLayout(ied, 2u, pvs));
+			break;
+		}
+
+		default:
+			throw INFO_EXCEPT("Found an unrecognized coloring mode when trying to create a Curve.");
+	}
+
+	unsigned* indexs = new unsigned[data.desc.vertex_count];
+	for (unsigned i = 0; i < data.desc.vertex_count; i++)
+		indexs[i] = i;
+
+	AddBind(new IndexBuffer(indexs, data.desc.vertex_count));
+	delete[] indexs;
+
+	AddBind(new Topology(LINE_STRIP));
+	AddBind(new Rasterizer());
+
+	data.pVSCB = AddBind(new ConstantBuffer(&data.vscBuff, VERTEX_CONSTANT_BUFFER));
+}
+
+/*
+-----------------------------------------------------------------------------------------------------------
+ User Functions
+-----------------------------------------------------------------------------------------------------------
+*/
+
+// If updates are enabled this function allows to change the range of the curve function. It 
+// expects the initial function pointer to still be callable, it will evaluate it on the new 
+// range and send the vertices to the GPU. If coloring is functional it also expects the color 
+// function to still be callable, if coloring is not functional it will reuse the old colors.
+
+void Curve::updateRange(Vector2f range)
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the vertices on an uninitialized Curve.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	if (!data.desc.enable_updates)
+		throw INFO_EXCEPT("Trying to update the vertices on a Curve with updates disabled.");
+
+	// Define the t_values where the generator function will be evaluated.
+	float dt = data.desc.border_points_included ?
+		(range.y - range.x) / (data.desc.vertex_count - 1.f) :
+		(range.y - range.x) / (data.desc.vertex_count + 1.f);
+
+	float t_i = data.desc.border_points_included ? range.x : range.x + dt;
+
+	switch (data.desc.coloring)
+	{
+		case CURVE_DESC::GLOBAL_COLORING:
+		{
+			for (unsigned n = 0u; n < data.desc.vertex_count; n++)
+				data.Vertices[n] = data.desc.curve_function(t_i + n * dt).getVector4();
+
+			data.pUpdateVB->updateVertices(data.Vertices, data.desc.vertex_count);
+			break;
+		}
+
+		case CURVE_DESC::LIST_COLORING:
+		{
+			for (unsigned n = 0u; n < data.desc.vertex_count; n++)
+				data.ColVertices[n].position = data.desc.curve_function(t_i + n * dt).getVector4();
+
+			data.pUpdateVB->updateVertices(data.ColVertices, data.desc.vertex_count);
+			break;
+		}
+
+		case CURVE_DESC::FUNCTION_COLORING:
+		{
+			for (unsigned n = 0u; n < data.desc.vertex_count; n++)
+			{
+				data.ColVertices[n].position = data.desc.curve_function(t_i + n * dt).getVector4();
+				data.ColVertices[n].color = data.desc.color_function(t_i + n * dt).getColor4();
+			}
+
+			data.pUpdateVB->updateVertices(data.ColVertices, data.desc.vertex_count);
+			break;
+		}
+	}
+}
+
+// If updates are enabled, and coloring is with a list, this function allows to change 
+// the current vertex colors for the new ones specified. It expects a valid pointer 
+// with a list of colors as long as the vertex count.
+
+void Curve::updateColors(Color* color_list)
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the colors on an uninitialized Curve.");
+
+	if (!color_list)
+		throw INFO_EXCEPT("Trying to update the colors on a Curve with an invalid color list.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	if (data.desc.coloring != CURVE_DESC::LIST_COLORING)
+		throw INFO_EXCEPT("Trying to update the colors on a Curve with a different coloring.");
+
+	if (!data.desc.enable_updates)
+		throw INFO_EXCEPT("Trying to update the colors on a Curve with updates disabled.");
+
+	for (unsigned i = 0u; i < data.desc.vertex_count; i++)
+		data.ColVertices[i].color = color_list[i].getColor4();
+
+	data.pUpdateVB->updateVertices(data.ColVertices, data.desc.vertex_count);
+}
+
+// If the coloring is set to global, updates the global Curve color.
+
+void Curve::updateGlobalColor(Color color)
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the global color on an uninitialized Curve.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	if (data.desc.coloring != CURVE_DESC::GLOBAL_COLORING)
+		throw INFO_EXCEPT("Trying to update the global color on a Curve with a different coloring.");
+
+	_float4color col = color.getColor4();
+	data.pGlobalColorCB->update(&col);
+}
+
+// Updates the rotation quaternion of the Curve. If multiplicative it will apply
+// the rotation on top of the current rotation. For more information on how to rotate
+// with quaternions check the Quaternion header file.
 
 void Curve::updateRotation(Quaternion rotation, bool multiplicative)
 {
-	if (!multiplicative)
-		vscBuff.rotation = rotation;
-	else
-		vscBuff.rotation *= rotation;
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the rotation on an uninitialized Curve.");
 
-	vscBuff.rotation.normalize();
-	((ConstantBuffer*)pVSCB)->update(&vscBuff);
+	if (!rotation)
+		throw INFO_EXCEPT(
+			"Invalid quaternion found when trying to update rotation on a Curve.\n"
+			"Quaternion 0 can not be normalized and therefore can not describe an objects rotation."
+		);
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	if (multiplicative)
+		data.vscBuff.rotation *= rotation;
+	else
+		data.vscBuff.rotation = rotation;
+
+	data.vscBuff.rotation.normalize();
+	data.pVSCB->update(&data.vscBuff);
 }
+
+// Updates the scene position of the Curve. If additive it will add the vector
+// to the current position vector of the Curve.
 
 void Curve::updatePosition(Vector3f position, bool additive)
 {
-	if (!additive)
-		vscBuff.translation = position.getVector4();
-	else
-	{
-		vscBuff.translation.x += position.x;
-		vscBuff.translation.y += position.y;
-		vscBuff.translation.z += position.z;
-	}
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the position on an uninitialized Curve.");
 
-	((ConstantBuffer*)pVSCB)->update(&vscBuff);
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	if (additive)
+		position += Vector3f(data.vscBuff.position.x, data.vscBuff.position.y, data.vscBuff.position.z);
+
+	data.vscBuff.position = position.getVector4();
+	data.pVSCB->update(&data.vscBuff);
 }
 
-Quaternion Curve::getRotation()
+// Updates the screen displacement of the figure. To be used if you intend to render 
+// multiple scenes/plots on the same render target.
+
+void Curve::updateScreenPosition(Vector2f screenDisplacement)
 {
-	return vscBuff.rotation;
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the screen position on an uninitialized Curve.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	data.vscBuff.displacement = screenDisplacement.getVector4();
+	data.pVSCB->update(&data.vscBuff);
 }
 
-Vector3f Curve::getPosition()
+/*
+-----------------------------------------------------------------------------------------------------------
+ Getters
+-----------------------------------------------------------------------------------------------------------
+*/
+
+// Returns the current rotation quaternion.
+
+Quaternion Curve::getRotation() const
 {
-	return Vector3f(vscBuff.translation.x, vscBuff.translation.y, vscBuff.translation.z);
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to get the rotation of an uninitialized Curve.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	return data.vscBuff.rotation;
+}
+
+// Returns the current scene position.
+
+Vector3f Curve::getPosition() const
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to get the position of an uninitialized Curve.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	return { data.vscBuff.position.x, data.vscBuff.position.y, data.vscBuff.position.z };
+}
+
+// Returns the current screen position.
+
+Vector2f Curve::getScreenPosition() const
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to get the screen position of an uninitialized Curve.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	return { data.vscBuff.displacement.x, data.vscBuff.displacement.y };
 }

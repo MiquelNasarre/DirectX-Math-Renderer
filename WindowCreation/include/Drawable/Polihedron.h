@@ -13,7 +13,7 @@ position, and screen shifting and it is displayed in relation to the perspective
 Graphics currently set as render target.
 
 It allows for ilumination, texturing, transparencies and figure updates. For information 
-on how to hadle transparencies you can check the Graphics header. For information on how 
+on how to handle transparencies you can check the Graphics header. For information on how 
 to create images for the texture you can check the Image class header.
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
@@ -85,6 +85,9 @@ struct POLIHEDRON_DESC
 	bool pixelated_texture = false;
 };
 
+// Polihedron drawable class, used for drawing and interacting with user defined triangle 
+// meshes on a Graphics instance. Allows for different rendering settings including but not 
+// limited to textures, ilumination, transparencies. Check the descriptor to see all options.
 class Polihedron : public Drawable
 {
 public:
@@ -123,7 +126,7 @@ public:
 	// with quaternions check the Quaternion header file.
 	void updateRotation(Quaternion rotation, bool multiplicative = false);
 
-	// Updates the scene position of the Polihedrom. I additive it will add the vector
+	// Updates the scene position of the Polihedrom. If additive it will add the vector
 	// to the current position vector of the Polihedron.
 	void updatePosition(Vector3f position, bool additive = false);
 

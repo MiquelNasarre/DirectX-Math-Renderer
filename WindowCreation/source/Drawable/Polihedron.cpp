@@ -369,15 +369,15 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 void Polihedron::updateVertices(const Vector3f* vertex_list)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update the vertices on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update the vertices on an uninitialized Polihedron.");
 
 	if (!vertex_list)
-		throw INFO_EXCEPT("Trying to update the vertices with an invalid vertex list");
+		throw INFO_EXCEPT("Trying to update the vertices with an invalid vertex list.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (!data.desc.enable_updates)
-		throw INFO_EXCEPT("Trying to update the vertices on a Polihedron with updates disabled");
+		throw INFO_EXCEPT("Trying to update the vertices on a Polihedron with updates disabled.");
 
 	switch (data.desc.coloring)
 	{
@@ -457,18 +457,18 @@ void Polihedron::updateVertices(const Vector3f* vertex_list)
 void Polihedron::updateColors(const Color* color_list)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update the colors on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update the colors on an uninitialized Polihedron.");
 
 	if (!color_list)
-		throw INFO_EXCEPT("Trying to update the colors with an invalid color list");
+		throw INFO_EXCEPT("Trying to update the colors on a Polihedron with an invalid color list.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (data.desc.coloring != POLIHEDRON_DESC::PER_VERTEX_COLORING)
-		throw INFO_EXCEPT("Trying to update the colors on a Polihedron with a different coloring");
+		throw INFO_EXCEPT("Trying to update the colors on a Polihedron with a different coloring.");
 
 	if (!data.desc.enable_updates)
-		throw INFO_EXCEPT("Trying to update the colors on a Polihedron with updates disabled");
+		throw INFO_EXCEPT("Trying to update the colors on a Polihedron with updates disabled.");
 
 	for (unsigned i = 0u; i < 3u * data.desc.triangle_count; i++)
 		data.ColVertices[i].color = color_list[i].getColor4();
@@ -484,18 +484,18 @@ void Polihedron::updateColors(const Color* color_list)
 void Polihedron::updateTextureCoordinates(const Vector2i* texture_coordinates_list)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update the texture coordinates on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update the texture coordinates on an uninitialized Polihedron.");
 
 	if (!texture_coordinates_list)
-		throw INFO_EXCEPT("Trying to update the texture coordinates with an invalid texture coordinate list");
+		throw INFO_EXCEPT("Trying to update the texture coordinates with an invalid texture coordinate list.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (data.desc.coloring != POLIHEDRON_DESC::TEXTURED_COLORING)
-		throw INFO_EXCEPT("Trying to update the texture coordinates on a Polihedron with a different coloring");
+		throw INFO_EXCEPT("Trying to update the texture coordinates on a Polihedron with a different coloring.");
 
 	if (!data.desc.enable_updates)
-		throw INFO_EXCEPT("Trying to update the texture coordinates on a Polihedron with updates disabled");
+		throw INFO_EXCEPT("Trying to update the texture coordinates on a Polihedron with updates disabled.");
 
 	for (unsigned i = 0u; i < 3u * data.desc.triangle_count; i++)
 		data.TexVertices[i].coord = {
@@ -511,12 +511,12 @@ void Polihedron::updateTextureCoordinates(const Vector2i* texture_coordinates_li
 void Polihedron::updateGlobalColor(Color color)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update the global color on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update the global color on an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (data.desc.coloring != POLIHEDRON_DESC::GLOBAL_COLORING)
-		throw INFO_EXCEPT("Trying to update the global color on a Polihedron with a different coloring");
+		throw INFO_EXCEPT("Trying to update the global color on a Polihedron with a different coloring.");
 
 	_float4color col = color.getColor4();
 	data.pGlobalColorCB->update(&col);
@@ -529,7 +529,7 @@ void Polihedron::updateGlobalColor(Color color)
 void Polihedron::updateRotation(Quaternion rotation, bool multiplicative)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update the rotation on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update the rotation on an uninitialized Polihedron.");
 
 	if (!rotation)
 		throw INFO_EXCEPT(
@@ -554,7 +554,7 @@ void Polihedron::updateRotation(Quaternion rotation, bool multiplicative)
 void Polihedron::updatePosition(Vector3f position, bool additive)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update the position on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update the position on an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
@@ -571,7 +571,7 @@ void Polihedron::updatePosition(Vector3f position, bool additive)
 void Polihedron::updateScreenPosition(Vector2f screenDisplacement)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update the screen position on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update the screen position on an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
@@ -585,15 +585,15 @@ void Polihedron::updateScreenPosition(Vector2f screenDisplacement)
 void Polihedron::updateLight(unsigned id, Vector2f intensities, Color color, Vector3f position)
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to update a light on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to update a light on an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (!data.desc.enable_iluminated)
-		throw INFO_EXCEPT("Trying to update a light on a Polihedron with ilumination disabled");
+		throw INFO_EXCEPT("Trying to update a light on a Polihedron with ilumination disabled.");
 
 	if (id >= 8)
-		throw INFO_EXCEPT("Trying to update a light with an invalid id (must be 0-7)");
+		throw INFO_EXCEPT("Trying to update a light with an invalid id (must be 0-7).");
 
 	data.pscBuff.lightsource[id] = { intensities.getVector4(), color.getColor4(), position.getVector4() };
 	data.pPSCB->update(&data.pscBuff);
@@ -604,12 +604,12 @@ void Polihedron::updateLight(unsigned id, Vector2f intensities, Color color, Vec
 void Polihedron::clearLights()
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to clear the lights on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to clear the lights on an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (!data.desc.enable_iluminated)
-		throw INFO_EXCEPT("Trying to clear the lights on a Polihedron with ilumination disabled");
+		throw INFO_EXCEPT("Trying to clear the lights on a Polihedron with ilumination disabled.");
 
 	for (auto& light : data.pscBuff.lightsource)
 		light = {};
@@ -628,7 +628,7 @@ void Polihedron::clearLights()
 Quaternion Polihedron::getRotation() const
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to get the rotation on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to get the rotation of an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
@@ -640,7 +640,7 @@ Quaternion Polihedron::getRotation() const
 Vector3f Polihedron::getPosition() const
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to get the position on an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to get the position of an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
@@ -652,7 +652,7 @@ Vector3f Polihedron::getPosition() const
 Vector2f Polihedron::getScreenPosition() const
 {
 	if (!isInit)
-		throw INFO_EXCEPT("Trying to get the screen position of an uninitialized Polihedron");
+		throw INFO_EXCEPT("Trying to get the screen position of an uninitialized Polihedron.");
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 

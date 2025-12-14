@@ -102,12 +102,15 @@ Bindable* Drawable::AddBind(Bindable* bind)
 // memory management the bindable sent to this function must be allocated
 // using new(), and the deletion must be left to the drawable management.
 
-Bindable* Drawable::changeBind(Bindable* bind, unsigned N)
+Bindable* Drawable::changeBind(Bindable* bind, unsigned N, bool delete_replaced)
 {
 	DrawableInternals& data = *((DrawableInternals*)DrawableData);
 
-	// delete old object, assign new object.
-	delete data.binds[N];
+	// delete old object if specified.
+	if (delete_replaced)
+		delete data.binds[N];
+
+	// assign new object.
 	data.binds[N] = bind;
 
 	return data.binds[N];

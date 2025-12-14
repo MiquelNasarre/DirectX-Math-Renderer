@@ -15,6 +15,11 @@ their GPU binding. To create a texture the Image class is to be used. Internally
 a pointer to an array of colors and the image dimensions. It supports transparencies and 
 image loading and saving from memory.
 
+This bindable also supports cube-maps for background creation. The image uploaded must contain
+the six faces of the cube stacked on top of each other in the order [+X,-X,+Y,-Y,+Z,-Z].
+And the orientation must correspond to what a camera at the origin would see when looking 
+along that axis direction, with +Y as “up” in world.
+
 For more information on how to use the Image class I strongly suggest checking its header.
 For more information on how textures are used in Pixel Shaders and DX11 in general you can 
 check the microsoft learn documentation at:
@@ -31,13 +36,22 @@ enum TEXTURE_USAGE
 	TEXTURE_USAGE_DYNAMIC,
 };
 
+// For background images that support fields of view cubemaps are a very common choice to
+// minimize distortion while making the math simple on the GPU side. If you want to generate 
+// a cube-map the uploaded image dimensions must be (width, 6 * width).
+enum TEXTURE_TYPE
+{
+	TEXTURE_TYPE_IMAGE,
+	TEXTURE_TYPE_CUBEMAP,
+};
+
 // Texture bindable class, from an Image it creates a texture and sends it to the GPU to 
-// be red by the Pixel Shader at the specified slot.
+// be read by the Pixel Shader at the specified slot.
 class Texture : public Bindable
 {
 public:
 	// Expects a valid image pointer and creates the texture in the GPU.
-	Texture(Image* image, TEXTURE_USAGE usage = TEXTURE_USAGE_DEFAULT, unsigned slot = 0u);
+	Texture(Image* image, TEXTURE_USAGE usage = TEXTURE_USAGE_DEFAULT, TEXTURE_TYPE type = TEXTURE_TYPE_IMAGE, unsigned slot = 0u);
 
 	// Releases the GPU pointer and deletes the data.
 	~Texture() override;

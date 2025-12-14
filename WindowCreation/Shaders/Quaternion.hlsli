@@ -16,10 +16,16 @@ inline float4 qMul(float4 q0, float4 pos, float4 q1)
     return qMul(qMul(q0, pos), q1);
 }
 
+// Returns the conjugate of a quaternion.
+inline float4 qConj(float4 q)
+{
+    return float4(q.r, -q.gba);
+}
+
 // Operation to take a rotation quaternion and apply it to a position.
 inline float4 qRot(float4 q, float4 pos)
 {
-    return qMul(q, pos, float4(q.r, -q.gba));
+    return qMul(q, pos, qConj(q));
 }
 
 // Convert from Quaternion to R3,

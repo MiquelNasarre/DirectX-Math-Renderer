@@ -120,9 +120,9 @@ void Surface::create(SURFACE_SHAPE* ss, SURFACE_COLORING* psc)
 		AddBind(new Texture(sc.texture0));
 
 		if (sc.texture1)
-			AddBind(new Texture(sc.texture1, TEXTURE_USAGE_DEFAULT, 1u));
+			AddBind(new Texture(sc.texture1, TEXTURE_USAGE_DEFAULT, TEXTURE_TYPE_IMAGE, 1u));
 		else
-			AddBind(new Texture(sc.texture0, TEXTURE_USAGE_DEFAULT, 1u));
+			AddBind(new Texture(sc.texture0, TEXTURE_USAGE_DEFAULT, TEXTURE_TYPE_IMAGE, 1u));
 
 		void* pvs = nullptr;
 		if (sc.Lighted)
@@ -243,8 +243,8 @@ void Surface::updateTextures(Image& image0, Image& image1)
 	if (!sc.Textured)
 		throw INFO_EXCEPT("You cannot call a texture update in a surface that wasn't initialized as textured");
 
-	changeBind(new Texture(&image0, TEXTURE_USAGE_DEFAULT, 0u), 4u);
-	changeBind(new Texture(&image1, TEXTURE_USAGE_DEFAULT, 1u), 5u);
+	changeBind(new Texture(&image0, TEXTURE_USAGE_DEFAULT, TEXTURE_TYPE_IMAGE, 0u), 4u);
+	changeBind(new Texture(&image1, TEXTURE_USAGE_DEFAULT, TEXTURE_TYPE_IMAGE, 1u), 5u);
 }
 
 void Surface::updateLight(unsigned id, Vector2f intensity, Color color, Vector3f position)

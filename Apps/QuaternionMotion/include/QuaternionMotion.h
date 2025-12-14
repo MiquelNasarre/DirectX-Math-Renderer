@@ -4,6 +4,8 @@
 #include "Drawable/Surface.h"
 #include "Drawable/Polihedron.h"
 #include "Drawable/Background.h"
+#include "Drawable/Curve.h"
+#include "Drawable/Light.h"
 #include "IG_QuaternionMotion.h"
 
 enum DRAG_TYPE
@@ -67,6 +69,8 @@ private:
 	bool magnetized = false;
 	Vector3f magnetPos = { 1.f, 0.f, 0.f };
 
+	Light		light;
+	Curve		curve;
 	Background  back;
 	Surface		shape_0;
 	Polihedron	shape_1;

@@ -20,3 +20,4 @@ To be included in any drawable that might use most or all of them.
 #include "Bindable/Sampler.h"			// Sampler bindable
 #include "Bindable/Rasterizer.h"		// Rasterizer bindable
 #include "Bindable/Blender.h"			// Blender bindable
+#include "Bindable/DepthStencil.h"		// Depth Stencil bindable

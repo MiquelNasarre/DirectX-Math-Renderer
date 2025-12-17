@@ -2,7 +2,7 @@
 #include "Exception/Exception.h"
 #include "Exception/_exDefault.h"
 #include "DxgiInfoManager.h"
-#include "dxerr.h"
+#include "Exception/dxerr/dxerr.h"
 
 #include <string>
 

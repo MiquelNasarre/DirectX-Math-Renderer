@@ -4,8 +4,6 @@
 #include "IG_QuaternionMotion.h"
 #include <string>
 
-#define DO(call) shape_0.call;shape_1.call;shape_2.call;shape_3.call
-
 QuaternionMotion::QuaternionMotion()
 	: window({ 640, 480 }, "QuaternionMotion", "", true)
 {
@@ -86,23 +84,6 @@ QuaternionMotion::QuaternionMotion()
 	for (Color& c : colors)
 		c = Color(rand() % 256, rand() % 256, rand() % 256, 128);
 
-	SURFACE_SHAPE ss0 = { _EXPLICIT_ICOSPHERE, exampleRadius, 5u };
-	ss0.numU = 200u;
-	ss0.numV = 200u;
-
-	SURFACE_COLORING sc = {};
-	sc.color = Color(255, 255, 255, 127);
-	sc.transparency = false;
-
-	shape_0.create(&ss0, &sc);
-
-	SURFACE_SHAPE ss1 = { _PARAMETRIC, KleinBottle, Vector2f(0, 0), Vector2f(MATH_PI, 2 * MATH_PI)};
-	ss1.grid_type = true;
-	ss1.numU = 50u;
-	ss1.numV = 50u;
-
-	shape_3.create(&ss1, &sc);
-	
 	Image grass_tex("resources/grass_block.bmp");
 	Image cube_map("resources/cube_park.bmp");
 
@@ -131,6 +112,13 @@ QuaternionMotion::QuaternionMotion()
 
 	//Image imageGPTv2(textureGPTv2);
 
+	SURFACE_DESC surfDesc0 = {};
+	surfDesc0.type = SURFACE_DESC::IMPLICIT_SURFACE;
+	surfDesc0.implicit_func = [](float x, float y, float z) { return 2 * x * x + 2 * y * y - z * z - 1.f; };
+	surfDesc0.wire_frame_topology = true;
+
+	shape_0.initialize(&surfDesc0);
+
 	POLIHEDRON_DESC desc = {};
 	desc.coloring = POLIHEDRON_DESC::TEXTURED_COLORING;
 	desc.pixelated_texture = true;
@@ -154,6 +142,7 @@ QuaternionMotion::QuaternionMotion()
 	shape_2.initialize(&desc0);
 
 	BACKGROUND_DESC backDesc = {};
+	backDesc.override_buffers = true;
 	backDesc.image = &cube_map;
 	backDesc.pixelated_texture = false;
 	backDesc.texture_updates = false;
@@ -174,6 +163,17 @@ QuaternionMotion::QuaternionMotion()
 	lightDesc.position = { 2.f, 0.f, 0.f };
 
 	light.initialize(&lightDesc);
+
+	SURFACE_DESC surfDesc = {};
+	surfDesc.type = SURFACE_DESC::PARAMETRIC_SURFACE;
+	surfDesc.parametric_func = &KleinBottle;
+	surfDesc.range_u = { 0.f, MATH_PI };
+	surfDesc.range_v = { 0.f,2.f * MATH_PI };
+	surfDesc.num_u = 50u;
+	surfDesc.num_v = 50u;
+	surfDesc.wire_frame_topology = true;
+
+	shape_3.initialize(&surfDesc);
 
 	window.graphics().enableOITransparency();
 }
@@ -246,13 +246,20 @@ void QuaternionMotion::eventManager()
 	
 	int l = IG_DATA::UPDATE_LIGHT;
 	if (l == -2) {
-		for (int i = 0; i < 8; i++) {
-			DO(updateLight(i, IG_DATA::LIGHTS[i].intensities, IG_DATA::LIGHTS[i].color, IG_DATA::LIGHTS[i].position));
+		for (int i = 0; i < 8; i++) 
+		{
+			shape_0.updateLight(i, IG_DATA::LIGHTS[i].intensities, IG_DATA::LIGHTS[i].color, IG_DATA::LIGHTS[i].position);
+			shape_1.updateLight(i, IG_DATA::LIGHTS[i].intensities, IG_DATA::LIGHTS[i].color, IG_DATA::LIGHTS[i].position);
+			shape_2.updateLight(i, IG_DATA::LIGHTS[i].intensities, IG_DATA::LIGHTS[i].color, IG_DATA::LIGHTS[i].position);
+			shape_3.updateLight(i, IG_DATA::LIGHTS[i].intensities, IG_DATA::LIGHTS[i].color, IG_DATA::LIGHTS[i].position);
 		}
 		IG_DATA::UPDATE_LIGHT = -1;
 	}
 	if (l > -1) {
-		DO(updateLight(l, IG_DATA::LIGHTS[l].intensities, IG_DATA::LIGHTS[l].color, IG_DATA::LIGHTS[l].position));
+		shape_0.updateLight(l, IG_DATA::LIGHTS[l].intensities, IG_DATA::LIGHTS[l].color, IG_DATA::LIGHTS[l].position);
+		shape_1.updateLight(l, IG_DATA::LIGHTS[l].intensities, IG_DATA::LIGHTS[l].color, IG_DATA::LIGHTS[l].position);
+		shape_2.updateLight(l, IG_DATA::LIGHTS[l].intensities, IG_DATA::LIGHTS[l].color, IG_DATA::LIGHTS[l].position);
+		shape_3.updateLight(l, IG_DATA::LIGHTS[l].intensities, IG_DATA::LIGHTS[l].color, IG_DATA::LIGHTS[l].position);
 		IG_DATA::UPDATE_LIGHT = -1;
 	}
 }
@@ -263,36 +270,46 @@ void QuaternionMotion::doFrame()
 
 	//	Update objects
 
+	window.graphics().setRenderTarget();
+
 	window.graphics().updatePerspective(observer, center, scale);
 
-	DO(updateRotation(rotationQuaternion(axis, dangle), true));
+	shape_0.updateRotation(rotationQuaternion(axis, dangle), true);
+	shape_1.updateRotation(rotationQuaternion(axis, dangle), true);
+	shape_2.updateRotation(rotationQuaternion(axis, dangle), true);
+	shape_3.updateRotation(rotationQuaternion(axis, dangle), true);
 	back.updateRotation(rotationQuaternion(axis, dangle), true);
 	curve.updateRotation(rotationQuaternion(axis, dangle), true);
 
-	const char* rot = shape_0.getRotation().str();
-	window.setTitle("%s  -  %u fps", rot, (unsigned)window.getFramerate());
-	free((void*)rot);
+	window.setTitle("%s  -  %u fps", shape_1.getRotation().str(), (unsigned)window.getFramerate());
 
 	//	Rendering
-
-	window.graphics().clearBuffer(Color::Black);
 
 	switch (IG_DATA::FIGURE)
 	{
 	case SQUARE:
+		window.graphics().clearTransparencyBuffers();
 		back.Draw();
 		shape_1.Draw();
 		break;
 	case WEIRD_SHAPE:
+		window.graphics().clearBuffer(Color::Black);
+		shape_0.Draw();
 		curve.Draw();
 		light.Draw();
 		break;
-	case OCTAHEDRON:
+	case OCTAHEDRON:	
+		shape_2.updateDistortion(Matrix(250.f / window.graphics().getScale()));
+		
+		window.graphics().clearBuffer(Color::Black);
 		shape_2.Draw();
 		light.Draw();
 		break;
+
 	case KLEIN:
+		window.graphics().clearBuffer(Color::Black);
 		shape_3.Draw();
+		break;
 	default:
 		break;
 	}
@@ -513,9 +530,17 @@ void QuaternionMotion::drag_magnetic_mouse()
 
 //	Functions
 
-float exampleRadius(float theta, float phi)
+float exampleRadius(float x, float y, float z)
 {
-	return 1.f + (sinf(theta) * sinf(theta) + cosf(phi) * sinf(phi)) * sinf(5 * theta) * cosf(3 * phi) * cosf(phi) / 2.f;
+	if (z == 1.f || z == -1.f)
+		return z * 0.65f;
+
+	float costheta = z;
+	float sintheta = sqrtf(1 - z * z);
+	float cosphi = x / sintheta;
+	float sinphi = y / sintheta;
+
+	return 1.f + (sintheta * sintheta + cosphi * sinphi) * sinf(5 * costheta) * cosf(3 * cosphi) * cosphi / 2.f;
 }
 
 Vector3f KleinBottle(float u, float v)
@@ -525,8 +550,11 @@ Vector3f KleinBottle(float u, float v)
 	float c_v = cosf(v);
 	float s_v = sinf(v);
 
-	float x = -2.f / 15.f * c_u * (3 * c_v - 30 * s_u + 90 * powf(c_u, 4.f) * s_u - 60 * powf(c_u, 6.f) * s_u + 5 * c_u * c_v * s_u);
-	float y = -1.f / 15.f * s_u * (3 * c_v - 3 * c_u * c_u * c_v - 48 * powf(c_u, 4.f) * c_v + 48 * powf(c_u, 6.f) * c_v - 60 * s_u + 5 * c_u * c_v * s_u - 5 * powf(c_u, 3) * c_v * s_u - 80 * powf(c_u, 7.f) * c_v * s_u) - 2;
+	float c_u3 = c_u * c_u * c_u;
+	float c_u4 = c_u3 * c_u;
+
+	float x = -2.f / 15.f * c_u * (3 * c_v - 30 * s_u + 90 * c_u4 * s_u - 60 * c_u3 * c_u3 * s_u + 5 * c_u * c_v * s_u);
+	float y = -1.f / 15.f * s_u * (3 * c_v - 3 * c_u * c_u * c_v - 48 * c_u4 * c_v + 48 * c_u3 * c_u3 * c_v - 60 * s_u + 5 * c_u * c_v * s_u - 5 * c_u3 * c_v * s_u - 80 * c_u3 * c_u4 * c_v * s_u) - 2;
 	float z = 2.f / 15.f * (3 + 5 * c_u * s_u) * s_v;
 	return Vector3f(x, y, z);
 }

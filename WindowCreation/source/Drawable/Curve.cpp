@@ -22,10 +22,20 @@ struct CurveInternals
 
 	struct VSconstBuffer
 	{
-		Quaternion rotation			= 1.f;
-		_float4vector position		= { 0.f, 0.f, 0.f, 0.f };
+		_float4matrix transform = 
+		{
+			1.f, 0.f, 0.f, 0.f,
+			0.f, 1.f, 0.f, 0.f,
+			0.f, 0.f, 1.f, 0.f,
+			0.f, 0.f, 0.f, 1.f,
+		};
 		_float4vector displacement	= { 0.f, 0.f, 0.f, 0.f };
-	}vscBuff;
+	}
+	vscBuff = {};
+
+	Matrix distortion = Matrix(1.f);
+	Quaternion rotation	= 1.f;
+	Vector3f position = {};
 
 	VertexBuffer* pUpdateVB = nullptr;
 
@@ -371,11 +381,16 @@ void Curve::updateRotation(Quaternion rotation, bool multiplicative)
 	CurveInternals& data = *(CurveInternals*)curveData;
 
 	if (multiplicative)
-		data.vscBuff.rotation *= rotation;
+		data.rotation *= rotation;
 	else
-		data.vscBuff.rotation = rotation;
+		data.rotation = rotation;
 
-	data.vscBuff.rotation.normalize();
+	data.rotation.normalize();
+
+	Matrix L = data.rotation.getMatrix() * data.distortion;
+
+	data.vscBuff.transform = L.getMatrix4(data.position);
+
 	data.pVSCB->update(&data.vscBuff);
 }
 
@@ -390,9 +405,45 @@ void Curve::updatePosition(Vector3f position, bool additive)
 	CurveInternals& data = *(CurveInternals*)curveData;
 
 	if (additive)
-		position += Vector3f(data.vscBuff.position.x, data.vscBuff.position.y, data.vscBuff.position.z);
+		data.position += position;
+	else
+		data.position = position;
 
-	data.vscBuff.position = position.getVector4();
+	Matrix L = data.rotation.getMatrix() * data.distortion;
+
+	data.vscBuff.transform = L.getMatrix4(data.position);
+
+	data.pVSCB->update(&data.vscBuff);
+}
+
+// Updates the matrix multiplied to the Curve, adding any arbitrary linear distortion to 
+// it. If you want to simply modify the size of the object just call this function on a 
+// diagonal matrix. Check the Matrix header for helpers to create any arbitrary distortion. 
+// If multiplicative the distortion will be added to the current distortion.
+
+void Curve::updateDistortion(Matrix distortion, bool multiplicative)
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the distortion on an uninitialized Curve.");
+
+	if (!distortion.determinant())
+		throw INFO_EXCEPT(
+			"Trying to update the distortion with a non invertible matrix.\n"
+			"Degenerate Matrices are not allowed for shape distortion.\n"
+			"If you want to reduce dimensionality you can apply it yourself to the vertices."
+		);
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	if (multiplicative)
+		data.distortion = distortion * data.distortion;
+	else
+		data.distortion = distortion;
+
+	Matrix L = data.rotation.getMatrix() * data.distortion;
+
+	data.vscBuff.transform = L.getMatrix4(data.position);
+
 	data.pVSCB->update(&data.vscBuff);
 }
 
@@ -425,7 +476,7 @@ Quaternion Curve::getRotation() const
 
 	CurveInternals& data = *(CurveInternals*)curveData;
 
-	return data.vscBuff.rotation;
+	return data.rotation;
 }
 
 // Returns the current scene position.
@@ -437,7 +488,19 @@ Vector3f Curve::getPosition() const
 
 	CurveInternals& data = *(CurveInternals*)curveData;
 
-	return { data.vscBuff.position.x, data.vscBuff.position.y, data.vscBuff.position.z };
+	return data.position;
+}
+
+// Returns the current distortion matrix.
+
+Matrix Curve::getDistortion() const
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to get the distortion matrix of an uninitialized Curve.");
+
+	CurveInternals& data = *(CurveInternals*)curveData;
+
+	return data.distortion;
 }
 
 // Returns the current screen position.

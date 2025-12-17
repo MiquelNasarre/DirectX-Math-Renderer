@@ -51,7 +51,7 @@ class Texture : public Bindable
 {
 public:
 	// Expects a valid image pointer and creates the texture in the GPU.
-	Texture(Image* image, TEXTURE_USAGE usage = TEXTURE_USAGE_DEFAULT, TEXTURE_TYPE type = TEXTURE_TYPE_IMAGE, unsigned slot = 0u);
+	Texture(const Image* image, TEXTURE_USAGE usage = TEXTURE_USAGE_DEFAULT, TEXTURE_TYPE type = TEXTURE_TYPE_IMAGE, unsigned slot = 0u);
 
 	// Releases the GPU pointer and deletes the data.
 	~Texture() override;
@@ -64,7 +64,7 @@ public:
 
 	// If usage is dynamic updates the texture with the new image.
 	// Dimensions must match the initial image dimensions.
-	void update(Image* image);
+	void update(const Image* image);
 
 private:
 	// Pointer to the internal Texture data.

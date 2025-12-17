@@ -9,9 +9,9 @@
 //#define GRAPHICS_DEBUGGING
 
 /*
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
  Global Device Functions
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
 */
 
 // This struct contains the data for the global device.
@@ -119,9 +119,9 @@ void* GlobalDevice::get_context_ptr()
 #define _context ((ID3D11DeviceContext*)GlobalDevice::get_context_ptr())
 
 /*
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
  OIT Implementation Functions
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
 */
 
 // This struct contains all the necessary GPU pointers for the OIT pass
@@ -147,9 +147,9 @@ struct OITransparencyInternals
 };
 
 /*
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
  Graphics class Internal Functions
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
 */
 
 // This structure contains all the data needed for the graphics
@@ -163,6 +163,8 @@ struct GraphicsInternals
 	ComPtr<ID3D11DepthStencilView>	pDSV = {};
 	
 	ConstantBuffer* Perspective = nullptr;
+	DepthStencil* defaultDephtStencil = nullptr;
+	Blender* defaultBlender = nullptr;
 
 	bool oitEnabled = false;
 	OITransparencyInternals* OIT = nullptr;
@@ -184,6 +186,10 @@ Graphics::~Graphics()
 
 	// Delete the perspective Constant Buffer
 	delete data.Perspective;
+
+	// Delete default bindables
+	delete data.defaultDephtStencil;
+	delete data.defaultBlender;
 
 	// Delete the data
 	delete &data;
@@ -231,6 +237,10 @@ Graphics::Graphics(void* hWnd)
 	//	Create Perspective constant buffer
 	data.Perspective = new ConstantBuffer(&cbuff, VERTEX_CONSTANT_BUFFER, 0u);
 
+	// Create default bindables
+	data.defaultBlender = new Blender(BLEND_MODE_OPAQUE);
+	data.defaultDephtStencil = new DepthStencil(DEPTH_STENCIL_MODE_DEFAULT);
+
 	// If someone was the render target reset to it.
 	if (currentRenderTarget) currentRenderTarget->setRenderTarget();
 	// Else you are the render target.
@@ -238,9 +248,9 @@ Graphics::Graphics(void* hWnd)
 }
 
 /*
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
  Graphics class Interface Functions
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
 */
 
 // Before issuing any draw calls to the window, for multiple window settings 
@@ -303,8 +313,12 @@ void Graphics::pushFrame()
 		ID3D11ShaderResourceView* nullSrvs[2] = { nullptr, nullptr };
 		GFX_THROW_INFO_ONLY(_context->PSSetShaderResources(0u, 2u, nullSrvs));
 
-		// Restore backbuffer as RT and default depth/blend state
+		// Restore backbuffer as RT
 		GFX_THROW_INFO_ONLY(_context->OMSetRenderTargets(1u, data.pTarget.GetAddressOf(), data.pDSV.Get()));
+
+		// Restore default blend/depth state
+		data.defaultDephtStencil->Bind();
+		data.defaultBlender->Bind();
 	}
 
 	// If the window has an imGui instance call the render function before swapping.
@@ -322,15 +336,36 @@ void Graphics::pushFrame()
 	}
 }
 
-// Clears the buffer with the specified color.
+// Clears the buffer with the specified color. If all buffers is false it will only clear
+// the screen color. the depth buffer and the transparency buffers will stay the same.
 
-void Graphics::clearBuffer(Color color)
+void Graphics::clearBuffer(Color color, bool all_buffers)
 {
 	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
 
 	_float4color col = color.getColor4();
 	GFX_THROW_INFO_ONLY(_context->ClearRenderTargetView(data.pTarget.Get(), &col.r));
-	GFX_THROW_INFO_ONLY(_context->ClearDepthStencilView(data.pDSV.Get(),D3D11_CLEAR_DEPTH,1.f,0u));
+
+	if (all_buffers)
+		clearDepthBuffer(), clearTransparencyBuffers();
+}
+
+// Clears the depth buffer so that all objects painted are moved to the back.
+// The last frame pixels are still on the render target.
+
+void Graphics::clearDepthBuffer()
+{
+	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
+
+	GFX_THROW_INFO_ONLY(_context->ClearDepthStencilView(data.pDSV.Get(), D3D11_CLEAR_DEPTH, 1.f, 0u));
+}
+
+// If OITransparency is enabled clears the two buffers related to OIT plotting.
+// IF it is not enabled it does nothing.
+
+void Graphics::clearTransparencyBuffers()
+{
+	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
 
 	if (data.oitEnabled)
 	{
@@ -344,15 +379,6 @@ void Graphics::clearBuffer(Color color)
 	}
 }
 
-// Clears the depth buffer so that all objects painted are moved to the back.
-
-void Graphics::clearDepthBuffer()
-{
-	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
-
-	GFX_THROW_INFO_ONLY(_context->ClearDepthStencilView(data.pDSV.Get(), D3D11_CLEAR_DEPTH, 1.f, 0u));
-}
-
 // Calls to draw the objects as indexed in the index count.
 
 void Graphics::drawIndexed(unsigned IndexCount, bool isOIT)
@@ -363,10 +389,10 @@ void Graphics::drawIndexed(unsigned IndexCount, bool isOIT)
 			"Create a window object or call setRenderTarget on your desired window object before calling Drawable::Draw()"
 		);
 
+	GraphicsInternals& data = *((GraphicsInternals*)currentRenderTarget->GraphicsData);
+
 	if (isOIT)
 	{
-		GraphicsInternals& data = *((GraphicsInternals*)currentRenderTarget->GraphicsData);
-		
 		if (!data.oitEnabled)
 			throw INFO_EXCEPT(
 				"Trying to draw a OITransparency Drawable on a Window that does not support it.\n"
@@ -376,7 +402,8 @@ void Graphics::drawIndexed(unsigned IndexCount, bool isOIT)
 		OITransparencyInternals& oit = *data.OIT;
 
 		// 1) Bind OIT MRTs + depth
-		ID3D11RenderTargetView* rtvs[2] = {
+		ID3D11RenderTargetView* rtvs[2] = 
+		{
 			oit.pOITAccumRTV.Get(),
 			oit.pOITRevealRTV.Get()
 		};
@@ -395,8 +422,9 @@ void Graphics::drawIndexed(unsigned IndexCount, bool isOIT)
 
 	else GFX_THROW_INFO_ONLY(_context->DrawIndexed(IndexCount, 0u, 0u));
 
-	// Back to default Depth Stencil State if it was changed.
-	GFX_THROW_INFO_ONLY(_context->OMSetDepthStencilState(nullptr, 0u));
+	// Back to default Depth Stencil State and Blender.
+	data.defaultDephtStencil->Bind();
+	data.defaultBlender->Bind();
 }
 
 // Simple conversion from a pixel position on screen to a (-1.0,1.0)x(-1.0,1.0) c R^2 position.
@@ -568,9 +596,9 @@ bool Graphics::isOITransparencyEnabled() const
 }
 
 /*
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
  Getters & Setters
---------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------
 */
 
 // Updates the perspective on the window, by changing the observer quaternion, 

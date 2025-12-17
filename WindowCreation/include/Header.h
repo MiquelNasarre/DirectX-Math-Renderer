@@ -17,4 +17,4 @@ code and the image library used mainly for textures.
 #include "Math/Quaternion.h"
 #include "Math/constants.h"
 
-#include "Image.h"
+#include "Image/Image.h"

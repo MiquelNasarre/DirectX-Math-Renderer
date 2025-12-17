@@ -2,8 +2,8 @@
 
 cbuffer Cbuff1 : register(b1)
 {
-    float4 rotation;            // Object rotation (quaternion)    
-    float4 translation;         // World Translation
+    float4x4 transform;         // Distortion + Rotation + Translation
+    float4x4 norm_transform;    // Distortion + Rotation for normals
     float2 screenDisplacement;  // Screen displacement
 };
 
@@ -19,9 +19,9 @@ VSOut main(float4 pos : Position, float4 norm : Normal, float4 color : Color)
 {
 	VSOut vso;
     
-    // Transform the normal vector and position with the objects rotation
-    vso.norm = Q2V(qRot(rotation, V2Q(norm))); 
-    vso.R3pos = Q2V(qRot(rotation, V2Q(pos))) + translation;
+    // Transform the normal vector and position with the transformation matrices
+    vso.norm = normalize(mul(norm_transform, norm));
+    vso.R3pos = mul(transform, pos);
     
     // Default method to transform from R3 to screen position
     vso.SCpos = R3toScreenPos(vso.R3pos);

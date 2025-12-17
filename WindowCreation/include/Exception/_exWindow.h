@@ -1,6 +1,6 @@
 #pragma once
 #include "Exception/Exception.h"
-#include "dxerr.h"
+#include "Exception/dxerr/dxerr.h"
 
 #include <string>
 

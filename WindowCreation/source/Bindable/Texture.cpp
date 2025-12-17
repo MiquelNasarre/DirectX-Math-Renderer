@@ -26,7 +26,7 @@ struct TextureInternals
 
 // Takes the Images reference and creates the texture in the GPU.
 
-Texture::Texture(Image* image, TEXTURE_USAGE usage, TEXTURE_TYPE type, unsigned slot)
+Texture::Texture(const Image* image, TEXTURE_USAGE usage, TEXTURE_TYPE type, unsigned slot)
 {
 	if (!image)
 		throw INFO_EXCEPT("Found nullptr when expecting an Image to create a Texture.");
@@ -153,7 +153,7 @@ void Texture::setSlot(unsigned slot)
 // If usage is dynamic updates the texture with the new image.
 // Dimensions must match the initial image dimensions.
 
-void Texture::update(Image* image)
+void Texture::update(const Image* image)
 {
 	if (!image)
 		throw INFO_EXCEPT("Found nullptr when expecting an Image to update a Texture.");

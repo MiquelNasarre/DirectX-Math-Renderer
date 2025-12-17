@@ -1,3 +1,4 @@
+#include "OITheader.hlsli"
 
 struct Lightsource
 {
@@ -23,7 +24,7 @@ struct PSOut
     float reveal : SV_Target1; // alpha for revealage product
 };
 
-PSOut main(float2 coord : Coord, float3 pos : PointPos, float3 norm : Norm, bool front : SV_IsFrontFace)
+PSOut main(float2 coord : Coord, float3 pos : PointPos, float3 norm : Norm, float4 scPos : SV_Position, bool front : SV_IsFrontFace)
 {
     // Sample from texture
     float4 color = _texture.Sample(_samp, coord);
@@ -68,8 +69,12 @@ PSOut main(float2 coord : Coord, float3 pos : PointPos, float3 norm : Norm, bool
     float alpha = saturate(color.a);
 
     PSOut outp;
+    
+    // Z dependent weight
+    float w = depth_weight(scPos);
+    
     // Accumulation target: premultiplied color + alpha (C_src * C_dst, A_src + A_dst)
-    outp.accum = float4(lit.rgb * alpha, alpha);
+    outp.accum = float4(lit.rgb * alpha * w, alpha * w);
     
     // Reveal target: alpha ((1 - A_src) * (1 - A_dst))
     outp.reveal = alpha;

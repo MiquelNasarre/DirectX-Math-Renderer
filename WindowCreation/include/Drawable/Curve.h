@@ -9,8 +9,8 @@ nature of this library it is mandatory that we have a drawable meant for drawing
 in the 3D space, and that is exactly what this class does.
 
 As it is standard on this library it has multiple setting to set the object rotation,
-position, and screen shifting and it is displayed in relation to the perspective of the
-Graphics currently set as render target.
+position, linear distortion, and screen shifting and it is displayed in relation to the
+perspective of the Graphics currently set as render target.
 
 It allows for transparencies, and function and coloring updates. For information on how 
 to handle transparencies you can check the Graphics header.
@@ -62,7 +62,7 @@ struct CURVE_DESC
 	// updateVertices() and updateColors() require it.
 	bool enable_updates = false;
 
-	// Whether the edge values of the range will are included in the set.
+	// Whether the edge values of the range are included in the set.
 	bool border_points_included = true;
 };
 
@@ -105,6 +105,12 @@ public:
 	// to the current position vector of the Curve.
 	void updatePosition(Vector3f position, bool additive = false);
 
+	// Updates the matrix multiplied to the Curve, adding any arbitrary linear distortion to 
+	// it. If you want to simply modify the size of the object just call this function on a 
+	// diagonal matrix. Check the Matrix header for helpers to create any arbitrary distortion. 
+	// If multiplicative the distortion will be added to the current distortion.
+	void updateDistortion(Matrix distortion, bool multiplicative = false);
+
 	// Updates the screen displacement of the figure. To be used if you intend to render 
 	// multiple scenes/plots on the same render target.
 	void updateScreenPosition(Vector2f screenDisplacement);
@@ -114,6 +120,9 @@ public:
 
 	// Returns the current scene position.
 	Vector3f getPosition() const;
+
+	// Returns the current distortion matrix.
+	Matrix getDistortion() const;
 
 	// Returns the current screen position.
 	Vector2f getScreenPosition() const;

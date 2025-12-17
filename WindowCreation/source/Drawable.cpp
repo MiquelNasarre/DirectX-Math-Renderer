@@ -3,20 +3,39 @@
 #include "Bindable/Blender.h"
 #include "Exception/_exDefault.h"
 
-#include <memory>
-#include <vector>
 #include <typeinfo>
 
 // Struct containing the bindable data of a given drawable object.
 struct DrawableInternals
 {
 	// All bindables are found in this vector.
-	std::vector<Bindable*> binds = {};
+	Bindable** binds = nullptr;
+	unsigned n_binds = 0u;
+
+	void push_back(Bindable* bind)
+	{
+		Bindable** new_binds = new Bindable* [n_binds + 1u];
+
+		for (unsigned i = 0u; i < n_binds; i++)
+			new_binds[i] = binds[i];
+
+		new_binds[n_binds++] = bind;
+
+		if (binds)
+			delete[] binds;
+
+		binds = new_binds;
+	}
 
 	~DrawableInternals()
 	{
-		for (auto& b : binds)
-			delete b;
+		if (!n_binds)
+			return;
+
+		for (unsigned i = 0u; i < n_binds; i++)
+			delete binds[i];
+
+		delete[] binds;
 	}
 };
 
@@ -66,8 +85,10 @@ void Drawable::_draw() const
 	unsigned indexCount = 0u;
 	bool isOIT = false;
 
-	for (auto& bind : data.binds)
+	for (unsigned i = 0u; i< data.n_binds; i++)
 	{
+		Bindable* bind = data.binds[i];
+
 		// Look for the Blender in case it requires OIT.
 		if (typeid(*bind) == typeid(Blender) && ((Blender*)bind)->getMode() == BLEND_MODE_OIT_WEIGHTED)
 			isOIT = true;
@@ -92,7 +113,7 @@ Bindable* Drawable::AddBind(Bindable* bind)
 	DrawableInternals& data = *((DrawableInternals*)DrawableData);
 
 	// Push the new bindable to the vector.
-	data.binds.push_back(bind);
+	data.push_back(bind);
 
 	// Return the pointer to the new bindable.
 	return bind;

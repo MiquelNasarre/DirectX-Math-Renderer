@@ -43,6 +43,12 @@ struct BACKGROUND_DESC
 
 	// Whether the Background texture is pixelated or linearly interpolates.
 	bool pixelated_texture = false;
+
+	// If true, when drawn it will override whatever is on the depth buffer and render
+	// target, basically clearing the screen with the background. If drawn first, set 
+	// to true and clearBuffer() is not necessary. Better for performance.
+	// If using OIT clearTransparencyBuffers() is still necessary.
+	bool override_buffers = false;
 };
 
 // Background drawable class, used for drawing and interaction with textured backgrounds
@@ -64,7 +70,7 @@ public:
 	// If updates are enabled, this function allows to update the background texture.
 	// Expects a valid image pointer to the new Background image, with the same dimensions
 	// as the image used in the constructor.
-	void updateTexture(Image* image);
+	void updateTexture(const Image* image);
 
 	// If the Background is dynamic, it updates the rotation quaternion of the scene. If 
 	// multiplicative it will apply the rotation on top of the current rotation. For more 

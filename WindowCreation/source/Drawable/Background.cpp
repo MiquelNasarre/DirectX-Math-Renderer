@@ -127,6 +127,9 @@ void Background::initialize(const BACKGROUND_DESC* pDesc)
 	AddBind(new Rasterizer(false));
 	AddBind(new Topology(TRIANGLE_STRIP));
 	AddBind(new Blender(BLEND_MODE_OPAQUE));
+
+	if (data.desc.override_buffers)
+		AddBind(new DepthStencil(DEPTH_STENCIL_MODE_OVERRIDE));
 }
 
 /*
@@ -139,7 +142,7 @@ void Background::initialize(const BACKGROUND_DESC* pDesc)
 // Expects a valid image pointer to the new Background image, with the same dimensions
 // as the image used in the constructor.
 
-void Background::updateTexture(Image* image)
+void Background::updateTexture(const Image* image)
 {
 	if (!isInit)
 		throw INFO_EXCEPT("Trying to update the texture on an uninitialized Background.");

@@ -2,6 +2,7 @@
 #include "Bindable/BindableBase.h"
 
 #include "Exception/_exDefault.h"
+#include <math.h>
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -73,8 +74,6 @@ void Light::initialize(const LIGHT_DESC* pDesc)
 			"Found poligon sides smaller than three when trying to create a Light.\n"
 			"You need at least three poligon sides to initialize a Light."
 		);
-
-#include <math.h>
 
 	// Make a circle of points and connect them.
 
@@ -254,4 +253,3 @@ float Light::getRadius() const
 
 	return data.desc.radius;
 }
-

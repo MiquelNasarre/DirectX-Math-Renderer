@@ -4,12 +4,19 @@
 /* GRAPHICS OBJECT CLASS
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
-This header contains the Graphics object and its functions. All windows contain
-their own graphics object which controls the GPU pointers regarding that window.
+This header contains the Graphics object and its functions. All windows contain their own 
+graphics object which controls the GPU pointers regarding that window.
 
-Also due to the nature of the API the class also contains the POV of the window,
-including a direction of view and a center. All drawables have acces to this buffer
-and the shader are built accordingly. The buffer can be modified via class functions.
+Also due to the nature of the API the class also contains the POV of the window, including 
+a direction of view and a center. All drawables have acces to this buffer and the shaders 
+are built accordingly. The direction is given by a quaternion and the center is given by a 
+3D vector. They can be updated via class functions.
+
+The graphics also defines two default bindables, these being the depth stencil state to be 
+always DEPTH_STENCIL_MODE_DEFAULT, and the blender to be always BLEND_MODE_OPAQUE. Therefore 
+if you design a drawable that does not require different settings you don't have to include 
+those bindables. Every other bindable must be in every single drawable. Check bindable base
+to see all the different bindables contained in this library.
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
 */
@@ -72,9 +79,6 @@ private:
 	Graphics(const Graphics&) = delete;
 	Graphics& operator=(const Graphics&) = delete;
 
-	// Clears the depth buffer so that all objects painted are moved to the back.
-	void clearDepthBuffer();
-
 	// Calls to draw the objects as indexed in the index count.
 	static void drawIndexed(unsigned IndexCount, bool isOIT);
 
@@ -89,8 +93,17 @@ public:
 	// Swaps the current frame and shows the new frame to the window.
 	void pushFrame();
 
-	// Clears the buffer with the specified color.
-	void clearBuffer(Color color);
+	// Clears the buffer with the specified color. If all buffers is false it will only clear
+	// the screen color. the depth buffer and the transparency buffers will stay the same.
+	void clearBuffer(Color color, bool all_buffers = true);
+
+	// Clears the depth buffer so that all objects painted are moved to the back.
+	// The last frame pixels are still on the render target.
+	void clearDepthBuffer();
+
+	// If OITransparency is enabled clears the two buffers related to OIT plotting.
+	// IF it is not enabled it does nothing.
+	void clearTransparencyBuffers();
 
 	// Simple conversion from a pixel position on screen to a (-1.0,1.0)x(-1.0,1.0) c R^2 position.
 	Vector2f PixeltoR2(const Vector2i MousePos);

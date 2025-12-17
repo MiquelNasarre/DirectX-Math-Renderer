@@ -44,7 +44,8 @@ struct IG_DATA {
 	static int UPDATE_LIGHT;
 };
 
-class QuaternionMotion {
+class QuaternionMotion 
+{
 private:
 	Window window;
 	IG_QuaternionMotion imGui;
@@ -99,6 +100,6 @@ private:
 
 //	Functions
 
-float exampleRadius(float, float);
+float exampleRadius(float, float, float);
 
 Vector3f KleinBottle(float u, float v);

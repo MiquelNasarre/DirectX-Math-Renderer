@@ -9,8 +9,8 @@ this case here we have it. To initialize it, it expects a valid pointer to a des
 and will create the Shape with the specified data.
 
 As it is standard on this library it has multiple setting to set the object rotation,
-position, and screen shifting and it is displayed in relation to the perspective of the
-Graphics currently set as render target.
+position, linear distortion, and screen shifting and it is displayed in relation to the 
+perspective of the Graphics currently set as render target.
 
 It allows for ilumination, texturing, transparencies and figure updates. For information 
 on how to handle transparencies you can check the Graphics header. For information on how 
@@ -63,6 +63,27 @@ struct POLIHEDRON_DESC
 	// vertex of every triangle. Three times the traiangle count.
 	Vector2i* texture_coordinates_list = nullptr;
 
+	// If the Polihedron is iluminated it specifies how the normal vectors will be obtained.
+	enum POLIHEDRON_NORMALS
+	{
+		// The normal vectors will be computed by triagle and assigned to each vertex 
+		// accordingly, grid pattern is clearly visible unless the grid is very thin.
+		COMPUTED_TRIANGLE_NORMALS,
+		// Each vertex has its own normal vector attached, an that onw will be used
+		// across all its triangle connections. The list must be provided.
+		PER_VERTEX_LIST_NORMALS,
+		// Each vertex appearence on each triangle will have a different normal from
+		// the normal vector list. So the list must be as long as three times the number
+		// of triangles.
+		PER_TRIANGLE_LIST_NORMALS,
+	}
+	normal_computation = COMPUTED_TRIANGLE_NORMALS; // Defaults to computation.
+
+	// IF normals are not computed this variable is expected to contain a valid list
+	// of normal vectors as long as the vertex count in case of per vertex normals, 
+	// or as long a three times the triangle count in case of per triangle normals.
+	Vector3f* normal_vectors_list = nullptr;
+
 	// Whether both sides of each triangle are rendered or not.
 	bool double_sided_rendering = true;
 
@@ -75,7 +96,7 @@ struct POLIHEDRON_DESC
 
 	// Whether the polihedron allows for shape updates, leave at false if 
 	// you don't intend to update the shape of the Polihedron. Only the functions 
-	// updateVertices(), updateColors(), undateTextureCoordinates() require it.
+	// updateVertices(), updateColors(), updateTextureCoordinates() require it.
 	bool enable_updates	= false;
 
 	// IF true renders only the aristas of the Polihedron.
@@ -83,6 +104,11 @@ struct POLIHEDRON_DESC
 
 	// Uses a nearest point sampler instead of a linear one.
 	bool pixelated_texture = false;
+
+	// By default polihedrons and surfaces are lit by four different color lights
+	// around the center of coordinates, allows for a nice default that iluminates
+	// everything and distiguishes different areas, disable to set all to black.
+	bool default_initial_lights = true;
 };
 
 // Polihedron drawable class, used for drawing and interacting with user defined triangle 
@@ -112,6 +138,11 @@ public:
 	// Three times the triangle count.
 	void updateColors(const Color* color_list);
 
+	// If normals are provided this function allows to update the normal vectors in the 
+	// same satting that the Polihedron was initialized on. It expects a valid list of
+	// normal vectors of the correspoding lenght.
+	void updateNormals(const Vector3f* normal_vectors_list);
+
 	// If updates are enabled, and coloring is texured, this functions allows o change the 
 	// current vertex texture coordinates for the new ones specified. It expects a valid 
 	// pointer with a list of pixels containing one coordinates per every vertex of every
@@ -130,6 +161,12 @@ public:
 	// to the current position vector of the Polihedron.
 	void updatePosition(Vector3f position, bool additive = false);
 
+	// Updates the matrix multiplied to the Polihedrom, adding any arbitrary linear distortion 
+	// to it. If you want to simply modify the size of the object just call this function on a 
+	// diagonal matrix. Check the Matrix header for helpers to create any arbitrary distortion. 
+	// If multiplicative the distortion will be added to the current distortion.
+	void updateDistortion(Matrix distortion, bool multiplicative = false);
+
 	// Updates the screen displacement of the figure. To be used if you intend to render 
 	// multiple scenes/plots on the same render target.
 	void updateScreenPosition(Vector2f screenDisplacement);
@@ -146,6 +183,9 @@ public:
 
 	// Returns the current scene position.
 	Vector3f getPosition() const;
+
+	// Returns the current distortion matrix.
+	Matrix getDistortion() const;
 
 	// Returns the current screen position.
 	Vector2f getScreenPosition() const;

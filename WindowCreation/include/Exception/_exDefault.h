@@ -1,6 +1,5 @@
 #pragma once
 #include "Exception/Exception.h"
-#include <string>
 
 /* DEFAULT EXCEPTION CLASS
 -------------------------------------------------------------------------------------------------------
@@ -24,40 +23,91 @@ class InfoException : public Exception
 public:
 	// Single message constructor, the message is stored in the info.
 	InfoException(int line, const char* file, const char* msg) noexcept
-		: Exception(line, file), info{ msg }
+		: Exception(line, file)
 	{
+		unsigned c = 0u;
+		info = new char[2048];
+
+		// Add intro to information.
+		const char* intro = "\n[Description]\n";
+		unsigned i = 0u;
+		while (intro[i] && c < 2047)
+			info[c++] = intro[i++];
+
+		// join all info messages with newlines into single string.
+		i = 0u;
+		while (msg[i] && c < 2047)
+			info[c++] = msg[i++];
+
+		// Add intro to origin string.
+		const char* origin_intro = "\n[Error Info]\n";
+		i = 0u;
+		while (origin_intro[i] && c < 2047)
+			info[c++] = origin_intro[i++];
+
+		// Add origin location.
+		const char* origin = GetOriginString();
+		i = 0u;
+		while (origin[i] && c < 2047)
+			info[c++] = origin[i++];
+
+		// Add final EOS
+		info[c] = '\0';
 	}
 
 	// Multiple messages constructor, the messages are stored in the info.
 	InfoException(int line, const char* file, const char** infoMsgs = nullptr) noexcept
 		:Exception(line, file)
 	{
-		// join all info messages with newlines into single string
+		unsigned c = 0u;
+		info = new char[2048];
 
-		if (!infoMsgs)
-			return;
+		// Add intro to information.
+		const char* intro = "\n[Description]\n";
+		unsigned i = 0u;
+		while (intro[i] && c < 2047)
+			info[c++] = intro[i++];
 
-		unsigned int i = 0;
+		// join all info messages with newlines into single string.
+		i = 0u;
 		while (infoMsgs[i])
 		{
-			info += infoMsgs[i];
-			info.push_back('\n');
-			i++;
+			unsigned j = 0u;
+			while (infoMsgs[i][j] && c < 2047)
+				info[c++] = infoMsgs[i][j++];
+
+			if(infoMsgs[++i] && c < 2047)
+				info[c++]= '\n';
 		}
 
-		// remove final newline if exists
+		// Add intro to origin string.
+		const char* origin_intro = "\n[Error Info]\n";
+		i = 0u;
+		while (origin_intro[i] && c < 2047)
+			info[c++] = origin_intro[i++];
 
-		if (!info.empty())
-			info.pop_back();
+		// Add origin location.
+		const char* origin = GetOriginString();
+		i = 0u;
+		while (origin[i] && c < 2047)
+			info[c++] = origin[i++];
+
+		// Add final EOS
+		info[c] = '\0';
+	}
+
+	// Deletes the string pointer.
+	~InfoException()
+	{
+		if (info)
+			delete[] info;
 	}
 
 	// Override method, prints the stored information and the 
 	// position the exception was thrown at.
 	const char* what() const noexcept override
 	{
-		auto message = new std::string(std::string("\n[Error Info]\n") + info + "\n[Exception Thrown At]\n" + GetOriginString());
-		whatBuffer = (char*)message->c_str();
-		return whatBuffer;
+		return info;
 	}
 
 	// Info Exception type override.
@@ -68,5 +118,5 @@ public:
 
 private:
 	// Exception information storage.
-	std::string info;
+	char* info = nullptr;
 };

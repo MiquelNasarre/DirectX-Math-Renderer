@@ -14,22 +14,22 @@ struct PolihedronInternals
 {
 	struct Vertex
 	{
-		_float4vector vector;
-		_float4vector norm;
+		_float4vector vector = {};
+		_float4vector norm = {};
 	}*Vertices = nullptr;
 
 	struct ColorVertex
 	{
-		_float4vector vector;
-		_float4vector norm;
-		_float4color color;
+		_float4vector vector = {};
+		_float4vector norm = {};
+		_float4color color = {};
 	}*ColVertices = nullptr;
 
 	struct TextureVertex
 	{
-		_float4vector vector;
-		_float4vector norm;
-		_float4vector coord;
+		_float4vector vector = {};
+		_float4vector norm = {};
+		_float4vector coord = {};
 	}*TexVertices = nullptr;
 
 	unsigned image_width = 0u;
@@ -37,26 +37,36 @@ struct PolihedronInternals
 
 	struct VSconstBuffer
 	{
-		Quaternion rotation			= 1.f;
-		_float4vector position		= { 0.f, 0.f, 0.f, 0.f };
+		_float4matrix transform =
+		{
+			1.f, 0.f, 0.f, 0.f,
+			0.f, 1.f, 0.f, 0.f,
+			0.f, 0.f, 1.f, 0.f,
+			0.f, 0.f, 0.f, 1.f,
+		};
+		_float4matrix normal_transform =
+		{
+			1.f, 0.f, 0.f, 0.f,
+			0.f, 1.f, 0.f, 0.f,
+			0.f, 0.f, 1.f, 0.f,
+			0.f, 0.f, 0.f, 1.f,
+		};
 		_float4vector displacement	= { 0.f, 0.f, 0.f, 0.f };
-	}vscBuff;
+	}
+	vscBuff = {};
+
+	Matrix distortion = Matrix(1.f);
+	Quaternion rotation = 1.f;
+	Vector3f position = {};
 
 	struct PSconstBuffer
 	{
 		struct {
-			_float4vector intensity = { 0.f,0.f,0.f,0.f };
-			_float4color  color		= { 0.f,0.f,0.f,0.f };
-			_float4vector position	= { 0.f,0.f,0.f,0.f };
+			_float4vector intensity = { 0.f, 0.f, 0.f, 0.f };
+			_float4color  color		= { 0.f, 0.f, 0.f, 0.f };
+			_float4vector position	= { 0.f, 0.f, 0.f, 0.f };
 		}lightsource[8];
-	}
-	pscBuff = // Default light settings
-	{
-			60.f,10.f,NULL,NULL,1.0f, 0.2f, 0.2f, 1.f , 0.f, 8.f, 8.f,NULL,
-			60.f,10.f,NULL,NULL,0.0f, 1.0f, 0.0f, 1.f , 0.f,-8.f, 8.f,NULL,
-			60.f,10.f,NULL,NULL,0.5f, 0.0f, 1.0f, 1.f ,-8.f, 0.f,-8.f,NULL,
-			60.f,10.f,NULL,NULL,1.0f, 1.0f, 0.0f, 1.f , 8.f, 0.f, 8.f,NULL,
-	};
+	}pscBuff;
 
 	ConstantBuffer* pVSCB = nullptr;
 	ConstantBuffer* pPSCB = nullptr;
@@ -130,6 +140,10 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 	if (!data.desc.triangle_list)
 		throw INFO_EXCEPT("Found nullptr when trying to access a triangle list to create a Polihedron.");
 
+	if (data.desc.normal_computation != POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS && !data.desc.normal_vectors_list)
+		throw INFO_EXCEPT("Found nullptr when trying to access a normal vector list to create a Polihedron.");
+
+
 	switch (data.desc.coloring)
 	{
 		case POLIHEDRON_DESC::GLOBAL_COLORING:
@@ -142,15 +156,44 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 				const Vector3f& v1 = data.desc.vertex_list[data.desc.triangle_list[i].y];
 				const Vector3f& v2 = data.desc.vertex_list[data.desc.triangle_list[i].z];
 
-				Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
-
 				data.Vertices[3 * i + 0].vector = v0.getVector4();
 				data.Vertices[3 * i + 1].vector = v1.getVector4();
 				data.Vertices[3 * i + 2].vector = v2.getVector4();
 
-				data.Vertices[3 * i + 0].norm = norm.getVector4();
-				data.Vertices[3 * i + 1].norm = norm.getVector4();
-				data.Vertices[3 * i + 2].norm = norm.getVector4();
+				if (data.desc.enable_iluminated)
+				{
+					switch (data.desc.normal_computation)
+					{
+						case POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS:
+						{
+							Vector3f norm = ((v1 - v0) * (v2 - v0)).normalize();
+
+							data.Vertices[3 * i + 0].norm = norm.getVector4();
+							data.Vertices[3 * i + 1].norm = norm.getVector4();
+							data.Vertices[3 * i + 2].norm = norm.getVector4();
+							break;
+						}
+
+						case POLIHEDRON_DESC::PER_TRIANGLE_LIST_NORMALS:
+						{
+							data.Vertices[3 * i + 0].norm = data.desc.normal_vectors_list[3 * i + 0].getVector4();
+							data.Vertices[3 * i + 1].norm = data.desc.normal_vectors_list[3 * i + 1].getVector4();
+							data.Vertices[3 * i + 2].norm = data.desc.normal_vectors_list[3 * i + 2].getVector4();
+							break;
+						}
+
+						case POLIHEDRON_DESC::PER_VERTEX_LIST_NORMALS:
+						{
+							data.Vertices[3 * i + 0].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].x].getVector4();
+							data.Vertices[3 * i + 1].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].y].getVector4();
+							data.Vertices[3 * i + 2].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].z].getVector4();
+							break;
+						}
+
+						default:
+							throw INFO_EXCEPT("Unknown normal computation mode found when trying to initialize a Polihedron.");
+					}
+				}
 			}
 			data.pUpdateVB = AddBind(new VertexBuffer(data.Vertices, 3u * data.desc.triangle_count, data.desc.enable_updates ? VB_USAGE_DYNAMIC : VB_USAGE_DEFAULT));
 
@@ -200,19 +243,48 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 				const Vector3f& v1 = data.desc.vertex_list[data.desc.triangle_list[i].y];
 				const Vector3f& v2 = data.desc.vertex_list[data.desc.triangle_list[i].z];
 
-				Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
-
 				data.ColVertices[3 * i + 0].vector = v0.getVector4();
 				data.ColVertices[3 * i + 1].vector = v1.getVector4();
 				data.ColVertices[3 * i + 2].vector = v2.getVector4();
 
-				data.ColVertices[3 * i + 0].norm = norm.getVector4();
-				data.ColVertices[3 * i + 1].norm = norm.getVector4();
-				data.ColVertices[3 * i + 2].norm = norm.getVector4();
-
 				data.ColVertices[3 * i + 0].color = data.desc.color_list[3 * i + 0].getColor4();
 				data.ColVertices[3 * i + 1].color = data.desc.color_list[3 * i + 1].getColor4();
 				data.ColVertices[3 * i + 2].color = data.desc.color_list[3 * i + 2].getColor4();
+
+				if (data.desc.enable_iluminated)
+				{
+					switch (data.desc.normal_computation)
+					{
+						case POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS:
+						{
+							Vector3f norm = ((v1 - v0) * (v2 - v0)).normalize();
+
+							data.ColVertices[3 * i + 0].norm = norm.getVector4();
+							data.ColVertices[3 * i + 1].norm = norm.getVector4();
+							data.ColVertices[3 * i + 2].norm = norm.getVector4();
+							break;
+						}
+
+						case POLIHEDRON_DESC::PER_TRIANGLE_LIST_NORMALS:
+						{
+							data.ColVertices[3 * i + 0].norm = data.desc.normal_vectors_list[3 * i + 0].getVector4();
+							data.ColVertices[3 * i + 1].norm = data.desc.normal_vectors_list[3 * i + 1].getVector4();
+							data.ColVertices[3 * i + 2].norm = data.desc.normal_vectors_list[3 * i + 2].getVector4();
+							break;
+						}
+
+						case POLIHEDRON_DESC::PER_VERTEX_LIST_NORMALS:
+						{
+							data.ColVertices[3 * i + 0].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].x].getVector4();
+							data.ColVertices[3 * i + 1].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].y].getVector4();
+							data.ColVertices[3 * i + 2].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].z].getVector4();
+							break;
+						}
+
+						default:
+							throw INFO_EXCEPT("Unknown normal computation mode found when trying to initialize a Polihedron.");
+					}
+				}
 			}
 			data.pUpdateVB = AddBind(new VertexBuffer(data.ColVertices, 3u * data.desc.triangle_count, data.desc.enable_updates ? VB_USAGE_DYNAMIC : VB_USAGE_DEFAULT));
 
@@ -265,15 +337,9 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 				const Vector3f& v1 = data.desc.vertex_list[data.desc.triangle_list[i].y];
 				const Vector3f& v2 = data.desc.vertex_list[data.desc.triangle_list[i].z];
 
-				Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
-
 				data.TexVertices[3 * i + 0].vector = v0.getVector4();
 				data.TexVertices[3 * i + 1].vector = v1.getVector4();
 				data.TexVertices[3 * i + 2].vector = v2.getVector4();
-
-				data.TexVertices[3 * i + 0].norm = norm.getVector4();
-				data.TexVertices[3 * i + 1].norm = norm.getVector4();
-				data.TexVertices[3 * i + 2].norm = norm.getVector4();
 
 				data.TexVertices[3 * i + 0].coord = {
 					float(data.desc.texture_coordinates_list[3 * i + 0].x) / data.image_width,
@@ -289,6 +355,42 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 					float(data.desc.texture_coordinates_list[3 * i + 2].x) / data.image_width,
 					float(data.desc.texture_coordinates_list[3 * i + 2].y) / data.image_height,
 				0.f,0.f };
+
+				if (data.desc.enable_iluminated)
+				{
+					switch (data.desc.normal_computation)
+					{
+						case POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS:
+						{
+							Vector3f norm = ((v1 - v0) * (v2 - v0)).normalize();
+
+							data.TexVertices[3 * i + 0].norm = norm.getVector4();
+							data.TexVertices[3 * i + 1].norm = norm.getVector4();
+							data.TexVertices[3 * i + 2].norm = norm.getVector4();
+							break;
+						}
+
+						case POLIHEDRON_DESC::PER_TRIANGLE_LIST_NORMALS:
+						{
+							data.TexVertices[3 * i + 0].norm = data.desc.normal_vectors_list[3 * i + 0].getVector4();
+							data.TexVertices[3 * i + 1].norm = data.desc.normal_vectors_list[3 * i + 1].getVector4();
+							data.TexVertices[3 * i + 2].norm = data.desc.normal_vectors_list[3 * i + 2].getVector4();
+							break;
+						}
+
+						case POLIHEDRON_DESC::PER_VERTEX_LIST_NORMALS:
+						{
+							data.TexVertices[3 * i + 0].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].x].getVector4();
+							data.TexVertices[3 * i + 1].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].y].getVector4();
+							data.TexVertices[3 * i + 2].norm = data.desc.normal_vectors_list[data.desc.triangle_list[i].z].getVector4();
+							break;
+						}
+
+						default:
+							throw INFO_EXCEPT("Unknown normal computation mode found when trying to initialize a Polihedron.");
+					}
+				}
+
 			}
 			data.pUpdateVB = AddBind(new VertexBuffer(data.TexVertices, 3u * data.desc.triangle_count, data.desc.enable_updates ? VB_USAGE_DYNAMIC : VB_USAGE_DEFAULT));
 
@@ -334,7 +436,13 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 
 	// If update enabled save a copy to update vertices
 	if (data.desc.enable_updates)
-		data.desc.triangle_list = (Vector3i*)memcpy(new Vector3i[data.desc.triangle_count], data.desc.triangle_list, data.desc.triangle_count * sizeof(Vector3i));
+	{
+		Vector3i* new_list = new Vector3i[data.desc.triangle_count];
+		for (unsigned i = 0u; i < data.desc.triangle_count; i++)
+			new_list[i] = data.desc.triangle_list[i];
+
+		data.desc.triangle_list = new_list;
+	}
 	// Else forget about it.
 	else
 		data.desc.triangle_list = nullptr;
@@ -353,7 +461,28 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 
 	// If iluminated is enabled bind the default lights
 	if (data.desc.enable_iluminated)
+	{
+		if (data.desc.default_initial_lights)
+		{
+			data.pscBuff.lightsource[0].intensity = { 60.f, 10.f };
+			data.pscBuff.lightsource[1].intensity = { 60.f, 10.f };
+			data.pscBuff.lightsource[2].intensity = { 60.f, 10.f };
+			data.pscBuff.lightsource[3].intensity = { 60.f, 10.f };
+
+			data.pscBuff.lightsource[0].color = { 1.0f, 0.2f, 0.2f, 1.f };
+			data.pscBuff.lightsource[1].color = { 0.0f, 1.0f, 0.0f, 1.f };
+			data.pscBuff.lightsource[2].color = { 0.5f, 0.0f, 1.0f, 1.f };
+			data.pscBuff.lightsource[3].color = { 1.0f, 1.0f, 0.0f, 1.f };
+
+			data.pscBuff.lightsource[0].position = { 0.f, 8.f, 8.f };
+			data.pscBuff.lightsource[1].position = { 0.f,-8.f, 8.f };
+			data.pscBuff.lightsource[2].position = {-8.f, 0.f,-8.f };
+			data.pscBuff.lightsource[3].position = { 8.f, 0.f, 8.f };
+		}
+
 		data.pPSCB = AddBind(new ConstantBuffer(&data.pscBuff, PIXEL_CONSTANT_BUFFER));
+	}
+
 }
 
 /*
@@ -389,15 +518,18 @@ void Polihedron::updateVertices(const Vector3f* vertex_list)
 				const Vector3f& v1 = vertex_list[data.desc.triangle_list[i].y];
 				const Vector3f& v2 = vertex_list[data.desc.triangle_list[i].z];
 
-				Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
-
 				data.Vertices[3 * i + 0].vector = v0.getVector4();
 				data.Vertices[3 * i + 1].vector = v1.getVector4();
 				data.Vertices[3 * i + 2].vector = v2.getVector4();
 
-				data.Vertices[3 * i + 0].norm = norm.getVector4();
-				data.Vertices[3 * i + 1].norm = norm.getVector4();
-				data.Vertices[3 * i + 2].norm = norm.getVector4();
+				if (data.desc.normal_computation == POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS)
+				{
+					Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
+
+					data.Vertices[3 * i + 0].norm = norm.getVector4();
+					data.Vertices[3 * i + 1].norm = norm.getVector4();
+					data.Vertices[3 * i + 2].norm = norm.getVector4();
+				}
 			}
 			data.pUpdateVB->updateVertices(data.Vertices, 3u * data.desc.triangle_count);
 			break;
@@ -411,15 +543,18 @@ void Polihedron::updateVertices(const Vector3f* vertex_list)
 				const Vector3f& v1 = vertex_list[data.desc.triangle_list[i].y];
 				const Vector3f& v2 = vertex_list[data.desc.triangle_list[i].z];
 
-				Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
-
 				data.ColVertices[3 * i + 0].vector = v0.getVector4();
 				data.ColVertices[3 * i + 1].vector = v1.getVector4();
 				data.ColVertices[3 * i + 2].vector = v2.getVector4();
 
-				data.ColVertices[3 * i + 0].norm = norm.getVector4();
-				data.ColVertices[3 * i + 1].norm = norm.getVector4();
-				data.ColVertices[3 * i + 2].norm = norm.getVector4();
+				if (data.desc.normal_computation == POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS)
+				{
+					Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
+
+					data.ColVertices[3 * i + 0].norm = norm.getVector4();
+					data.ColVertices[3 * i + 1].norm = norm.getVector4();
+					data.ColVertices[3 * i + 2].norm = norm.getVector4();
+				}
 			}
 			data.pUpdateVB->updateVertices(data.ColVertices, 3u * data.desc.triangle_count);
 			break;
@@ -433,15 +568,18 @@ void Polihedron::updateVertices(const Vector3f* vertex_list)
 				const Vector3f& v1 = vertex_list[data.desc.triangle_list[i].y];
 				const Vector3f& v2 = vertex_list[data.desc.triangle_list[i].z];
 
-				Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
-
 				data.TexVertices[3 * i + 0].vector = v0.getVector4();
 				data.TexVertices[3 * i + 1].vector = v1.getVector4();
 				data.TexVertices[3 * i + 2].vector = v2.getVector4();
 
-				data.TexVertices[3 * i + 0].norm = norm.getVector4();
-				data.TexVertices[3 * i + 1].norm = norm.getVector4();
-				data.TexVertices[3 * i + 2].norm = norm.getVector4();
+				if (data.desc.normal_computation == POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS)
+				{
+					Vector3f norm = data.desc.enable_iluminated ? ((v1 - v0) * (v2 - v0)).normalize() : Vector3f();
+
+					data.TexVertices[3 * i + 0].norm = norm.getVector4();
+					data.TexVertices[3 * i + 1].norm = norm.getVector4();
+					data.TexVertices[3 * i + 2].norm = norm.getVector4();
+				}
 			}
 			data.pUpdateVB->updateVertices(data.TexVertices, 3u * data.desc.triangle_count);
 			break;
@@ -474,6 +612,101 @@ void Polihedron::updateColors(const Color* color_list)
 		data.ColVertices[i].color = color_list[i].getColor4();
 
 	data.pUpdateVB->updateVertices(data.ColVertices, 3u * data.desc.triangle_count);
+}
+
+// If normals are provided this function allows to update the normal vectors in the 
+// same satting that the Polihedron was initialized on. It expects a valid list of
+// normal vectors of the correspoding lenght.
+
+void Polihedron::updateNormals(const Vector3f* normal_vectors_list)
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the normal vectors on an uninitialized Polihedron.");
+
+	if (!normal_vectors_list)
+		throw INFO_EXCEPT("Trying to update the normal vectors on a Polihedron with an invalid normal vectors list.");
+
+	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
+
+	if (data.desc.normal_computation == POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS)
+		throw INFO_EXCEPT(
+			"Trying to update the normal vectors on a Polihedron with a different normal vectors setting.\n"
+			"When normals are on computed mode, they are recomputed automatically when vertices are updated."
+		);
+
+	if (!data.desc.enable_updates)
+		throw INFO_EXCEPT("Trying to update the normal vectors on a Polihedron with updates disabled.");
+
+
+	switch (data.desc.coloring) 
+	{
+	case POLIHEDRON_DESC::GLOBAL_COLORING:
+
+		switch (data.desc.normal_computation)
+		{
+		case POLIHEDRON_DESC::PER_TRIANGLE_LIST_NORMALS:
+			for (unsigned i = 0u; i < 3u * data.desc.triangle_count; i++)
+				data.Vertices[i].norm = normal_vectors_list[i].getVector4();
+			break;
+
+		case POLIHEDRON_DESC::PER_VERTEX_LIST_NORMALS:
+			for (unsigned i = 0u; i < data.desc.triangle_count; i++)
+			{
+				data.Vertices[3 * i + 0].norm = normal_vectors_list[data.desc.triangle_list[i].x].getVector4();
+				data.Vertices[3 * i + 1].norm = normal_vectors_list[data.desc.triangle_list[i].y].getVector4();
+				data.Vertices[3 * i + 2].norm = normal_vectors_list[data.desc.triangle_list[i].z].getVector4();
+			}
+			break;
+		}
+
+		data.pUpdateVB->updateVertices(data.Vertices, 3u * data.desc.triangle_count);
+		break;
+
+	case POLIHEDRON_DESC::PER_VERTEX_COLORING:
+
+		switch (data.desc.normal_computation)
+		{
+		case POLIHEDRON_DESC::PER_TRIANGLE_LIST_NORMALS:
+			for (unsigned i = 0u; i < 3u * data.desc.triangle_count; i++)
+				data.ColVertices[i].norm = normal_vectors_list[i].getVector4();
+			break;
+
+		case POLIHEDRON_DESC::PER_VERTEX_LIST_NORMALS:
+			for (unsigned i = 0u; i < data.desc.triangle_count; i++)
+			{
+				data.ColVertices[3 * i + 0].norm = normal_vectors_list[data.desc.triangle_list[i].x].getVector4();
+				data.ColVertices[3 * i + 1].norm = normal_vectors_list[data.desc.triangle_list[i].y].getVector4();
+				data.ColVertices[3 * i + 2].norm = normal_vectors_list[data.desc.triangle_list[i].z].getVector4();
+			}
+			break;
+		}
+
+		data.pUpdateVB->updateVertices(data.ColVertices, 3u * data.desc.triangle_count);
+		break;
+
+	case POLIHEDRON_DESC::TEXTURED_COLORING:
+
+		switch (data.desc.normal_computation)
+		{
+		case POLIHEDRON_DESC::PER_TRIANGLE_LIST_NORMALS:
+			for (unsigned i = 0u; i < 3u * data.desc.triangle_count; i++)
+				data.TexVertices[i].norm = normal_vectors_list[i].getVector4();
+			break;
+
+		case POLIHEDRON_DESC::PER_VERTEX_LIST_NORMALS:
+			for (unsigned i = 0u; i < data.desc.triangle_count; i++)
+			{
+				data.TexVertices[3 * i + 0].norm = normal_vectors_list[data.desc.triangle_list[i].x].getVector4();
+				data.TexVertices[3 * i + 1].norm = normal_vectors_list[data.desc.triangle_list[i].y].getVector4();
+				data.TexVertices[3 * i + 2].norm = normal_vectors_list[data.desc.triangle_list[i].z].getVector4();
+			}
+			break;
+		}
+
+		data.pUpdateVB->updateVertices(data.TexVertices, 3u * data.desc.triangle_count);
+		break;
+	}
+
 }
 
 // If updates are enabled, and coloring is texured, this functions allows o change the 
@@ -540,11 +773,17 @@ void Polihedron::updateRotation(Quaternion rotation, bool multiplicative)
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (multiplicative)
-		data.vscBuff.rotation *= rotation;
+		data.rotation *= rotation;
 	else
-		data.vscBuff.rotation = rotation;
+		data.rotation = rotation;
 
-	data.vscBuff.rotation.normalize();
+	data.rotation.normalize();
+
+	Matrix L = data.rotation.getMatrix() * data.distortion;
+
+	data.vscBuff.transform = L.getMatrix4(data.position);
+	data.vscBuff.normal_transform = L.inverse().transposed().getMatrix4();
+
 	data.pVSCB->update(&data.vscBuff);
 }
 
@@ -559,9 +798,46 @@ void Polihedron::updatePosition(Vector3f position, bool additive)
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (additive)
-		position += Vector3f(data.vscBuff.position.x, data.vscBuff.position.y, data.vscBuff.position.z);
+		data.position += position;
+	else
+		data.position = position;
 
-	data.vscBuff.position = position.getVector4();
+	Matrix L = data.rotation.getMatrix() * data.distortion;
+
+	data.vscBuff.transform = L.getMatrix4(data.position);
+
+	data.pVSCB->update(&data.vscBuff);
+}
+
+// Updates the matrix multiplied to the Polihedrom, adding any arbitrary linear distortion 
+// to it. If you want to simply modify the size of the object just call this function on a 
+// diagonal matrix. Check the Matrix header for helpers to create any arbitrary distortion. 
+// If multiplicative the distortion will be added to the current distortion.
+
+void Polihedron::updateDistortion(Matrix distortion, bool multiplicative)
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to update the distortion on an uninitialized Polihedron.");
+
+	if (!distortion.determinant())
+		throw INFO_EXCEPT(
+			"Trying to update the distortion with a non invertible matrix.\n"
+			"Degenerate Matrices are not allowed for shape distortion.\n"
+			"If you want to reduce dimensionality you can apply it yourself to the vertices."
+		);
+
+	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
+
+	if (multiplicative)
+		data.distortion = distortion * data.distortion;
+	else
+		data.distortion = distortion;
+
+	Matrix L = data.rotation.getMatrix() * data.distortion;
+
+	data.vscBuff.transform = L.getMatrix4(data.position);
+	data.vscBuff.normal_transform = L.inverse().transposed().getMatrix4();
+
 	data.pVSCB->update(&data.vscBuff);
 }
 
@@ -632,7 +908,7 @@ Quaternion Polihedron::getRotation() const
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
-	return data.vscBuff.rotation;
+	return data.rotation;
 }
 
 // Returns the current scene position.
@@ -644,7 +920,19 @@ Vector3f Polihedron::getPosition() const
 
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
-	return { data.vscBuff.position.x, data.vscBuff.position.y, data.vscBuff.position.z };
+	return data.position;
+}
+
+// Returns the current distortion matrix.
+
+Matrix Polihedron::getDistortion() const
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to get the distortion matrix of an uninitialized Polihedron.");
+
+	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
+
+	return data.distortion;
 }
 
 // Returns the current screen position.

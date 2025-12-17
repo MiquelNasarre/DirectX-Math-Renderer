@@ -37,6 +37,24 @@
     <Filter Include="Sources\Public\Drawable">
       <UniqueIdentifier>{e78ba6a6-4008-4009-af5f-d33a3c788151}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sources\Private\Math">
+      <UniqueIdentifier>{c240352d-2fd1-47e6-ab8a-e4c782f1069d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\Public\Math">
+      <UniqueIdentifier>{9a02c024-25de-487e-8269-ab8b3c718008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\Private\Image">
+      <UniqueIdentifier>{974393b0-139e-49f8-9f1f-f7304d2e7ba4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\Public\Image">
+      <UniqueIdentifier>{a3050d05-21bb-4bf6-82ff-a43d445ae43b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\Private\Exception\dxerr">
+      <UniqueIdentifier>{41e0d99f-6f2c-4ab6-a5d9-7f9cb0bce60f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\Public\Exception\dxerr">
+      <UniqueIdentifier>{1df3c96d-d120-4058-bfcd-168a18bfc7ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Drawable.cpp">
@@ -116,6 +134,18 @@
     </ClCompile>
     <ClCompile Include="source\Bindable\DepthStencil.cpp">
       <Filter>Sources\Private\Bindable</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Math\Quaternion.cpp">
+      <Filter>Sources\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Math\Vectors.cpp">
+      <Filter>Sources\Private\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Image\Image.cpp">
+      <Filter>Sources\Private\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Exception\dxerr\dxerr.cpp">
+      <Filter>Sources\Private\Exception\dxerr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -218,24 +248,33 @@
     <ClInclude Include="include\Bindable\DepthStencil.h">
       <Filter>Sources\Public\Bindable</Filter>
     </ClInclude>
+    <ClInclude Include="include\Math\constants.h">
+      <Filter>Sources\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Math\Matrix.h">
+      <Filter>Sources\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Math\Quaternion.h">
+      <Filter>Sources\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Math\Vectors.h">
+      <Filter>Sources\Public\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Image\Color.h">
+      <Filter>Sources\Public\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Image\Image.h">
+      <Filter>Sources\Public\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exception\dxerr\dxerr.h">
+      <Filter>Sources\Public\Exception\dxerr</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\VertexColorVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\VertexColorPS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\SurfacePS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\SurfaceVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\TexSurfaceVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\TexSurfacePS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\BackgroundVS.hlsl">
@@ -257,15 +296,6 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\ColorCurveVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\UnlitSurfacePS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\UnlitSurfaceVS.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\UnlitUntexVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\OITresolveVS.hlsl">
@@ -316,7 +346,16 @@
     <FxCompile Include="Shaders\CurveVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\OITLightPS.hlsl">
+    <FxCompile Include="Shaders\CubeTexturePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\UnlitCubeTexturePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\OITCubeTexturePS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\OITUnlitCubeTexturePS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
@@ -331,6 +370,18 @@
     </None>
     <None Include="Shaders\Perspective.hlsli">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\OITheader.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="source\Exception\dxerr\DXGetErrorDescription.inl">
+      <Filter>Sources\Private\Exception\dxerr</Filter>
+    </None>
+    <None Include="source\Exception\dxerr\DXGetErrorString.inl">
+      <Filter>Sources\Private\Exception\dxerr</Filter>
+    </None>
+    <None Include="source\Exception\dxerr\DXTrace.inl">
+      <Filter>Sources\Private\Exception\dxerr</Filter>
     </None>
   </ItemGroup>
 </Project>

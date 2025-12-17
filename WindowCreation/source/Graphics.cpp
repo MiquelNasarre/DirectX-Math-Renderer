@@ -1,9 +1,8 @@
 #include "Bindable/BindableBase.h"
-#include "Exception/_exGraphics.h"
 #include "iGManager.h"
 
 #include "WinHeader.h"
-#include <dxgi1_6.h> // For GPU selection
+#include "Exception/_exGraphics.h"
 
 // Uncomment to use the Graphics Debugger.
 //#define GRAPHICS_DEBUGGING
@@ -320,12 +319,12 @@ void Graphics::pushFrame()
 		data.defaultDephtStencil->Bind();
 		data.defaultBlender->Bind();
 	}
-
+#ifdef _INCLUDE_IMGUI
 	// If the window has an imGui instance call the render function before swapping.
 	Window* pWnd = reinterpret_cast<Window*>(GetWindowLongPtr(data.HWnd, GWLP_USERDATA));
 	if (pWnd && *pWnd->imGuiPtrAdress())
 		((iGManager*)(*pWnd->imGuiPtrAdress()))->render();
-
+#endif
 	// Present the new frame to the window.
 	HRESULT hr;
 	if (FAILED(hr = data.pSwap->Present(1u, 0u))) {

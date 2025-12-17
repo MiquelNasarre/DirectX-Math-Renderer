@@ -49,12 +49,6 @@
     <Filter Include="Sources\Public\Image">
       <UniqueIdentifier>{a3050d05-21bb-4bf6-82ff-a43d445ae43b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sources\Private\Exception\dxerr">
-      <UniqueIdentifier>{41e0d99f-6f2c-4ab6-a5d9-7f9cb0bce60f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Public\Exception\dxerr">
-      <UniqueIdentifier>{1df3c96d-d120-4058-bfcd-168a18bfc7ab}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Drawable.cpp">
@@ -144,8 +138,8 @@
     <ClCompile Include="source\Image\Image.cpp">
       <Filter>Sources\Private\Image</Filter>
     </ClCompile>
-    <ClCompile Include="source\Exception\dxerr\dxerr.cpp">
-      <Filter>Sources\Private\Exception\dxerr</Filter>
+    <ClCompile Include="source\Exception\_exGraphics.cpp">
+      <Filter>Sources\Private\Exception</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -266,9 +260,6 @@
     <ClInclude Include="include\Image\Image.h">
       <Filter>Sources\Public\Image</Filter>
     </ClInclude>
-    <ClInclude Include="include\Exception\dxerr\dxerr.h">
-      <Filter>Sources\Public\Exception\dxerr</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\VertexColorVS.hlsl">
@@ -373,15 +364,6 @@
     </None>
     <None Include="Shaders\OITheader.hlsli">
       <Filter>Shaders</Filter>
-    </None>
-    <None Include="source\Exception\dxerr\DXGetErrorDescription.inl">
-      <Filter>Sources\Private\Exception\dxerr</Filter>
-    </None>
-    <None Include="source\Exception\dxerr\DXGetErrorString.inl">
-      <Filter>Sources\Private\Exception\dxerr</Filter>
-    </None>
-    <None Include="source\Exception\dxerr\DXTrace.inl">
-      <Filter>Sources\Private\Exception\dxerr</Filter>
     </None>
   </ItemGroup>
 </Project>

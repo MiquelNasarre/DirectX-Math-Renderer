@@ -226,7 +226,8 @@ bool Image::save(const char* fmt_filename, ...) const
     filename[c++] = 'p';
     filename[c++] = '\0';
 
-    FILE* file = fopen(filename, "wb");
+    FILE* file = nullptr;
+    fopen_s(&file, filename, "wb");
     if (!file) 
         return false;
 
@@ -319,7 +320,8 @@ bool Image::load(const char* fmt_filename, ...)
     filename[c++] = 'p';
     filename[c++] = '\0';
 
-    FILE* file = fopen(filename, "rb");
+    FILE* file = nullptr;
+    fopen_s(&file, filename, "rb");
     if (!file) return false;
 
     // Check signature

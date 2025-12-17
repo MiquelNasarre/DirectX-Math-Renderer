@@ -1,5 +1,6 @@
-#pragma once
+#pragma 
 #include "Window.h"
+#ifdef _INCLUDE_IMGUI
 
 /* IMGUI BASE CLASS MANAGER
 -------------------------------------------------------------------------------------------------------
@@ -76,3 +77,4 @@ private:
 	iGManager(const iGManager&) = delete;
 	iGManager operator=(const iGManager&) = delete;
 };
+#endif

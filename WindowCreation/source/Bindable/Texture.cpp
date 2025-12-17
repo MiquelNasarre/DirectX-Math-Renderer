@@ -102,7 +102,7 @@ Texture::Texture(const Image* image, TEXTURE_USAGE usage, TEXTURE_TYPE type, uns
 		const unsigned faceBytes = image->width() * image->width() * sizeof(Color);
 		for (unsigned face = 0u; face < 6; face++)
 		{
-			psd[face].pSysMem = (uint8_t*)image->pixels() + face * faceBytes;
+			psd[face].pSysMem = (byte*)image->pixels() + face * faceBytes;
 			psd[face].SysMemPitch = image->width() * sizeof(Color);
 		}
 		GFX_THROW_INFO(_device->CreateTexture2D(&textureDesc, psd, data.pTexture.GetAddressOf()));
@@ -171,40 +171,40 @@ void Texture::update(const Image* image)
 
 	switch (data.type)
 	{
-	case TEXTURE_TYPE_IMAGE:
-	{
-		// Create the mapping to the image data
-		D3D11_MAPPED_SUBRESOURCE msr;
-		GFX_THROW_INFO(_context->Map(data.pTexture.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr));
-
-		// Copy the new image pixels
-		const unsigned rowBytes = image->width() * sizeof(Color);
-		for (unsigned y = 0; y < image->height(); y++)
-			memcpy((uint8_t*)msr.pData + y * msr.RowPitch, (uint8_t*)image->pixels() + y * rowBytes, rowBytes);
-
-		// Unmap the data
-		GFX_THROW_INFO_ONLY(_context->Unmap(data.pTexture.Get(), 0u));
-		break;
-	}
-
-	case TEXTURE_TYPE_CUBEMAP:
-	{
-		const unsigned faceBytes = image->width() * image->width() * sizeof(Color);
-		const unsigned rowBytes = image->width() * sizeof(Color);
-		for (unsigned face = 0u; face < 6u; face++)
+		case TEXTURE_TYPE_IMAGE:
 		{
-			// Create the mapping to the face data
+			// Create the mapping to the image data
 			D3D11_MAPPED_SUBRESOURCE msr;
-			GFX_THROW_INFO(_context->Map(data.pTexture.Get(), face, D3D11_MAP_WRITE_DISCARD, 0u, &msr));
+			GFX_THROW_INFO(_context->Map(data.pTexture.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr));
 
-			// Copy the new cube face pixels
-			for (unsigned y = 0; y < image->height() / 6u; y++)
-				memcpy((uint8_t*)msr.pData + y * msr.RowPitch, (uint8_t*)image->pixels() + face * faceBytes + y * rowBytes, rowBytes);
+			// Copy the new image pixels
+			const unsigned rowBytes = image->width() * sizeof(Color);
+			for (unsigned y = 0; y < image->height(); y++)
+				memcpy((byte*)msr.pData + y * msr.RowPitch, (byte*)image->pixels() + y * rowBytes, rowBytes);
 
 			// Unmap the data
-			GFX_THROW_INFO_ONLY(_context->Unmap(data.pTexture.Get(), face));
+			GFX_THROW_INFO_ONLY(_context->Unmap(data.pTexture.Get(), 0u));
+			break;
 		}
-		break;
-	}
+
+		case TEXTURE_TYPE_CUBEMAP:
+		{
+			const unsigned faceBytes = image->width() * image->width() * sizeof(Color);
+			const unsigned rowBytes = image->width() * sizeof(Color);
+			for (unsigned face = 0u; face < 6u; face++)
+			{
+				// Create the mapping to the face data
+				D3D11_MAPPED_SUBRESOURCE msr;
+				GFX_THROW_INFO(_context->Map(data.pTexture.Get(), face, D3D11_MAP_WRITE_DISCARD, 0u, &msr));
+
+				// Copy the new cube face pixels
+				for (unsigned y = 0; y < image->height() / 6u; y++)
+					memcpy((byte*)msr.pData + y * msr.RowPitch, (byte*)image->pixels() + face * faceBytes + y * rowBytes, rowBytes);
+
+				// Unmap the data
+				GFX_THROW_INFO_ONLY(_context->Unmap(data.pTexture.Get(), face));
+			}
+			break;
+		}
 	}
 }

@@ -5053,7 +5053,7 @@ void Surface::updateRotation(Quaternion rotation, bool multiplicative)
 	SurfaceInternals& data = *(SurfaceInternals*)surfaceData;
 
 	if (multiplicative)
-		data.rotation *= rotation;
+		data.rotation *= rotation.normal();
 	else
 		data.rotation = rotation;
 

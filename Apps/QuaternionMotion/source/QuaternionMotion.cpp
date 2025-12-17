@@ -1,15 +1,18 @@
 #include "QuaternionMotion.h"
+#include "IG_QuaternionMotion.h"
+
 #include "Keyboard.h"
 #include "Mouse.h"
-#include "IG_QuaternionMotion.h"
-#include <string>
+
+#include <cmath>
 
 QuaternionMotion::QuaternionMotion()
 	: window({ 640, 480 }, "QuaternionMotion", "", true)
 {
 	window.setFramerateLimit(60);
+#ifdef _INCLUDE_IMGUI
 	imGui.bind(window);
-
+#endif
 	IG_DATA::LIGHTS[0].is_on = true;
 	IG_DATA::LIGHTS[0].color = Color(255, 51, 51, 255);
 	IG_DATA::LIGHTS[0].intensities = { 60.f,10.f };
@@ -152,7 +155,7 @@ QuaternionMotion::QuaternionMotion()
 
 	CURVE_DESC curveDesc = {};
 	curveDesc.coloring = CURVE_DESC::FUNCTION_COLORING;
-	curveDesc.curve_function = [](float t) { return Vector3f(cosf(10 * t), sinf(10 * t), t); };
+	curveDesc.curve_function = [](float t)-> Vector3f { return { cosf(10 * t), sinf(10 * t), t }; };
 	curveDesc.color_function = [](float t) { return Color((unsigned char)((cosf(10 * t) + 1) * 128), (unsigned char)((sinf(10 * t) + 1) * 128), (unsigned char)((t + 1) * 128)); };
 
 	curve.initialize(&curveDesc);
@@ -196,7 +199,7 @@ void QuaternionMotion::eventManager()
 		strictReturn();
 
 	if (Keyboard::isKeyPressed('S'))
-		dangle = 0.f;
+		rotation = 1.f;
 
 
 	if (Mouse::isButtonPressed(Mouse::Left) && !dragging)
@@ -274,12 +277,12 @@ void QuaternionMotion::doFrame()
 
 	window.graphics().updatePerspective(observer, center, scale);
 
-	shape_0.updateRotation(rotationQuaternion(axis, dangle), true);
-	shape_1.updateRotation(rotationQuaternion(axis, dangle), true);
-	shape_2.updateRotation(rotationQuaternion(axis, dangle), true);
-	shape_3.updateRotation(rotationQuaternion(axis, dangle), true);
-	back.updateRotation(rotationQuaternion(axis, dangle), true);
-	curve.updateRotation(rotationQuaternion(axis, dangle), true);
+	shape_0.updateRotation(rotation, true);
+	shape_1.updateRotation(rotation, true);
+	shape_2.updateRotation(rotation, true);
+	shape_3.updateRotation(rotation, true);
+	back.updateRotation(rotation, true);
+	curve.updateRotation(rotation, true);
 
 	window.setTitle("%s  -  %u fps", shape_1.getRotation().str(), (unsigned)window.getFramerate());
 
@@ -323,60 +326,25 @@ void QuaternionMotion::doFrame()
 
 void QuaternionMotion::magneticReturn()
 {
-	Quaternion rot = shape_0.getRotation();
-	if (rot.r < 0)rot = -rot;
-	constexpr float pull = 0.03f;
+	constexpr float drag = 0.05f, e = 1e-8f, force = 0.04f;
 
-	float angle = 2 * acosf(rot.r);
-	Vector3f axisRot = rot.getVector();
-
-	Quaternion newRot;
-	if (angle < pull)
-		newRot = rotationQuaternion(axisRot, -pull / 40.f) * rotationQuaternion(axis, dangle);
-	else
-		newRot = rotationQuaternion(axisRot, -angle / 40.f) * rotationQuaternion(axis, dangle);
-
-	axis = newRot.getVector();
-	dangle = 2.f * acosf(newRot.r);
-
-	dangle *= 0.95f;
-
-	if (fabs(angle) < 0.01f && fabs(dangle) < 0.005f)
-	{
-		shape_0.updateRotation(Vector3f(), 0.f);
-		shape_1.updateRotation(Vector3f(), 0.f);
-		shape_2.updateRotation( Vector3f(), 0.f);
-		returning = false;
-		dangle = 0.f;
-	}
+	Quaternion attraction = (shape_0.getRotation().inv() + 1.f / force);
+	
+	rotation = (attraction * rotation).normal() + drag;
 }
 
 void QuaternionMotion::strictReturn()
 {
-	dangle = 0;
-
-	Quaternion rot = shape_0.getRotation();
-	if (rot.r < 0)rot = -rot;
-
-	float angle = 2 * acosf(rot.r);
-	Vector3f axisRot = rot.getVector();
-
-	axis = axisRot;
-	dangle = -powf(angle, 0.65f) / 40.f;
-
-	if (fabs(angle) < 0.01f)
-	{
-		shape_0.updateRotation(Vector3f(), 0.f);
-		shape_1.updateRotation(Vector3f(), 0.f);
-		shape_2.updateRotation(Vector3f(), 0.f);
-		strict = false;
-		dangle = 0.f;
-	}
+	Quaternion rot = shape_0.getRotation().inv();
+	
+	rotation = (rot.r > 0.f) ? rot + 16.f : -rot + 16.f;
 }
 
 void QuaternionMotion::drag_rigid_plane()
 {
-	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
+	Quaternion qobs = window.graphics().getObserver();
+
+	Vector3f obs = -(qobs * QUAT_K * qobs.inv()).getVector();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -402,7 +370,9 @@ void QuaternionMotion::drag_rigid_plane()
 
 void QuaternionMotion::drag_rigid_space()
 {
-	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
+	Quaternion qobs = window.graphics().getObserver();
+
+	Vector3f obs = -(qobs * QUAT_K * qobs.inv()).getVector();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -429,7 +399,9 @@ void QuaternionMotion::drag_rigid_space()
 
 void QuaternionMotion::drag_dynamic_plane()
 {
-	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
+	Quaternion qobs = window.graphics().getObserver();
+
+	Vector3f obs = -(qobs * QUAT_K * qobs.inv()).getVector();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -463,67 +435,40 @@ void QuaternionMotion::drag_dynamic_plane()
 
 void QuaternionMotion::drag_dynamic_space()
 {
-	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
-	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
-	Vector3f ey = ex * obs;
+	Quaternion qobs = window.graphics().getObserver();
+	Vector2i dim = window.getDimensions() / 2;
 
-	Vector3f lastMouse = (-obs + (ex * (lastPos.x - window.getDimensions().x / 2) + ey * (lastPos.y - window.getDimensions().y / 2)) / scale).normalize();
+	Vector3f p0 = { (lastPos.x - dim.x) / scale, -(lastPos.y - dim.y) / scale, -1.f };
+
 	lastPos = Mouse::getPosition();
-	Vector3f newMouse = (-obs + (ex * (lastPos.x - window.getDimensions().x / 2) + ey * (lastPos.y - window.getDimensions().y / 2)) / scale).normalize();
+	Vector3f p1 = { (lastPos.x - dim.x) / scale, -(lastPos.y - dim.y) / scale, -1.f };
 
-	Vector3f axis0 = lastMouse * newMouse;
-	if (!axis0) axis0 = newMouse;
-	axis0.normalize();
-	float dangle0 = -acosf(lastMouse ^ newMouse);
-	if ((lastMouse ^ newMouse) > 1.f)dangle0 = 0.f;
-	if (lastMouse == newMouse) dangle0 = 0.f;
+	p0 = (qobs * Quaternion(p0) * qobs.inv()).getVector().normal();
+	p1 = (qobs * Quaternion(p1) * qobs.inv()).getVector().normal();
 
-	constexpr float s = 1.f / 1.5f;
+	Quaternion rot = (Quaternion(p1 * p0) + 1.f + (p0 ^ p1)).normal();
 
-	Quaternion newRot = rotationQuaternion(newMouse, Mouse::getWheel() / 18000.f) * rotationQuaternion(axis0, dangle0) * rotationQuaternion(axis, (dangle * (1.f - s + fabsf(axis ^ newMouse) * s)));
-	
-	dangle = 2.f * acosf(newRot.r);
-	axis = newRot.getVector();
-	if (!axis)axis = newMouse;
-	axis.normalize();
+	Quaternion wheel_spin = rotationQuaternion(p1, Mouse::getWheel() / 18000.f);
+	Quaternion momentum = fabsf(rotation.r) < 1.f - 1e-6f ? (rotation + (1.f - fabsf(rotation.getVector().normal() ^ p1))).normal() : Quaternion(1.f);
+
+	rotation = wheel_spin * rot * momentum;
 }
 
 void QuaternionMotion::drag_magnetic_mouse()
 {
-	Vector3f obs = { 0.f,1.f, 0.f };// window.graphics().getObserver();
-	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
-	Vector3f ey = ex * obs;
+	Quaternion qobs = window.graphics().getObserver();
+	Vector2i dim = window.getDimensions() / 2;
 
 	lastPos = Mouse::getPosition();
-	Vector3f newMouse = (-obs + (ex * (lastPos.x - window.getDimensions().x / 2) + ey * (lastPos.y - window.getDimensions().y / 2)) / scale).normalize();
+	Vector3f p1 = { (lastPos.x - dim.x) / scale, -(lastPos.y - dim.y) / scale, -1.f };
+
+	p1 = (qobs * Quaternion(p1) * qobs.inv()).getVector().normal();
 
 	Quaternion rot = shape_0.getRotation();
-	Vector3f polePos = (rot * Quaternion(Vector3f(0.f, 1.f, 0.f)) * Quaternion(rot.r, -rot.i, -rot.j, -rot.k)).getVector();
+	Vector3f polePos = (rot * QUAT_K * rot.inv()).getVector();
 
-	Vector3f axis0 = newMouse * polePos;
-	if (!axis0) axis0 = newMouse;
-	axis0.normalize();
-
-	constexpr float max = 0.02f;
-	float dangle0 = acosf(polePos ^ newMouse);
-	if ((polePos ^ newMouse) > 1.f)dangle0 = 0.f;
-	if (polePos == newMouse) dangle0 = 0.f;
-	dangle0 /= 40.f;
-	if (dangle0 > max)
-		dangle0 = max;
-	else if (dangle0 < -max)
-		dangle0 = -max;
-
-	dangle *= 0.97f;
-
-	Quaternion newRot = rotationQuaternion(axis0, dangle0) * rotationQuaternion(axis, dangle);
-
-	dangle = 2 * acosf(newRot.r);
-	if (newRot.r > 1)
-		dangle = 0.f;
-	axis = newRot.getVector();
-	if (!axis)axis = newMouse;
-	axis.normalize();
+	constexpr float weakness = 32.f, drag = 0.05f;
+	rotation = ((Quaternion(p1 * polePos) + (polePos ^ p1) + weakness) * (rotation + drag)).normal();
 
 	Mouse::getWheel();
 }
@@ -556,5 +501,5 @@ Vector3f KleinBottle(float u, float v)
 	float x = -2.f / 15.f * c_u * (3 * c_v - 30 * s_u + 90 * c_u4 * s_u - 60 * c_u3 * c_u3 * s_u + 5 * c_u * c_v * s_u);
 	float y = -1.f / 15.f * s_u * (3 * c_v - 3 * c_u * c_u * c_v - 48 * c_u4 * c_v + 48 * c_u3 * c_u3 * c_v - 60 * s_u + 5 * c_u * c_v * s_u - 5 * c_u3 * c_v * s_u - 80 * c_u3 * c_u4 * c_v * s_u) - 2;
 	float z = 2.f / 15.f * (3 + 5 * c_u * s_u) * s_v;
-	return Vector3f(x, y, z);
+	return { x, y, z };
 }

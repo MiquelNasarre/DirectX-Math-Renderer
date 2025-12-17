@@ -25,35 +25,40 @@ enum SHAPE
 	KLEIN
 };
 
-struct IG_DATA {
+struct IG_DATA 
+{
 
-	static float THETA;
-	static float PHI;
+	static inline float THETA = 0.f;
+	static inline float PHI = 0.f;
 
-	static DRAG_TYPE TYPE;
-	static SHAPE FIGURE;
+	static inline DRAG_TYPE TYPE = DYNAMIC_SPACE;
+	static inline SHAPE FIGURE = SQUARE;
 
-	struct lightsource {
+	struct lightsource 
+	{
 		bool is_on;
 		Vector2f intensities;
 		Color color;
 		Vector3f position;
 	};
 
-	static lightsource* LIGHTS;
-	static int UPDATE_LIGHT;
+	static inline lightsource LIGHTS[8] = {};
+
+	static inline int UPDATE_LIGHT = -1;
 };
 
 class QuaternionMotion 
 {
 private:
 	Window window;
+#ifdef _INCLUDE_IMGUI
 	IG_QuaternionMotion imGui;
-
+#endif
 	float scale = 280.f;
 	Vector3f center   = { 0.f, 0.f, 0.f };
 	Vector3f observer = { 0.f,-1.f, 0.f };
 
+	Quaternion rotation = { 1.f, 0.0025f,-0.0025f, 0.0025f };
 	Vector3f axis = Vector3f(1.f, -1.f, 1.f);
 	float dangle = 0.01f;
 

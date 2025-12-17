@@ -1,12 +1,13 @@
 #ifdef _DEBUG
 #include "Exception/DxgiInfoManager.h"
 
+#include "WinHeader.h"
 #include "Exception/_exGraphics.h"
 #include "Exception/_exWindow.h"
-#include "WinHeader.h"
 
 #include <dxgidebug.h>
 #include <memory>
+#include <string>
 
 // Private helper to run constructor/destructor.
 DxgiInfoManager DxgiInfoManager::helper;

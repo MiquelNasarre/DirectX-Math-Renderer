@@ -1,8 +1,7 @@
 #pragma once
 #include "Exception/Exception.h"
-#include "Exception/dxerr/dxerr.h"
 
-#include <string>
+#include <stdio.h>
 
 /* WIN32 EXCEPTION CLASS
 -------------------------------------------------------------------------------------------------------
@@ -29,32 +28,8 @@ public:
 	WindowException(int line, const char* file, HRESULT hr) noexcept
 		: Exception(line, file), hr(hr)
 	{
-	}
-
-	// Returns a string containing the error code, the code description,
-	// obtained via TranslateErrorCode(hr), and the exception origin.
-	const char* what() const noexcept override
-	{
-		auto message = new std::string(
-			"[Error Code] " + std::to_string(hr) + "\n" +
-			"[Description] " + TranslateErrorCode(hr) + "\n" +
-			GetOriginString()
-		);
-		whatBuffer = (char*)message->c_str();
-		return whatBuffer;
-	}
-
-	// Win32 Exception type override.
-	const char* GetType() const noexcept override
-	{
-		return "Win32 Exception";
-	}
-
-private:
-	// Retrieves the error string from a given Win32 failed HRESULT 
-	// using the FormatMessage method and returns the string.
-	static const char* TranslateErrorCode(HRESULT hr) noexcept
-	{
+		// Retrieves the error string from a given Win32 failed HRESULT 
+		// using the FormatMessage method and returns the string.
 		char* pMsgBuf = nullptr;
 		// windows will allocate memory for err string and make our pointer point to it
 		DWORD nMsgLen = FormatMessageA(
@@ -63,14 +38,32 @@ private:
 			nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 			reinterpret_cast<LPSTR>(&pMsgBuf), 0, nullptr
 		);
-		// 0 string length returned indicates a failure
-		if (nMsgLen == 0)
-			return "Unidentified error code";
 
-		// return error string from windows-allocated buffer string
-		return pMsgBuf;
+		if (nMsgLen && pMsgBuf)
+		{
+			snprintf(info, 2048,
+				"[Error Code]\n%i\n"
+				"[Description]\n%s\n"
+				"%s"
+				, hr, pMsgBuf, GetOriginString()
+			);
+
+			LocalFree(pMsgBuf);
+		}
+
+		else
+			snprintf(info, 2048,
+				"[Error Code]\n%i\n"
+				"[Description]\nUnidentified error code\n"
+				"%s"
+				, hr, GetOriginString()
+			);
 	}
 
+	// Win32 Exception type override.
+	const char* GetType() const noexcept override { return "Win32 Exception"; }
+
+private:
 	// Stores the FAILED HRESULT
 	HRESULT hr;
 };

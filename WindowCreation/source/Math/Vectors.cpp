@@ -36,7 +36,7 @@ const char* Vector2d::str(const char* fmt) const
 	char* str = str_buffer[buffer_pos];
 	buffer_pos = (buffer_pos + 1u) % 16u;
 
-	sprintf(str, fmt, x, y);
+	snprintf(str, 512, fmt, x, y);
 
 	return str;
 }
@@ -61,7 +61,7 @@ const char* Vector2f::str(const char* fmt) const
 	char* str = str_buffer[buffer_pos];
 	buffer_pos = (buffer_pos + 1u) % 16u;
 
-	sprintf(str, fmt, x, y);
+	snprintf(str, 512, fmt, x, y);
 
 	return str;
 }
@@ -86,7 +86,7 @@ const char* Vector2i::str(const char* fmt) const
 	char* str = str_buffer[buffer_pos];
 	buffer_pos = (buffer_pos + 1u) % 16u;
 
-	sprintf(str, fmt, x, y);
+	snprintf(str, 512, fmt, x, y);
 
 	return str;
 }
@@ -111,7 +111,7 @@ const char* Vector3d::str(const char* fmt) const
 	char* str = str_buffer[buffer_pos];
 	buffer_pos = (buffer_pos + 1u) % 16u;
 
-	sprintf(str, fmt, x, y, z);
+	snprintf(str, 512, fmt, x, y, z);
 
 	return str;
 }
@@ -136,7 +136,7 @@ const char* Vector3f::str(const char* fmt) const
 	char* str = str_buffer[buffer_pos];
 	buffer_pos = (buffer_pos + 1u) % 16u;
 
-	sprintf(str, fmt, x, y, z);
+	snprintf(str, 512, fmt, x, y, z);
 
 	return str;
 }
@@ -161,7 +161,7 @@ const char* Vector3i::str(const char* fmt) const
 	char* str = str_buffer[buffer_pos];
 	buffer_pos = (buffer_pos + 1u) % 16u;
 
-	sprintf(str, fmt, x, y, z);
+	snprintf(str, 512, fmt, x, y, z);
 
 	return str;
 }

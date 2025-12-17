@@ -1,15 +1,9 @@
-#include "IG_QuaternionMotion.h"
 #include "QuaternionMotion.h"
+
+#ifdef _INCLUDE_IMGUI
+#include "IG_QuaternionMotion.h"
 #include "imgui/imgui.h"
 #include <string>
-
-DRAG_TYPE	IG_DATA::TYPE			= DYNAMIC_SPACE;
-SHAPE		IG_DATA::FIGURE			= SQUARE;
-int			IG_DATA::UPDATE_LIGHT	= -1;
-float		IG_DATA::THETA			= MATH_PI / 2.f;
-float		IG_DATA::PHI			= 0.f;
-
-IG_DATA::lightsource* IG_DATA::LIGHTS = (IG_DATA::lightsource*)calloc(sizeof(IG_DATA::lightsource), 8);
 
 static IG_DATA::lightsource savestate;
 
@@ -137,8 +131,8 @@ void IG_QuaternionMotion::render()
 
 				if (ImGui::MenuItem("Reset"))
 				{
-					free(IG_DATA::LIGHTS);
-					IG_DATA::LIGHTS = (IG_DATA::lightsource*)calloc(8, sizeof(IG_DATA::lightsource));
+					// BROKEN
+
 					IG_DATA::LIGHTS[0].is_on = true;
 					IG_DATA::LIGHTS[0].color = Color(255,51,51,255);
 					IG_DATA::LIGHTS[0].intensities = { 60.f,10.f };
@@ -162,8 +156,8 @@ void IG_QuaternionMotion::render()
 
 				if (ImGui::MenuItem("Clear"))
 				{
-					free(IG_DATA::LIGHTS);
-					IG_DATA::LIGHTS = (IG_DATA::lightsource*)calloc(8, sizeof(IG_DATA::lightsource));
+					// BROKEN
+
 					IG_DATA::UPDATE_LIGHT = -2;
 					light = -1;
 				}
@@ -193,3 +187,4 @@ void IG_QuaternionMotion::render()
 
 	drawFrame();
 }
+#endif

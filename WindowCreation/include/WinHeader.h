@@ -7,7 +7,7 @@ This header contains necessary libraries to be loaded for most the D3D11 depende
 that are used across the library. 
 
 The define list at the beggining gets rid of some chunks of the code to not bloat the 
-bult time, if those dependencies are needed just comment them from the list.
+built time, if those dependencies are needed just comment them from the list.
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
 */
@@ -66,4 +66,17 @@ bult time, if those dependencies are needed just comment them from the list.
 #include <d3d11.h>
 #include <wrl.h>
 
+#include <windowsx.h>
+#include <dwmapi.h>
+#include <dxgi1_6.h> // For GPU selection
+
 using Microsoft::WRL::ComPtr;
+
+// Required libraries for DirectX11
+
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "Dwmapi.lib")
+#pragma comment(lib, "D3Dcompiler.lib")
+#pragma comment(lib, "D3D11.lib")
+#pragma comment(lib, "Winmm.lib")
+#pragma comment(lib, "dxgi.lib")

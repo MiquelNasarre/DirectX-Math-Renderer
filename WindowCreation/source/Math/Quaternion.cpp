@@ -25,7 +25,7 @@ const char* Quaternion::str(const char* fmt) const
 	char* str = str_buffer[buffer_pos];
 	buffer_pos = (buffer_pos + 1u) % 16u;
 
-	sprintf(str, fmt, r, i, j, k);
+	snprintf(str, 512, fmt, r, i, j, k);
 
 	return str;
 }

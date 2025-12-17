@@ -1,11 +1,11 @@
 #include "iGManager.h"
+
+#ifdef _INCLUDE_IMGUI
 #include "Exception/_exDefault.h"
 
 #include "WinHeader.h"
 #include "imgui/imgui_impl_dx11.h"
 #include "imgui/imgui_impl_win32.h"
-
-#include <unordered_map>
 
 // Declares the use of the ImGui message procedure.
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -172,4 +172,4 @@ bool iGManager::WndProcHandler(void* hWnd, unsigned int msg, unsigned int wParam
 	// Otherwise return false.
 	return false;
 }
-
+#endif

@@ -1,7 +1,7 @@
 #include "Drawable/Background.h"
 #include "Bindable/BindableBase.h"
 
-#include "Exception/_exGraphics.h"
+#include "Exception/_exDefault.h"
 
 /*
 -----------------------------------------------------------------------------------------------------------

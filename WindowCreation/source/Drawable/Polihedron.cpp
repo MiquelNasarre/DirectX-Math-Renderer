@@ -773,7 +773,7 @@ void Polihedron::updateRotation(Quaternion rotation, bool multiplicative)
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (multiplicative)
-		data.rotation *= rotation;
+		data.rotation *= rotation.normal();
 	else
 		data.rotation = rotation;
 

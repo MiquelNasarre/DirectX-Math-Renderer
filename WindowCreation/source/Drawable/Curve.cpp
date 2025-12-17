@@ -381,7 +381,7 @@ void Curve::updateRotation(Quaternion rotation, bool multiplicative)
 	CurveInternals& data = *(CurveInternals*)curveData;
 
 	if (multiplicative)
-		data.rotation *= rotation;
+		data.rotation *= rotation.normal();
 	else
 		data.rotation = rotation;
 

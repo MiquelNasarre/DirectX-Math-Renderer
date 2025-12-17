@@ -26,12 +26,11 @@ public:
 		: Exception(line, file)
 	{
 		unsigned c = 0u;
-		info = new char[2048];
 
 		// Add intro to information.
-		const char* intro = "\n[Description]\n";
+		const char* intro = "\n[Error Info]\n";
 		unsigned i = 0u;
-		while (intro[i] && c < 2047)
+		while (intro[i])
 			info[c++] = intro[i++];
 
 		// join all info messages with newlines into single string.
@@ -39,11 +38,8 @@ public:
 		while (msg[i] && c < 2047)
 			info[c++] = msg[i++];
 
-		// Add intro to origin string.
-		const char* origin_intro = "\n[Error Info]\n";
-		i = 0u;
-		while (origin_intro[i] && c < 2047)
-			info[c++] = origin_intro[i++];
+		if (c < 2047)
+			info[c++] = '\n';
 
 		// Add origin location.
 		const char* origin = GetOriginString();
@@ -59,12 +55,11 @@ public:
 	InfoException(int line, const char* file, const char** infoMsgs = nullptr) noexcept
 		:Exception(line, file)
 	{
-		unsigned c = 0u;
-		info = new char[2048];
+		unsigned i, j, c = 0u;
 
 		// Add intro to information.
-		const char* intro = "\n[Description]\n";
-		unsigned i = 0u;
+		const char* intro = "\n[Error Info]\n";
+		i = 0u;
 		while (intro[i] && c < 2047)
 			info[c++] = intro[i++];
 
@@ -72,19 +67,13 @@ public:
 		i = 0u;
 		while (infoMsgs[i])
 		{
-			unsigned j = 0u;
+			j = 0u;
 			while (infoMsgs[i][j] && c < 2047)
 				info[c++] = infoMsgs[i][j++];
 
-			if(infoMsgs[++i] && c < 2047)
+			if(c < 2047)
 				info[c++]= '\n';
 		}
-
-		// Add intro to origin string.
-		const char* origin_intro = "\n[Error Info]\n";
-		i = 0u;
-		while (origin_intro[i] && c < 2047)
-			info[c++] = origin_intro[i++];
 
 		// Add origin location.
 		const char* origin = GetOriginString();
@@ -96,27 +85,6 @@ public:
 		info[c] = '\0';
 	}
 
-	// Deletes the string pointer.
-	~InfoException()
-	{
-		if (info)
-			delete[] info;
-	}
-
-	// Override method, prints the stored information and the 
-	// position the exception was thrown at.
-	const char* what() const noexcept override
-	{
-		return info;
-	}
-
 	// Info Exception type override.
-	const char* GetType() const noexcept override
-	{
-		return "Graphics Info Exception";
-	}
-
-private:
-	// Exception information storage.
-	char* info = nullptr;
+	const char* GetType() const noexcept override { return "Graphics Info Exception"; }
 };

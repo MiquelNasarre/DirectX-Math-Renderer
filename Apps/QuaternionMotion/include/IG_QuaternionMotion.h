@@ -1,3 +1,4 @@
+#ifdef _INCLUDE_IMGUI
 #pragma once
 #include "iGManager.h"
 
@@ -12,3 +13,4 @@ public:
 	IG_QuaternionMotion() : iGManager() {}
 	void render() override;
 };
+#endif

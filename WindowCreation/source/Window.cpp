@@ -1,5 +1,4 @@
 #include "Window.h"
-#include "Exception/_exWindow.h"
 
 #include "Timer.h"
 #include "Graphics.h"
@@ -7,8 +6,9 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 
-#include <windowsx.h>
-#include <dwmapi.h>
+#include "WinHeader.h"
+#include "Exception/_exWindow.h"
+
 #include <queue>
 #include <string>
 #include <cstdarg>
@@ -97,11 +97,12 @@ public:
 			Mouse::clearBuffer();
 			break;
 		}
-
+#ifdef _INCLUDE_IMGUI
 		// Let ImGui handle the rest if he has focus
 
 		if (iGManager::WndProcHandler(hWnd, msg, (unsigned int)wParam, (unsigned int)lParam))
 			return DefWindowProc(hWnd, msg, wParam, lParam);
+#endif
 
 		// Other lesser cases
 
@@ -370,11 +371,11 @@ Window::Window(Vector2i Dim, const char* Title, const char* IconFilename, bool d
 Window::~Window()
 {
 	WindowInternals& data = *((WindowInternals*)WindowData);
-
+#ifdef _INCLUDE_IMGUI
 	// If an imgui instance is bound to the window unbind it.
 	if (data.imGui)
 		data.imGui->unbind();
-
+#endif
 	delete data.graphics;
 
 	DestroyWindow(data.hWnd);

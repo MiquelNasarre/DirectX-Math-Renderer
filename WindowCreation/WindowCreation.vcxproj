@@ -142,10 +142,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>RESOURCES_DIR=R"($(ProjectDir)Resources\)";SHADERS_DIR=LR"($(ProjectDir)Shaders\)";_CRT_SECURE_NO_WARNINGS;IS_DEBUG=true;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";RESOURCES_DIR=R"($(ProjectDir)Resources\)";SHADERS_DIR=LR"($(ProjectDir)Shaders\)";IS_DEBUG=true;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)imGui/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)imGui/include/;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -161,7 +161,8 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Resources/ResourceFiles/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>dxgi.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,10 +171,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>RESOURCES_DIR=R"($(ProjectDir)Resources\)";SHADERS_DIR=LR"($(ProjectDir)Shaders\)";_CRT_SECURE_NO_WARNINGS;NDEBUG;IS_DEBUG=false;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";RESOURCES_DIR=R"($(ProjectDir)Resources\)";SHADERS_DIR=LR"($(ProjectDir)Shaders\)";NDEBUG;IS_DEBUG=false;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)imGui/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)imGui/include/;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -191,7 +192,8 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Resources/ResourceFiles/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>dxgi.lib</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -213,9 +215,9 @@
     <ClCompile Include="source\Drawable\Light.cpp" />
     <ClCompile Include="source\Drawable\Surface.cpp" />
     <ClCompile Include="source\Drawable\Polihedron.cpp" />
-    <ClCompile Include="source\Exception\dxerr\dxerr.cpp" />
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp" />
     <ClCompile Include="source\Exception\Exception.cpp" />
+    <ClCompile Include="source\Exception\_exGraphics.cpp" />
     <ClCompile Include="source\Graphics.cpp" />
     <ClCompile Include="source\iGManager.cpp" />
     <ClCompile Include="source\Image\Image.cpp" />
@@ -247,7 +249,6 @@
     <ClInclude Include="include\Drawable\Light.h" />
     <ClInclude Include="include\Drawable\Surface.h" />
     <ClInclude Include="include\Drawable\Polihedron.h" />
-    <ClInclude Include="include\Exception\dxerr\dxerr.h" />
     <ClInclude Include="include\Exception\DxgiInfoManager.h" />
     <ClInclude Include="include\Exception\Exception.h" />
     <ClInclude Include="include\Exception\_exDefault.h" />
@@ -607,9 +608,6 @@
     <None Include="Shaders\OITheader.hlsli" />
     <None Include="Shaders\Perspective.hlsli" />
     <None Include="Shaders\Quaternion.hlsli" />
-    <None Include="source\Exception\dxerr\DXGetErrorDescription.inl" />
-    <None Include="source\Exception\dxerr\DXGetErrorString.inl" />
-    <None Include="source\Exception\dxerr\DXTrace.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

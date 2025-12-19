@@ -5191,7 +5191,7 @@ void Surface::getLight(unsigned id, Vector2f* intensities, Color* color, Vector3
 		*intensities = { data.pscBuff.lightsource[id].intensity.x,data.pscBuff.lightsource[id].intensity.y };
 
 	if (color)
-		*color = Color((float*)&data.pscBuff.lightsource[id].color);
+		*color = Color(data.pscBuff.lightsource[id].color);
 
 	if (position)
 		*position = {

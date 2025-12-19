@@ -111,10 +111,6 @@ QuaternionMotion::QuaternionMotion()
 		{ 16, 00 }, { 00, 16 }, { 16, 16 },
 	};
 
-#include "chatGPTmeshes.h"
-
-	//Image imageGPTv2(textureGPTv2);
-
 	SURFACE_DESC surfDesc0 = {};
 	surfDesc0.type = SURFACE_DESC::IMPLICIT_SURFACE;
 	surfDesc0.implicit_func = [](float x, float y, float z) { return 2 * x * x + 2 * y * y - z * z - 1.f; };

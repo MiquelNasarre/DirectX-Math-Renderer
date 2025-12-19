@@ -20,6 +20,10 @@ the six faces of the cube stacked on top of each other in the order [+X,-X,+Y,-Y
 And the orientation must correspond to what a camera at the origin would see when looking 
 along that axis direction, with +Y as “up” in world.
 
+The Image header contains a small library of functions called ToCube, for simple conversion
+from common spherical projections to cube-maps. I strongly recommend checking them out if you
+have other type of spherical projected images.
+
 For more information on how to use the Image class I strongly suggest checking its header.
 For more information on how textures are used in Pixel Shaders and DX11 in general you can 
 check the microsoft learn documentation at:

@@ -8,25 +8,7 @@
 
 /*
 -------------------------------------------------------------------------------------------------------
-Default colors definitions
--------------------------------------------------------------------------------------------------------
-*/
-
-const Color Color::Black		= Color(  0,  0,    0, 255);
-const Color Color::White		= Color(255, 255, 255, 255);
-const Color Color::Red			= Color(255,   0,   0, 255);
-const Color Color::Green		= Color(  0, 255,   0, 255);
-const Color Color::Blue			= Color(  0,   0, 255, 255);
-const Color Color::Yellow		= Color(255, 255,   0, 255);
-const Color Color::Cyan			= Color(  0, 255, 255, 255);
-const Color Color::Purple		= Color(255,   0, 255, 255);
-const Color Color::Gray			= Color(127, 127, 127, 255);
-const Color Color::Orange		= Color(255, 127,   0, 255);
-const Color Color::Transparent	= Color(  0,   0,   0,   0);
-
-/*
--------------------------------------------------------------------------------------------------------
-Helper functions to read and write BMPs
+ Helper functions to read and write BMPs
 -------------------------------------------------------------------------------------------------------
 */
 
@@ -65,7 +47,7 @@ static inline uint32_t read_le32(FILE* f)
 
 /*
 -------------------------------------------------------------------------------------------------------
-Constructors / Destructors
+ Constructors / Destructors
 -------------------------------------------------------------------------------------------------------
 */
 
@@ -119,7 +101,7 @@ Image& Image::operator=(const Image& other)
 
 // Stores a copy of the color pointer
 
-Image::Image(Color* pixels, unsigned int width, unsigned int height)
+Image::Image(Color* pixels, unsigned width, unsigned height)
     :width_{ width }, height_{ height }, pixels_{ (Color*)calloc(width * height, sizeof(Color)) }
 {
     memcpy(pixels_, pixels, width * height * sizeof(Color));
@@ -127,18 +109,16 @@ Image::Image(Color* pixels, unsigned int width, unsigned int height)
 
 // Creates an image with the specified size and color
 
-Image::Image(unsigned int w, unsigned int h, Color color)
+Image::Image(unsigned width, unsigned height, Color color)
 {
-    width_ = w;
-    height_ = h;
+    width_ = width;
+    height_ = height;
 
     pixels_ = (Color*)calloc(width_ * height_, sizeof(Color));
     
     if (color != Color::Transparent)
-    {
         for (unsigned int i = 0; i < width_ * height_; i++)
             pixels_[i] = color;
-    }
 }
 
 // Frees the pixel pointer
@@ -150,55 +130,7 @@ Image::~Image()
 
 /*
 -------------------------------------------------------------------------------------------------------
-User end functions
--------------------------------------------------------------------------------------------------------
-*/
-
-// Returns the pointer to the image pixels as a color array
-
-Color* Image::pixels()
-{
-    return pixels_;
-}
-
-// Returns the constant pointer to the image pixels as a color array.
-
-const Color* Image::pixels() const
-{
-    return pixels_;
-}
-
-// Returns the image width
-
-unsigned Image::width() const
-{
-    return width_;
-}
-
-// Returns the image height
-
-unsigned Image::height() const
-{
-    return height_;
-}
-
-// Returns a color reference to the specified pixel coordinates
-
-Color& Image::operator()(unsigned int row, unsigned int col)
-{
-    return pixels_[row * width_ + col];
-}
-
-// Returns a constant color reference to the specified pixel coordinates
-
-const Color& Image::operator()(unsigned int row, unsigned int col) const
-{
-    return pixels_[row * width_ + col];
-}
-
-/*
--------------------------------------------------------------------------------------------------------
-BMP image files functions
+ BMP image files functions
 -------------------------------------------------------------------------------------------------------
 */
 
@@ -379,7 +311,7 @@ bool Image::load(const char* fmt_filename, ...)
         free(pixels_);
 
     width_ = w; height_ = h;
-    pixels_ = (Color*)calloc((size_t)w * h, sizeof(Color));
+    pixels_ = (Color*)calloc(w * h, sizeof(Color));
 
     uint8_t* row = (uint8_t*)calloc(row_stride, sizeof(uint8_t));
     for (uint32_t y = 0; y < h; ++y)
@@ -393,7 +325,7 @@ bool Image::load(const char* fmt_filename, ...)
         }
 
         uint32_t dst_y = top_down ? y : (h - 1 - y);
-        Color* out = &pixels_[(size_t)dst_y * w];
+        Color* out = &pixels_[dst_y * w];
 
         if (biBitCount == 32)
             for (uint32_t x = 0; x < w; ++x)
@@ -417,4 +349,200 @@ bool Image::load(const char* fmt_filename, ...)
     free(row);
     fclose(file);
     return true;
+}
+
+/*
+-------------------------------------------------------------------------------------------------------
+ To Cube functions
+-------------------------------------------------------------------------------------------------------
+*/
+
+// Helper functions, they take spherical coordinates and a formatted image and sample
+// the color from the specified coordinates in the specified spherical format.
+
+static inline Color interpolate_color(float u, float v, const Image& image)
+{
+    // Set the image coordinates to [0,1)x[0,1)
+    u -= floorf(u);
+    if (v > 0.9999f) v = 0.9999f;
+    if (v < 0.f) v = 0.f;
+
+    // Map to image pixels
+    float x = u * (image.width() - 1.f);
+    float y = v * (image.height() - 1.f);
+
+    // Get neerest pixel coordinates
+    int x0 = (int)floorf(x);
+    int y0 = (int)floorf(y);
+    int x1 = x0 + 1;
+    int y1 = y0 + 1;
+
+    // Get pixel distances
+    float tx = x - (float)x0;
+    float ty = y - (float)y0;
+
+    // Get pixel colors
+    _float4color c00 = image(y0, x0).getColor4();
+    _float4color c10 = image(y0, x1).getColor4();
+    _float4color c01 = image(y1, x0).getColor4();
+    _float4color c11 = image(y1, x1).getColor4();
+
+    // Interpolation function
+    static auto intrp = [](_float4color c0, _float4color c1, float t) {
+        return _float4color
+        (
+            c0.r * (1.f - t) + c1.r * t,
+            c0.g * (1.f - t) + c1.g * t,
+            c0.b * (1.f - t) + c1.b * t,
+            c0.a * (1.f - t) + c1.a * t
+        );
+    };
+
+    // Interpolate sideways
+    _float4color c0 = intrp(c00, c10, tx);
+    _float4color c1 = intrp(c01, c11, tx);
+
+    // Interpolate vertically
+    return Color(intrp(c0, c1, ty));
+}
+static inline Color sample_from_equirect(float x, float y, float z, const Image& equirect)
+{
+    // Normalize the coordinates
+    const float norm = sqrtf(x * x + y * y + z * z);
+    x /= norm;
+    y /= norm;
+    z /= norm;
+
+    // Obtain latitude and longitude from the normalized values
+    float theta = atan2f(y, x);
+    float phi = asinf(z);
+
+    // Divide by 2*PI and add 1/2 to get it in range (0,1)
+    float u = theta * 0.1591549430918953f + 0.5f;
+    // Divide by PI and subtract from 1/2 to get it in range (0,1)
+    float v = 0.5f - phi * 0.3183098861837907f;
+
+    // Interpolate the obtained image coordinates
+    return interpolate_color(u, v, equirect);
+}
+static inline Color sample_from_fisheye(float x, float y, float z, const Image& fisheye, ToCube::FISHEYE_TYPE type)
+{
+    // Normalize the coordinates
+    const float norm = sqrtf(x * x + y * y + z * z);
+    x /= norm;
+    y /= norm;
+    z /= norm;
+
+    // Get the spherical coordinates
+    float theta = atan2f(sqrtf(x * x + y * y), z);
+    float alpha = atan2f(y, x);
+
+    // Transform the angular distance to radius depending on the type
+    float rho;
+    switch (type)
+    {
+    case ToCube::FISHEYE_EQUIDISTANT:
+        // Divide by pi
+        rho = theta * 0.3183098861837907f;
+        break;
+
+    case ToCube::FISHEYE_EQUISOLID:
+        // Transform to radius (0,1)
+        rho = sinf(theta / 2.f);
+        break;
+
+    case ToCube::FISHEYE_STEREOGRAPHIC:
+        // Transform to radius (0,1)
+        rho = tanf(theta / 2.f) / ToCube::STEREOGRAPHIC_DIV;
+        // If out of image bounds return
+        if (rho > 1.f) return ToCube::STEREOGRAPHIC_FILL;
+        break;
+
+    default:
+        return Color::Transparent;
+    }
+
+    // Get the circle coordinates in range (0,1)x(0,1)
+    float u = 0.5f + rho * cosf(alpha) / 2.f;
+    float v = 0.5f + rho * sinf(alpha) / 2.f;
+
+    // Interpolate the obtained image coordinates
+    return interpolate_color(u, v, fisheye);
+}
+
+// Equirectangular projections are extremely common, they follow the typical
+// latitude longitude coordinate system and are widely used for all kinds of
+// applications. This function allows you to convert equirectangular projection
+// images to texture cubes.
+
+Image* ToCube::from_equirect(const Image& equirect, unsigned cube_width)
+{
+    if (!equirect.width() || !equirect.height())
+        return nullptr;
+
+    Image& cube = *new Image(cube_width, 6u * cube_width);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 0u * cube_width, col) = sample_from_equirect(1.f - 2.f * float(col + 0.5f) / cube_width,  1.f, 1.f - 2.f * float(row + 0.5f) / cube_width, equirect);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 1u * cube_width, col) = sample_from_equirect(2.f * float(col + 0.5f) / cube_width - 1.f, -1.f, 1.f - 2.f * float(row + 0.5f) / cube_width, equirect);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 2u * cube_width, col) = sample_from_equirect(2.f * float(row + 0.5f) / cube_width - 1.f, 2.f * float(col + 0.5f) / cube_width - 1.f,  1.f, equirect);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 3u * cube_width, col) = sample_from_equirect(1.f - 2.f * float(row + 0.5f) / cube_width, 2.f * float(col + 0.5f) / cube_width - 1.f, -1.f, equirect);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 4u * cube_width, col) = sample_from_equirect( 1.f, 2.f * float(col + 0.5f) / cube_width - 1.f, 1.f - 2.f * float(row + 0.5f) / cube_width, equirect);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 5u * cube_width, col) = sample_from_equirect(-1.f, 1.f - 2.f * float(col + 0.5f) / cube_width, 1.f - 2.f * float(row + 0.5f) / cube_width, equirect);
+
+    return &cube;
+}
+
+// Fish-eye or circular panoramic pictures are common as a result of 360º cameras
+// that usually take this format when taking their pictures. This function allows
+// you to convert your fish-eye 360º pictures into texture cubes.
+
+Image* ToCube::from_fisheye(const Image& fisheye, unsigned cube_width, FISHEYE_TYPE type)
+{
+    if (!fisheye.width() || !fisheye.height())
+        return nullptr;
+
+    Image& cube = *new Image(cube_width, 6u * cube_width);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 0u * cube_width, col) = sample_from_fisheye(1.f - 2.f * float(col + 0.5f) / cube_width,  1.f, 1.f - 2.f * float(row + 0.5f) / cube_width, fisheye, type);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 1u * cube_width, col) = sample_from_fisheye(2.f * float(col + 0.5f) / cube_width - 1.f, -1.f, 1.f - 2.f * float(row + 0.5f) / cube_width, fisheye, type);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 2u * cube_width, col) = sample_from_fisheye(2.f * float(row + 0.5f) / cube_width - 1.f, 2.f * float(col + 0.5f) / cube_width - 1.f,  1.f, fisheye, type);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 3u * cube_width, col) = sample_from_fisheye(1.f - 2.f * float(row + 0.5f) / cube_width, 2.f * float(col + 0.5f) / cube_width - 1.f, -1.f, fisheye, type);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 4u * cube_width, col) = sample_from_fisheye( 1.f, 2.f * float(col + 0.5f) / cube_width - 1.f, 1.f - 2.f * float(row + 0.5f) / cube_width, fisheye, type);
+
+    for (unsigned row = 0u; row < cube_width; row++)
+        for (unsigned col = 0u; col < cube_width; col++)
+            cube(row + 5u * cube_width, col) = sample_from_fisheye(-1.f, 1.f - 2.f * float(col + 0.5f) / cube_width, 1.f - 2.f * float(row + 0.5f) / cube_width, fisheye, type);
+
+    return &cube;
 }

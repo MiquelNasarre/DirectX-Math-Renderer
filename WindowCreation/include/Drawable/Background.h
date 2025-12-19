@@ -15,6 +15,10 @@ For dynamic backgrounds the image is expected to be a cube-map, and will render 
 in the background when drawn. This scene will follow the default perspective of the Window, but
 you can also update the rotation of the background scene using updateRotation. For information
 on how to create a cube-map image check the Texture bindable header.
+
+The Image header contains a small library of functions called ToCube, for simple conversion
+from common spherical projections to cube-maps. I strongly recommend checking them out if you
+have other type of spherical projected images.
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
 */

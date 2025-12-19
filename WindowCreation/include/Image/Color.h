@@ -13,12 +13,12 @@ past with this class, still very simple and robust.
 */
 
 // Struct for sending color arrays to the GPU
-struct _float4color 
+struct alignas(16) _float4color 
 {
-	float r;
-	float g;
-	float b;
-	float a;
+	float r = 0.f;
+	float g = 0.f;
+	float b = 0.f;
+	float a = 0.f;
 };
 
 // Color class with storage BGRA useful for dealing with colored images.
@@ -39,13 +39,13 @@ struct Color
 		: R{ r }, G{ g }, B{ b }, A{ a } {}
 
 	// Initializes through a float*
-	constexpr Color(const float* float4color)
-		:	R{ unsigned char(float4color[0] * 255) },
-			G{ unsigned char(float4color[1] * 255) },
-			B{ unsigned char(float4color[2] * 255) },
-			A{ unsigned char(float4color[3] * 255) } {}
+	constexpr explicit Color(const _float4color col)
+		:	R{ unsigned char(col.r * 255.f) },
+			G{ unsigned char(col.g * 255.f) },
+			B{ unsigned char(col.b * 255.f) },
+			A{ unsigned char(col.a * 255.f) } {}
 
-	// Default colors defined for convenience
+	// Default colors for convenience
 	static const Color Black;
 	static const Color White;
 	static const Color Red;
@@ -198,7 +198,20 @@ struct Color
 	constexpr _float4color getColor4() const { return { (float)R / 255.f, (float)G / 255.f, (float)B / 255.f, (float)A / 255.f }; }
 };
 
-// Inverse operations
+// Reversed operations
 constexpr Color operator*(const int& rhs, const Color& lhs)		{ return lhs * rhs; }
 constexpr Color operator*(const float& rhs, const Color& lhs)	{ return lhs * rhs; }
 constexpr Color operator*(const double& rhs, const Color& lhs)	{ return lhs * rhs; }
+
+// Default colors definitions
+constexpr inline Color Color::Black			= Color(   0,   0,   0, 255);
+constexpr inline Color Color::White			= Color( 255, 255, 255, 255);
+constexpr inline Color Color::Red			= Color( 255,   0,   0, 255);
+constexpr inline Color Color::Green			= Color(   0, 255,   0, 255);
+constexpr inline Color Color::Blue			= Color(   0,   0, 255, 255);
+constexpr inline Color Color::Yellow		= Color( 255, 255,   0, 255);
+constexpr inline Color Color::Cyan			= Color(   0, 255, 255, 255);
+constexpr inline Color Color::Purple		= Color( 255,   0, 255, 255);
+constexpr inline Color Color::Gray			= Color( 127, 127, 127, 255);
+constexpr inline Color Color::Orange		= Color( 255, 127,   0, 255);
+constexpr inline Color Color::Transparent	= Color(   0,   0,   0,   0);

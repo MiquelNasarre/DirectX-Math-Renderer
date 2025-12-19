@@ -321,7 +321,7 @@ public:
 				// The reason why we can send &col as a float*, is because _float4 and Vector*f 
 				// structs are tightly packed and can be interpreted as float*.
 				ImGui::ColorPicker4("", (float*)&col);
-				light->color = Color((float*)&col);
+				light->color = Color(col);
 
 				// We add a double slider for the intensities.
 				ImGui::Spacing();

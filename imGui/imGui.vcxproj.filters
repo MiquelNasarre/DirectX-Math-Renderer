@@ -20,9 +20,6 @@
     <ClCompile Include="src\imgui_impl_dx11.cpp">
       <Filter>Sources\Private</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui_demo.cpp">
-      <Filter>Sources\Private</Filter>
-    </ClCompile>
     <ClCompile Include="src\imgui_draw.cpp">
       <Filter>Sources\Private</Filter>
     </ClCompile>
@@ -33,6 +30,9 @@
       <Filter>Sources\Private</Filter>
     </ClCompile>
     <ClCompile Include="src\imgui_tables.cpp">
+      <Filter>Sources\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_demo.cpp">
       <Filter>Sources\Private</Filter>
     </ClCompile>
   </ItemGroup>

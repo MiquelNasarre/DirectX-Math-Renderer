@@ -4,24 +4,26 @@
 /* WINDOW OBJECT CLASS
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
-To create a window in your desktop just create a Window object and you have it!
-To close the window just delete the object and it is gone. No headaches, and no
-non-sense. To know if a window close button has been pressed or close() has been
-called the processEvents() will return the ID of the window that wants to close.
+To create a window in your desktop just create a Window object and you have it! 
+To close the window just delete the object and it is gone. No headaches, and no 
+non-sense.
 
-The window class deals with all the Win32 API in the background, and allows for a
+The window class deals with all the Win32 API in the background, and allows for a 
 flexible window design, with multiple functions to customize the window to your 
-liking, check out the class to learn all its functionalities.
+liking, check out the class to learn about all its functionalities.
 
-The library also supports multiple window settings. For proper opening and closing
-I suggest holding pointers to windows and a counter, and deleting the windows when
+To know if a window close button has been pressed or close() has been called the 
+processEvents() will return the ID of the window that wants to close.
+
+This API also supports multiple window settings. For proper opening and closing I 
+suggest holding pointers to windows and a counter, and deleting the windows when 
 the global process events returns their ID.
 
 For App creation this API comes with a set of default Drawables and a Graphics 
-object contained inside the window, for an example on how to use the library you
+object contained inside the window, for an example on how to use the library you 
 can check the demo apps or the default helpers header.
 
-For further information check the github page:
+For further information check the github page: 
 https://github.com/MiquelNasarre/DirectX-Math-Renderer.git
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------

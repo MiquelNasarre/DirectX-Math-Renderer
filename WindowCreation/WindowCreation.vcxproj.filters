@@ -141,6 +141,9 @@
     <ClCompile Include="source\Exception\_exGraphics.cpp">
       <Filter>Sources\Private\Exception</Filter>
     </ClCompile>
+    <ClCompile Include="source\Drawable\Scatter.cpp">
+      <Filter>Sources\Private\Drawable</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Bindable.h">
@@ -259,6 +262,12 @@
     </ClInclude>
     <ClInclude Include="include\Image\Image.h">
       <Filter>Sources\Public\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="include\default_helpers.h">
+      <Filter>Sources\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Drawable\Scatter.h">
+      <Filter>Sources\Public\Drawable</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

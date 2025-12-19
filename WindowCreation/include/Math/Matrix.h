@@ -232,7 +232,7 @@ constexpr Matrix ScalingMatrix(float x, float y, float z)
 }
 
 // Stretch along direction 'axis' by 'factor' (factor=1 => no change).
-inline Matrix StretchAlong(const Vector3f axis, float factor)
+inline Matrix StretchMatrix(const Vector3f axis, float factor)
 {
     if (!axis)
         return Matrix::Identity();
@@ -249,7 +249,7 @@ inline Matrix StretchAlong(const Vector3f axis, float factor)
 }
 
 // Shear that pushes along 'dir' proportionally to projection on 'ref'.
-constexpr Matrix Shear(const Vector3f dir, const Vector3f ref, float k)
+constexpr Matrix ShearMatrix(const Vector3f dir, const Vector3f ref, float k)
 {
     // A = I + k * dir * ref^T   (dir/ref need not be orthogonal; ref is "measured axis")
     const Vector3f d = dir;

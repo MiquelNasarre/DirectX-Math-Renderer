@@ -190,6 +190,17 @@ int QuaternionMotion::Run()
 
 void QuaternionMotion::eventManager()
 {
+	//	Calculate observer vector
+
+	Vector3f up = { 0.f,1.f,0.f };
+
+	Quaternion rotUp = (up.normal().y > -0.99999f) ? Quaternion{ 1.f + up.y, -up.z, 0.f, up.x } : Quaternion{ 0.f, 0.f, 0.f, 1.f };
+
+	Quaternion rotTheta = { cosf(IG_DATA::THETA / 2.f), 0.f, sinf(IG_DATA::THETA / 2.f), 0.f };
+	Quaternion rotPhi   = { cosf(  IG_DATA::PHI / 2.f),-sinf(  IG_DATA::PHI / 2.f), 0.f, 0.f };
+
+	observer = (rotPhi * rotTheta * rotUp).normal();
+
 	// returning motion
 
 	if (Keyboard::isKeyPressed('R'))
@@ -237,14 +248,6 @@ void QuaternionMotion::eventManager()
 	else
 		scale *= powf(1.1f, Mouse::getWheel() / 120.f);
 
-	//	Calculate observer vector
-
-	observer = {
-			-cosf(IG_DATA::PHI) * cosf(IG_DATA::THETA) ,
-			-cosf(IG_DATA::PHI) * sinf(IG_DATA::THETA) ,
-			-sinf(IG_DATA::PHI)
-	};
-
 	//	Light updates
 	
 	int l = IG_DATA::UPDATE_LIGHT;
@@ -272,7 +275,7 @@ void QuaternionMotion::doFrame()
 	eventManager();
 
 	//	Update objects
-
+	
 	window.graphics().setRenderTarget();
 
 	window.graphics().updatePerspective(observer, center, scale);
@@ -284,7 +287,7 @@ void QuaternionMotion::doFrame()
 	back.updateRotation(rotation, true);
 	curve.updateRotation(rotation, true);
 
-	window.setTitle("%s  -  %u fps", shape_1.getRotation().str(), (unsigned)window.getFramerate());
+	window.setTitle("%s  -  %u fps", shape_1.getRotation().str(), (unsigned)(window.getFramerate() + 0.5f));
 
 	//	Rendering
 
@@ -342,9 +345,7 @@ void QuaternionMotion::strictReturn()
 
 void QuaternionMotion::drag_rigid_plane()
 {
-	Quaternion qobs = window.graphics().getObserver();
-
-	Vector3f obs = -(qobs * QUAT_K * qobs.inv()).getVector();
+	Vector3f obs = -(observer * QUAT_K * observer.inv()).getVector();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -370,9 +371,7 @@ void QuaternionMotion::drag_rigid_plane()
 
 void QuaternionMotion::drag_rigid_space()
 {
-	Quaternion qobs = window.graphics().getObserver();
-
-	Vector3f obs = -(qobs * QUAT_K * qobs.inv()).getVector();
+	Vector3f obs = -(observer * QUAT_K * observer.inv()).getVector();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -399,9 +398,7 @@ void QuaternionMotion::drag_rigid_space()
 
 void QuaternionMotion::drag_dynamic_plane()
 {
-	Quaternion qobs = window.graphics().getObserver();
-
-	Vector3f obs = -(qobs * QUAT_K * qobs.inv()).getVector();
+	Vector3f obs = -(observer * QUAT_K * observer.inv()).getVector();
 	Vector3f ex = -(obs * Vector3f(0.f, 0.f, 1.f)).normalize();
 	Vector3f ey = ex * obs;
 
@@ -435,7 +432,6 @@ void QuaternionMotion::drag_dynamic_plane()
 
 void QuaternionMotion::drag_dynamic_space()
 {
-	Quaternion qobs = window.graphics().getObserver();
 	Vector2i dim = window.getDimensions() / 2;
 
 	Vector3f p0 = { (lastPos.x - dim.x) / scale, -(lastPos.y - dim.y) / scale, -1.f };
@@ -443,8 +439,8 @@ void QuaternionMotion::drag_dynamic_space()
 	lastPos = Mouse::getPosition();
 	Vector3f p1 = { (lastPos.x - dim.x) / scale, -(lastPos.y - dim.y) / scale, -1.f };
 
-	p0 = (qobs * Quaternion(p0) * qobs.inv()).getVector().normal();
-	p1 = (qobs * Quaternion(p1) * qobs.inv()).getVector().normal();
+	p0 = (observer.inv() * Quaternion(p0) * observer).getVector().normal();
+	p1 = (observer.inv() * Quaternion(p1) * observer).getVector().normal();
 
 	Quaternion rot = (Quaternion(p1 * p0) + 1.f + (p0 ^ p1)).normal();
 
@@ -456,13 +452,12 @@ void QuaternionMotion::drag_dynamic_space()
 
 void QuaternionMotion::drag_magnetic_mouse()
 {
-	Quaternion qobs = window.graphics().getObserver();
 	Vector2i dim = window.getDimensions() / 2;
 
 	lastPos = Mouse::getPosition();
 	Vector3f p1 = { (lastPos.x - dim.x) / scale, -(lastPos.y - dim.y) / scale, -1.f };
 
-	p1 = (qobs * Quaternion(p1) * qobs.inv()).getVector().normal();
+	p1 = (observer * Quaternion(p1) * observer.inv()).getVector().normal();
 
 	Quaternion rot = shape_0.getRotation();
 	Vector3f polePos = (rot * QUAT_K * rot.inv()).getVector();

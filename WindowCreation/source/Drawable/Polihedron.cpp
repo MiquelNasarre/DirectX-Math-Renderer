@@ -819,13 +819,6 @@ void Polihedron::updateDistortion(Matrix distortion, bool multiplicative)
 	if (!isInit)
 		throw INFO_EXCEPT("Trying to update the distortion on an uninitialized Polihedron.");
 
-	if (!distortion.determinant())
-		throw INFO_EXCEPT(
-			"Trying to update the distortion with a non invertible matrix.\n"
-			"Degenerate Matrices are not allowed for shape distortion.\n"
-			"If you want to reduce dimensionality you can apply it yourself to the vertices."
-		);
-
 	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
 
 	if (multiplicative)
@@ -898,6 +891,36 @@ void Polihedron::clearLights()
  Getters
 -----------------------------------------------------------------------------------------------------------
 */
+
+
+// If ilumination is enabled, to the valid pointers it writes the specified lights data.
+
+void Polihedron::getLight(unsigned id, Vector2f* intensities, Color* color, Vector3f* position)
+{
+	if (!isInit)
+		throw INFO_EXCEPT("Trying to get a light of an uninitialized Polihedron.");
+
+	PolihedronInternals& data = *(PolihedronInternals*)polihedronData;
+
+	if (!data.desc.enable_iluminated)
+		throw INFO_EXCEPT("Trying to get a light of a Polihedron with ilumination disabled.");
+
+	if (id >= 8)
+		throw INFO_EXCEPT("Trying to get a light with an invalid id (must be 0-7).");
+
+	if (intensities)
+		*intensities = { data.pscBuff.lightsource[id].intensity.x,data.pscBuff.lightsource[id].intensity.y };
+
+	if (color)
+		*color = Color((float*)&data.pscBuff.lightsource[id].color);
+
+	if (position)
+		*position = {
+			data.pscBuff.lightsource[id].position.x,
+			data.pscBuff.lightsource[id].position.y,
+			data.pscBuff.lightsource[id].position.z
+		};
+}
 
 // Returns the current rotation quaternion.
 

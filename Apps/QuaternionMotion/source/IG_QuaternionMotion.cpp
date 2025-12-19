@@ -174,11 +174,6 @@ void IG_QuaternionMotion::render()
 		ImGui::SliderAngle("Theta", &IG_DATA::THETA);
 		ImGui::SliderAngle("Phi", &IG_DATA::PHI, -90.f, 90.f);
 
-		if (IG_DATA::PHI > 3.140f / 2.f)
-			IG_DATA::PHI = 3.140f / 2.f;
-		if (IG_DATA::PHI < -3.140f / 2.f)
-			IG_DATA::PHI = -3.140f / 2.f;
-
 	}
 	ImGui::End();
 

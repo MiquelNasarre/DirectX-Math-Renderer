@@ -1,13 +1,19 @@
-#include "QuaternionMotion.h"
-#include "Exception/Exception.h"
+#include "default_helpers.h"
 
-int __stdcall WinMain()
+void __stdcall WinMain()
 {
-	try 
-	{
-		return QuaternionMotion().Run();
-	}
-	catch (const Exception& exc) { exc.PopMessageBox(); }
+	SURFACE_DESC desc = {};
+	desc.explicit_func = [](float x, float y) { return cosf(10.f * (x * x + y * y)) / 5.f; };
+	Surface surf(&desc);
 
-	return -1;
+	defaultWindow window({ 640,320 });
+	window.pushDrawable(&surf);
+
+	while (Window::processEvents() != window.getID())
+	{
+		defaultEventManager(window.data);
+		surf.updateRotation(window.data.rot_free);
+		window.scale = window.data.scale;
+		window.drawFrame();
+	}
 }

@@ -213,6 +213,7 @@
     <ClCompile Include="source\Drawable\Background.cpp" />
     <ClCompile Include="source\Drawable\Curve.cpp" />
     <ClCompile Include="source\Drawable\Light.cpp" />
+    <ClCompile Include="source\Drawable\Scatter.cpp" />
     <ClCompile Include="source\Drawable\Surface.cpp" />
     <ClCompile Include="source\Drawable\Polihedron.cpp" />
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp" />
@@ -243,10 +244,12 @@
     <ClInclude Include="include\Bindable\Topology.h" />
     <ClInclude Include="include\Bindable\VertexBuffer.h" />
     <ClInclude Include="include\Bindable\VertexShader.h" />
+    <ClInclude Include="include\default_helpers.h" />
     <ClInclude Include="include\Drawable.h" />
     <ClInclude Include="include\Drawable\Background.h" />
     <ClInclude Include="include\Drawable\Curve.h" />
     <ClInclude Include="include\Drawable\Light.h" />
+    <ClInclude Include="include\Drawable\Scatter.h" />
     <ClInclude Include="include\Drawable\Surface.h" />
     <ClInclude Include="include\Drawable\Polihedron.h" />
     <ClInclude Include="include\Exception\DxgiInfoManager.h" />

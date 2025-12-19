@@ -1,4 +1,4 @@
-#pragma 
+#pragma once
 #include "Window.h"
 #ifdef _INCLUDE_IMGUI
 

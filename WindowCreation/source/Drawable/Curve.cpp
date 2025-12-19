@@ -426,13 +426,6 @@ void Curve::updateDistortion(Matrix distortion, bool multiplicative)
 	if (!isInit)
 		throw INFO_EXCEPT("Trying to update the distortion on an uninitialized Curve.");
 
-	if (!distortion.determinant())
-		throw INFO_EXCEPT(
-			"Trying to update the distortion with a non invertible matrix.\n"
-			"Degenerate Matrices are not allowed for shape distortion.\n"
-			"If you want to reduce dimensionality you can apply it yourself to the vertices."
-		);
-
 	CurveInternals& data = *(CurveInternals*)curveData;
 
 	if (multiplicative)

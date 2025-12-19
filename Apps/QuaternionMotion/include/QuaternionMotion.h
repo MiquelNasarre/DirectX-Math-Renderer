@@ -56,7 +56,7 @@ private:
 #endif
 	float scale = 280.f;
 	Vector3f center   = { 0.f, 0.f, 0.f };
-	Vector3f observer = { 0.f,-1.f, 0.f };
+	Quaternion observer = 1.f;
 
 	Quaternion rotation = { 1.f, 0.0025f,-0.0025f, 0.0025f };
 	Vector3f axis = Vector3f(1.f, -1.f, 1.f);
@@ -64,11 +64,6 @@ private:
 
 	Vector2i lastPos = {};
 	bool dragging = false;
-
-	//	Forced return
-
-	bool returning = false;
-	bool strict = false;
 
 	//	Magnet motion
 

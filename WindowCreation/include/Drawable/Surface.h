@@ -250,6 +250,9 @@ public:
 	// If ilumination is enabled clears all lights for the Surface.
 	void clearLights();
 
+	// If ilumination is enabled, to the valid pointers it writes the specified lights data.
+	void getLight(unsigned id, Vector2f* intensities, Color* color, Vector3f* position);
+
 	// Returns the current rotation quaternion.
 	Quaternion getRotation() const;
 

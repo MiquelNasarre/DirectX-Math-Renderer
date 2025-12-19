@@ -120,6 +120,9 @@ struct Vector2f
 	template <typename number_type>
 	constexpr Vector2f(number_type x, number_type y) { this->x = x; this->y = y; }
 
+	// Explicit _float4 constructors, takes its x,y coordinates.
+	constexpr explicit Vector2f(_float4vector vec) { x = vec.x, y = vec.y; }
+
 	// Other class constructor.
 	template <typename other_vector>
 	constexpr explicit Vector2f(const other_vector& other) { x = (float)other.x, y = (float)other.y; }
@@ -354,6 +357,9 @@ struct Vector3f
 
 	template <typename number_type>
 	constexpr Vector3f(number_type x, number_type y, number_type z) { this->x = x; this->y = y; this->z = z; }
+
+	// Explicit _float4 constructors, takes its x,y,z coordinates.
+	constexpr explicit Vector3f(_float4vector vec) { x = vec.x, y = vec.y, z = vec.z; }
 
 	// Other class constructor.
 	template <typename other_vector>

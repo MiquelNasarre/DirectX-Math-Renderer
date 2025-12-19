@@ -1,8 +1,6 @@
 #include "iGManager.h"
 
 #ifdef _INCLUDE_IMGUI
-#include "Exception/_exDefault.h"
-
 #include "WinHeader.h"
 #include "imgui/imgui_impl_dx11.h"
 #include "imgui/imgui_impl_win32.h"

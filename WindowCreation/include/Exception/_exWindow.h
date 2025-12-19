@@ -1,7 +1,7 @@
 #pragma once
 #include "Exception/Exception.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 /* WIN32 EXCEPTION CLASS
 -------------------------------------------------------------------------------------------------------

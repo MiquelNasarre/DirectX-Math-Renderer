@@ -1,7 +1,5 @@
 #include "Bindable/IndexBuffer.h"
-
 #include "WinHeader.h"
-#include "Exception/_exGraphics.h"
 
 // Handy helper pointers to the device and context.
 #define _device ((ID3D11Device*)device())

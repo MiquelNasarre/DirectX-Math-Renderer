@@ -61,6 +61,7 @@ built time, if those dependencies are needed just comment them from the list.
 #endif
 #pragma endregion
 
+// Win32 and DX11 includes
 #include <Windows.h>
 #include <WinUser.h>
 #include <d3d11.h>
@@ -70,10 +71,14 @@ built time, if those dependencies are needed just comment them from the list.
 #include <dwmapi.h>
 #include <dxgi1_6.h> // For GPU selection
 
+// Win32 and DX11 Exception Classes
+#include "Exception/_exWindow.h"
+#include "Exception/_exGraphics.h"
+
+// Using Com pointers
 using Microsoft::WRL::ComPtr;
 
 // Required libraries for DirectX11
-
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "Dwmapi.lib")
 #pragma comment(lib, "D3Dcompiler.lib")

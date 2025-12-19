@@ -218,7 +218,6 @@
     <ClCompile Include="source\Drawable\Polihedron.cpp" />
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp" />
     <ClCompile Include="source\Exception\Exception.cpp" />
-    <ClCompile Include="source\Exception\_exGraphics.cpp" />
     <ClCompile Include="source\Graphics.cpp" />
     <ClCompile Include="source\iGManager.cpp" />
     <ClCompile Include="source\Image\Image.cpp" />

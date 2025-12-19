@@ -59,32 +59,12 @@ private:
 };
 
 // Contains the graphics information of the window, storing the GPU access pointers
-// as well as the POV of the windows, draw calls are funneled through this object.
+// as well as the POV of the window, draw calls are funneled through this object.
 class Graphics
 {
 	friend class Drawable;
 	friend class Window;
 	friend class MSGHandlePipeline;
-private:
-	// Destroys the class data and frees the pointers to the graphics instance.
-	~Graphics();
-
-	// Initializes the class data and calls the creation of the graphics instance.
-	// Initializes all the necessary GPU data to be able to render the graphics objects.
-	Graphics(void* hWnd);
-
-	// No copies of a graphics instance are allowed.
-	Graphics(Graphics&&) = delete;
-	Graphics& operator=(Graphics&&) = delete;
-	Graphics(const Graphics&) = delete;
-	Graphics& operator=(const Graphics&) = delete;
-
-	// Calls to draw the objects as indexed in the index count.
-	static void drawIndexed(unsigned IndexCount, bool isOIT);
-
-	// Sets the window dimensions to the ones specified by the vector.
-	void setWindowDimensions(const Vector2i Dim);
-
 public:
 	// Before issuing any draw calls to the window, for multiple window settings 
 	// this function has to be called to bind the window as the render target.
@@ -105,8 +85,9 @@ public:
 	// IF it is not enabled it does nothing.
 	void clearTransparencyBuffers();
 
-	// Simple conversion from a pixel position on screen to a (-1.0,1.0)x(-1.0,1.0) c R^2 position.
-	Vector2f PixeltoR2(const Vector2i MousePos);
+	// Updates the perspective on the window, by changing the observer direction, 
+	// the center of the POV and the scale of the object looked at.
+	void updatePerspective(Quaternion obs, Vector3f center, float scale);
 
 	// To draw transparent objects this setting needs to be toggled on, it causes extra 
 	// conputation due to other buffers being used for rendering, so only turn on if needed.
@@ -120,18 +101,38 @@ public:
 	// Returns whether OITransparency is enabled on this Graphics object.
 	bool isOITransparencyEnabled() const;
 
-	// Updates the perspective on the window, by changing the observer direction, 
-	// the center of the POV and the scale of the object looked at.
-	void updatePerspective(Quaternion obs, Vector3f center, float scale);
-
 	// Returns the current observer quaternion.
-	Quaternion getObserver() const;
+	inline Quaternion getObserver() const { return cbuff.observer; }
 
 	// Returns the current Center POV.
-	Vector3f getCenter() const;
+	inline Vector3f getCenter() const { return Vector3f(cbuff.center); }
 
 	// Returns the current scals.
-	float getScale() const;
+	inline float getScale() const { return Scale; }
+
+private:
+	// Initializes the class data and calls the creation of the graphics instance.
+	// Initializes all the necessary GPU data to be able to render the graphics objects.
+	Graphics(void* hWnd);
+
+	// Destroys the class data and frees the pointers to the graphics instance.
+	~Graphics();
+
+	// To be called by drawable objects during their draw calls, issues an indexed 
+	// draw call drawing the object to the render target., If the object is transparent 
+	// redirects it to the accumulation targets for later composing. At the end returns 
+	// to default Blender and DepthStencil states.
+	static void drawIndexed(unsigned IndexCount, bool isOIT);
+
+	// To be called by its window. When window dimensions are updated it reshapes its
+	// buffers to match the new window dimensions, as specified by the vector.
+	void setWindowDimensions(const Vector2i Dim);
+
+	// No copies of a graphics instance are allowed.
+	Graphics(Graphics&&)					= delete;
+	Graphics& operator=(Graphics&&)			= delete;
+	Graphics(const Graphics&)				= delete;
+	Graphics& operator=(const Graphics&)	= delete;
 
 private:
 	void* GraphicsData = nullptr; // Stores the graphics object internal data.

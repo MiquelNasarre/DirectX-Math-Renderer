@@ -4,13 +4,22 @@
 /* WINDOW OBJECT CLASS
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
-This header contains the Window object and its functions. To facilitate window
-creation and management this class handles all the Win32 API and gives access to 
-a set of simple functions to control the application window.
+To create a window in your desktop just create a Window object and you have it!
+To close the window just delete the object and it is gone. No headaches, and no
+non-sense. To know if a window close button has been pressed or close() has been
+called the processEvents() will return the ID of the window that wants to close.
+
+The window class deals with all the Win32 API in the background, and allows for a
+flexible window design, with multiple functions to customize the window to your 
+liking, check out the class to learn all its functionalities.
+
+The library also supports multiple window settings. For proper opening and closing
+I suggest holding pointers to windows and a counter, and deleting the windows when
+the global process events returns their ID.
 
 For App creation this API comes with a set of default Drawables and a Graphics 
 object contained inside the window, for an example on how to use the library you
-can check the template app.
+can check the demo apps or the default helpers header.
 
 For further information check the github page:
 https://github.com/MiquelNasarre/DirectX-Math-Renderer.git
@@ -34,12 +43,20 @@ public:
 	// Returns a reference to the window internal Graphics object.
 	Graphics& graphics();
 
-	// Loops throgh the messages, pushes them to the queue and translates them.
-	// It reuturns 0 unless a window close button is pressed, in that case it 
-	// returns the window ID of that specific window.
+	// Function that may be called every frame during the App runtime. It manages the
+	// message pipeline, pushing events to the Mouse and Keboard for user interaction,
+	// sending them to ImGui if required, and doing important window internal updates.
+	// It also manages the framerate, waiting the correct amount of time to keep it 
+	// stable. 
+	// The function returns 0 during normal runtime, but if a window close button has
+	// been pressed or its close function has been called it will return the ID of the
+	// corresponding window, so that the App can safely delete the object if it pleases.
 	static unsigned processEvents();
 
-	// Closes the window.
+	// Equivalent to pressing the close button on the window. Sends a message to the
+	// handler and process events will catch it and return this window ID so that the
+	// user can close it if he pleases. The only way of closing a window properly is 
+	// through the desctructor.
 	void close();
 
 public:
@@ -47,7 +64,7 @@ public:
 
 	// Creates the window and its associated Graphics object with the
 	// specified dimensions, title, icon and theme.
-	Window(Vector2i Dim, const char* Title, const char* IconFilename = "", bool darkTheme = true);
+	Window(Vector2i Dim, const char* Title);
 
 	// Handles the proper deletion of the window data after its closing.
 	~Window();
@@ -55,7 +72,7 @@ public:
 	// --- GETTERS / SETTERS ---
 
 	// Returs the window ID. 
-	// The one posted by process events when cluse button pressed.
+	// The one posted by process events when close button pressed.
 	unsigned getID() const;
 
 	// Checks whether the window has focus.
@@ -89,6 +106,9 @@ public:
 	Vector2i getPosition() const;
 
 	// Sets the maximum framerate of the process to the one specified.
+	// This framerate is controlled by the process events, after every
+	// processing run if the time since last frame is too short it will 
+	// wait to keep the framerate stable.
 	static void setFramerateLimit(int fps);
 
 	// Returs the current framerate of the process.
@@ -102,11 +122,11 @@ private:
 	// Waits for a certain amount of time to keep the window
 	// running stable at the desired framerate.
 	static void handleFramerate();
-
+#ifdef _INCLUDE_IMGUI
 	// Returns adress to the pointer to the iGManager bound to the window.
 	// This is to be accessed by the iGManager and set the data accordingly.
 	void** imGuiPtrAdress();
-
+#endif
 	// Contains the internal data used by the window.
 	void* WindowData = nullptr;
 

@@ -1,7 +1,5 @@
 #include "Bindable/Texture.h"
 #include "WinHeader.h"
-#include "Graphics.h"
-#include "Exception/_exGraphics.h"
 
 // Handy helper pointers to the device and context.
 #define _device ((ID3D11Device*)device())

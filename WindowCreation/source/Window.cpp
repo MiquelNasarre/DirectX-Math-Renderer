@@ -7,11 +7,8 @@
 #include "Mouse.h"
 
 #include "WinHeader.h"
-#include "Exception/_exWindow.h"
 
-#include <queue>
-#include <string>
-#include <cstdarg>
+#include <cstdarg> // For formatted window titles
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -22,23 +19,19 @@
 // Custom message that signals a window close button pressed.
 #define WM_APP_WINDOW_CLOSE		(WM_APP + 1)
 
-// The maximum amount of messages to be stored on queue.
-#define MAX_MSG		128 
-
-using std::queue;
-using std::string;
-
 // This structure contains the internal data allocated by every window.
 struct WindowInternals
 {
 	Graphics* graphics = nullptr;	// Graphics object of the window.
+#ifdef _INCLUDE_IMGUI
 	iGManager* imGui = nullptr;		// Pointer to the current iGManager.
+#endif
 	static inline Timer timer;		// Timer object to keep track of the framerate.
 
 	Vector2i Dimensions = {};	// Dimensions of the window.
 	Vector2i Position = {};		// Position of the window.
-	string Name = {};			// Name of the window.
 	HWND hWnd = nullptr;		// Handle to the window.
+	char Name[512] = {};		// Name of the window.
 
 	static inline bool noFrameUpdate = false;	// Schedules next frame time to be skipped.
 	static inline float frame = 0.f;			// Stores the time of the last frame push.
@@ -211,38 +204,32 @@ public:
 -----------------------------------------------------------------------------------------------------------
 */
 
-// Global window class that creates the handle to the instance
-// and assings a name and icon to the process.
+// Global window class that creates the handle to the instance.
+// Also assings a name and icon to the process.
 class WindowClass
 {
 public:
 	// Returns the name of the window class.
-	static const LPCSTR GetName() noexcept
-	{
-		return wndClassName;
-	}
+	static inline const LPCSTR GetName() noexcept { return wndClassName; }
 	// Returns the handle to the instance.
-	static HINSTANCE GetInstance() noexcept
-	{
-		return wndClass.hInst;
-	}
+	static inline HINSTANCE GetInstance() noexcept { return hInst; }
 
 private:
 	// Private constructor creates the instance.
 	WindowClass() noexcept
-		:hInst{ GetModuleHandle(nullptr) }
 	{
-		//	Register Window class
+		// Get your process instance handle
+		hInst = GetModuleHandle(nullptr);
 
-		WNDCLASSEXA wc = { 0 };
+		//	Register Window class
+		WNDCLASSEXA wc = {};
 		wc.cbSize = sizeof(wc);
 		wc.style = CS_OWNDC;
 		wc.lpfnWndProc = MSGHandlePipeline::HandleMsgSetup;
 		wc.cbClsExtra = 0;
 		wc.cbWndExtra = 0;
 		wc.hInstance = GetInstance();
-		wc.hIcon = static_cast<HICON>(LoadImageA(0, (RESOURCES_DIR + std::string("Icon.ico")).c_str(), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE | LR_SHARED));
-		//wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+		wc.hIcon = static_cast<HICON>(LoadImageA(0, RESOURCES_DIR "Icon.ico", IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE | LR_SHARED));
 		wc.hbrBackground = nullptr;
 		wc.lpszMenuName = nullptr;
 		wc.lpszClassName = GetName();
@@ -252,14 +239,12 @@ private:
 	// Private destructor deletes the instance.
 	~WindowClass()
 	{
-		UnregisterClassA(wndClassName, GetInstance());
+		UnregisterClassA(wndClassName, hInst);
 	}
 
-	WindowClass(const WindowClass&) = delete;
-	WindowClass& operator=(const WindowClass&) = delete;
 	static constexpr LPCSTR wndClassName = "DirectX Window";
+	static inline HINSTANCE hInst;
 	static WindowClass wndClass;
-	HINSTANCE hInst;
 };
 
 WindowClass WindowClass::wndClass;
@@ -304,13 +289,14 @@ unsigned Window::processEvents()
 
 void Window::close()
 {
-	PostQuitMessage(0);
+	// Send a custom message to the thread's message queue
+	PostThreadMessage(GetCurrentThreadId(), WM_APP_WINDOW_CLOSE, (WPARAM)getID(), 0);
 }
 
 // Creates the window and its associated Graphics object with the
 // specified dimensions, title, icon and theme.
 
-Window::Window(Vector2i Dim, const char* Title, const char* IconFilename, bool darkTheme): w_id { next_id++ }
+Window::Window(Vector2i Dim, const char* Title): w_id { next_id++ }
 {
 	//	Calculate window size based on desired client region size
 
@@ -352,13 +338,10 @@ Window::Window(Vector2i Dim, const char* Title, const char* IconFilename, bool d
 	data.hWnd		= hWnd;
 	data.Dimensions = Dim;
 
-	//	Set title & icon & theme
+	//	Set title & dark theme
 
 	setTitle(Title);
-	if (IconFilename[0])
-		setIcon(IconFilename);
-	if (darkTheme)
-		setDarkTheme(TRUE);
+	setDarkTheme(true);
 
 	//	Create graphics object
 
@@ -405,20 +388,16 @@ void Window::setTitle(const char* fmt_name, ...)
 {
 	va_list ap;
 
-	// Unwrap the format
-	char name[512];
-
-	va_start(ap, fmt_name);
-	if (vsnprintf(name, 512, fmt_name, ap) < 0) return;
-	va_end(ap);
-
 	WindowInternals& data = *((WindowInternals*)WindowData);
-
-	data.Name = name;
+	
+	// Unwrap the format
+	va_start(ap, fmt_name);
+	if (vsnprintf(data.Name, 512, fmt_name, ap) < 0) return;
+	va_end(ap);
 
 	if (!IsWindow(data.hWnd))
 		return;
-	if (!SetWindowTextA(data.hWnd, name))
+	if (!SetWindowTextA(data.hWnd, data.Name))
 		throw WND_LAST_EXCEPT();
 }
 
@@ -537,7 +516,7 @@ const char* Window::getTitle() const
 {
 	WindowInternals& data = *((WindowInternals*)WindowData);
 
-	return data.Name.c_str();
+	return data.Name;
 }
 
 // Returns the dimensions vector of the window.
@@ -592,6 +571,7 @@ void Window::handleFramerate()
 	WindowInternals::frame = WindowInternals::timer.mark();
 }
 
+#ifdef _INCLUDE_IMGUI
 // Returns adress to the pointer to the iGManager bound to the window.
 // This is to be accessed by the iGManager and set the data accordingly.
 
@@ -601,3 +581,4 @@ void** Window::imGuiPtrAdress()
 
 	return (void**)&data.imGui;
 }
+#endif

@@ -138,9 +138,6 @@
     <ClCompile Include="source\Image\Image.cpp">
       <Filter>Sources\Private\Image</Filter>
     </ClCompile>
-    <ClCompile Include="source\Exception\_exGraphics.cpp">
-      <Filter>Sources\Private\Exception</Filter>
-    </ClCompile>
     <ClCompile Include="source\Drawable\Scatter.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>

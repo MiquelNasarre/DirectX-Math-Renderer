@@ -1,7 +1,5 @@
 #include "Bindable/VertexBuffer.h"
-
 #include "WinHeader.h"
-#include "Exception/_exGraphics.h"
 
 // Handy helper pointers to the device and context.
 #define _device ((ID3D11Device*)device())
@@ -14,7 +12,6 @@ struct VertexBufferInternals
 	VERTEX_BUFFER_USAGE usage;
 	UINT byteWidth;
 	UINT stride;
-
 };
 
 /*

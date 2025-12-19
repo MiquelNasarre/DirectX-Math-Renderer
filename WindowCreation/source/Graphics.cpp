@@ -2,7 +2,6 @@
 #include "iGManager.h"
 
 #include "WinHeader.h"
-#include "Exception/_exGraphics.h"
 
 // Uncomment to use the Graphics Debugger.
 //#define GRAPHICS_DEBUGGING
@@ -169,31 +168,6 @@ struct GraphicsInternals
 	OITransparencyInternals* OIT = nullptr;
 };
 
-// Destroys the class data and frees the pointers to the graphics instance.
-
-Graphics::~Graphics()
-{
-	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
-
-	// If you are the current render target, you are no longer
-	if (currentRenderTarget == this)
-		currentRenderTarget = nullptr;
-
-	// Disable OIT if enabled.
-	if (data.oitEnabled)
-		disableOITransparency();
-
-	// Delete the perspective Constant Buffer
-	delete data.Perspective;
-
-	// Delete default bindables
-	delete data.defaultDephtStencil;
-	delete data.defaultBlender;
-
-	// Delete the data
-	delete &data;
-}
-
 // Initializes the class data and calls the creation of the graphics instance.
 // Initializes all the necessary GPU data to be able to render the graphics objects.
 
@@ -244,6 +218,192 @@ Graphics::Graphics(void* hWnd)
 	if (currentRenderTarget) currentRenderTarget->setRenderTarget();
 	// Else you are the render target.
 	else setRenderTarget();
+}
+
+// Destroys the class data and frees the pointers to the graphics instance.
+
+Graphics::~Graphics()
+{
+	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
+
+	// If you are the current render target, you are no longer
+	if (currentRenderTarget == this)
+		currentRenderTarget = nullptr;
+
+	// Disable OIT if enabled.
+	if (data.oitEnabled)
+		disableOITransparency();
+
+	// Delete the perspective Constant Buffer
+	delete data.Perspective;
+
+	// Delete default bindables
+	delete data.defaultDephtStencil;
+	delete data.defaultBlender;
+
+	// Delete the data
+	delete &data;
+}
+
+// To be called by drawable objects during their draw calls, issues an indexed 
+// draw call drawing the object to the render target., If the object is transparent 
+// redirects it to the accumulation targets for later composing. At the end returns 
+// to default Blender and DepthStencil states.
+
+void Graphics::drawIndexed(unsigned IndexCount, bool isOIT)
+{
+	if (!currentRenderTarget)
+		throw INFO_EXCEPT(
+			"Trying to issue a draw call when no render target has been assigned. \n"
+			"Create a window object or call setRenderTarget on your desired window object before calling Drawable::Draw()"
+		);
+
+	GraphicsInternals& data = *((GraphicsInternals*)currentRenderTarget->GraphicsData);
+
+	if (isOIT)
+	{
+		if (!data.oitEnabled)
+			throw INFO_EXCEPT(
+				"Trying to draw a OITransparency Drawable on a Window that does not support it.\n"
+				"If you want to draw transparent objects on a window you first have to call Graphics::enableOITransparency()"
+			);
+
+		OITransparencyInternals& oit = *data.OIT;
+
+		// 1) Bind OIT MRTs + depth
+		ID3D11RenderTargetView* rtvs[2] =
+		{
+			oit.pOITAccumRTV.Get(),
+			oit.pOITRevealRTV.Get()
+		};
+		GFX_THROW_INFO_ONLY(_context->OMSetRenderTargets(2u, rtvs, data.pDSV.Get()));
+
+		// 2) Depth read-only + OIT blend state
+		GFX_THROW_INFO_ONLY(_context->OMSetDepthStencilState(oit.pOITDepthReadOnly.Get(), 0u));
+		GFX_THROW_INFO_ONLY(_context->OMSetBlendState(oit.pOITBlendState.Get(), nullptr, 0xFFFFFFFFu));
+
+		// 3) Draw into OIT buffers
+		GFX_THROW_INFO_ONLY(_context->DrawIndexed(IndexCount, 0u, 0u));
+
+		// 4) Restore backbuffer as RT and default depth/blend state
+		GFX_THROW_INFO_ONLY(_context->OMSetRenderTargets(1u, data.pTarget.GetAddressOf(), data.pDSV.Get()));
+	}
+
+	else GFX_THROW_INFO_ONLY(_context->DrawIndexed(IndexCount, 0u, 0u));
+
+	// Back to default Depth Stencil State and Blender.
+	data.defaultDephtStencil->Bind();
+	data.defaultBlender->Bind();
+}
+
+// To be called by its window. When window dimensions are updated it reshapes its
+// buffers to match the new window dimensions, as specified by the vector.
+
+void Graphics::setWindowDimensions(const Vector2i Dim)
+{
+	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
+
+	WindowDim = Dim;
+
+	if (!Dim.x || !Dim.y)
+		return;
+
+	// Release references to old buffers
+	data.pTarget.Reset();
+
+	// Preserve the existing buffer count and format.
+	// Automatically choose the width and height to match the client rect for HWNDs.
+
+	GFX_THROW_INFO(data.pSwap->ResizeBuffers(0u, (UINT)Dim.x, (UINT)Dim.y, DXGI_FORMAT_UNKNOWN, 0u));
+
+	// Get buffer and create a render-target-view.
+
+	ComPtr<ID3D11Resource> pBackBuffer;
+	GFX_THROW_INFO(data.pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
+	GFX_THROW_INFO(_device->CreateRenderTargetView(pBackBuffer.Get(), NULL, data.pTarget.GetAddressOf()));
+
+	//	Create depth stencil texture
+
+	ComPtr<ID3D11Texture2D> pDepthStencil;
+	D3D11_TEXTURE2D_DESC descDepth = {};
+	descDepth.Width = (UINT)Dim.x;
+	descDepth.Height = (UINT)Dim.y;
+	descDepth.MipLevels = 1u;
+	descDepth.ArraySize = 1u;
+	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
+	descDepth.SampleDesc.Count = 1u;
+	descDepth.SampleDesc.Quality = 0u;
+	descDepth.Usage = D3D11_USAGE_DEFAULT;
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	GFX_THROW_INFO(_device->CreateTexture2D(&descDepth, NULL, &pDepthStencil));
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
+	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0u;
+	GFX_THROW_INFO(_device->CreateDepthStencilView(pDepthStencil.Get(), &descDSV, data.pDSV.GetAddressOf()));
+
+	//	Update perspective to match scaling
+
+	cbuff.scaling = { Scale / Dim.x, Scale / Dim.y, Scale, 0.f };
+
+	data.Perspective->update(&cbuff);
+
+	clearDepthBuffer();
+
+	// If OIT is enabled resize its buffers as well
+	if (data.oitEnabled)
+	{
+		OITransparencyInternals& oit = *data.OIT;
+
+		// Release old RTs
+		oit.pOITAccumTex.Reset();
+		oit.pOITAccumRTV.Reset();
+		oit.pOITAccumSRV.Reset();
+		oit.pOITRevealTex.Reset();
+		oit.pOITRevealRTV.Reset();
+		oit.pOITRevealSRV.Reset();
+
+		D3D11_TEXTURE2D_DESC accumDesc = {};
+		accumDesc.Width = (UINT)Dim.x;
+		accumDesc.Height = (UINT)Dim.y;
+		accumDesc.MipLevels = 1u;
+		accumDesc.ArraySize = 1u;
+		accumDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		accumDesc.SampleDesc.Count = 1u;
+		accumDesc.SampleDesc.Quality = 0u;
+		accumDesc.Usage = D3D11_USAGE_DEFAULT;
+		accumDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+		GFX_THROW_INFO(_device->CreateTexture2D(&accumDesc, nullptr, oit.pOITAccumTex.GetAddressOf()));
+		GFX_THROW_INFO(_device->CreateRenderTargetView(oit.pOITAccumTex.Get(), nullptr, oit.pOITAccumRTV.GetAddressOf()));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC accumSRVDesc = {};
+		accumSRVDesc.Format = accumDesc.Format;
+		accumSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		accumSRVDesc.Texture2D.MostDetailedMip = 0;
+		accumSRVDesc.Texture2D.MipLevels = 1;
+
+		GFX_THROW_INFO(_device->CreateShaderResourceView(oit.pOITAccumTex.Get(), &accumSRVDesc, oit.pOITAccumSRV.GetAddressOf()));
+
+		D3D11_TEXTURE2D_DESC revealDesc = accumDesc;
+		revealDesc.Format = DXGI_FORMAT_R8_UNORM;
+
+		GFX_THROW_INFO(_device->CreateTexture2D(&revealDesc, nullptr, oit.pOITRevealTex.GetAddressOf()));
+		GFX_THROW_INFO(_device->CreateRenderTargetView(oit.pOITRevealTex.Get(), nullptr, oit.pOITRevealRTV.GetAddressOf()));
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC revealSRVDesc = {};
+		revealSRVDesc.Format = revealDesc.Format;
+		revealSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		revealSRVDesc.Texture2D.MostDetailedMip = 0;
+		revealSRVDesc.Texture2D.MipLevels = 1;
+
+		GFX_THROW_INFO(_device->CreateShaderResourceView(oit.pOITRevealTex.Get(), &revealSRVDesc, oit.pOITRevealSRV.GetAddressOf()));
+	}
+
+	// If I was the render target reset me.
+	if (currentRenderTarget == this)
+		currentRenderTarget->setRenderTarget();
 }
 
 /*
@@ -378,59 +538,23 @@ void Graphics::clearTransparencyBuffers()
 	}
 }
 
-// Calls to draw the objects as indexed in the index count.
+// Updates the perspective on the window, by changing the observer quaternion, 
+// the center of the POV and the scale of the object looked at.
 
-void Graphics::drawIndexed(unsigned IndexCount, bool isOIT)
+void Graphics::updatePerspective(Quaternion obs, Vector3f center, float scale)
 {
-	if (!currentRenderTarget)
-		throw INFO_EXCEPT(
-			"Trying to issue a draw call when no render target has been assigned. \n"
-			"Create a window object or call setRenderTarget on your desired window object before calling Drawable::Draw()"
-		);
+	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
 
-	GraphicsInternals& data = *((GraphicsInternals*)currentRenderTarget->GraphicsData);
+	if (!obs)
+		throw INFO_EXCEPT("The observer must be a quaternion diferent than zero");
 
-	if (isOIT)
-	{
-		if (!data.oitEnabled)
-			throw INFO_EXCEPT(
-				"Trying to draw a OITransparency Drawable on a Window that does not support it.\n"
-				"If you want to draw transparent objects on a window you first have to call Graphics::enableOITransparency()"
-			);
+	Scale = scale;
 
-		OITransparencyInternals& oit = *data.OIT;
+	cbuff.observer = obs.normalize();
+	cbuff.center = center.getVector4();
+	cbuff.scaling = { scale / WindowDim.x, scale / WindowDim.y, scale, 0.f };
 
-		// 1) Bind OIT MRTs + depth
-		ID3D11RenderTargetView* rtvs[2] = 
-		{
-			oit.pOITAccumRTV.Get(),
-			oit.pOITRevealRTV.Get()
-		};
-		GFX_THROW_INFO_ONLY(_context->OMSetRenderTargets(2u, rtvs, data.pDSV.Get()));
-
-		// 2) Depth read-only + OIT blend state
-		GFX_THROW_INFO_ONLY(_context->OMSetDepthStencilState(oit.pOITDepthReadOnly.Get(), 0u));
-		GFX_THROW_INFO_ONLY(_context->OMSetBlendState(oit.pOITBlendState.Get(), nullptr, 0xFFFFFFFFu));
-
-		// 3) Draw into OIT buffers
-		GFX_THROW_INFO_ONLY(_context->DrawIndexed(IndexCount, 0u, 0u));
-
-		// 4) Restore backbuffer as RT and default depth/blend state
-		GFX_THROW_INFO_ONLY(_context->OMSetRenderTargets(1u, data.pTarget.GetAddressOf(), data.pDSV.Get()));
-	}
-
-	else GFX_THROW_INFO_ONLY(_context->DrawIndexed(IndexCount, 0u, 0u));
-
-	// Back to default Depth Stencil State and Blender.
-	data.defaultDephtStencil->Bind();
-	data.defaultBlender->Bind();
-}
-
-// Simple conversion from a pixel position on screen to a (-1.0,1.0)x(-1.0,1.0) c R^2 position.
-
-Vector2f Graphics::PixeltoR2(const Vector2i MousePos)
-{
-	return Vector2f(2.f * MousePos.x / WindowDim.x - 1.f, -2.f * MousePos.y / WindowDim.y + 1.f);
+	data.Perspective->update(&cbuff);
 }
 
 // To draw transparent objects this setting needs to be toggled on, it causes extra 
@@ -592,159 +716,4 @@ bool Graphics::isOITransparencyEnabled() const
 	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
 
 	return data.oitEnabled;
-}
-
-/*
------------------------------------------------------------------------------------------------------------
- Getters & Setters
------------------------------------------------------------------------------------------------------------
-*/
-
-// Updates the perspective on the window, by changing the observer quaternion, 
-// the center of the POV and the scale of the object looked at.
-
-void Graphics::updatePerspective(Quaternion obs, Vector3f center, float scale)
-{
-	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
-
-	if (!obs)
-		throw INFO_EXCEPT("The observer must be a quaternion diferent than zero");
-
-	Scale = scale;
-
-	cbuff.observer = obs.normalize();
-	cbuff.center = center.getVector4();
-	cbuff.scaling = { scale / WindowDim.x, scale / WindowDim.y, scale, 0.f };
-
-	data.Perspective->update(&cbuff);
-}
-
-// Sets the window dimensions to the ones specified by the vector.
-
-void Graphics::setWindowDimensions(const Vector2i Dim)
-{
-	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
-
-	WindowDim = Dim;
-
-	if (!Dim.x || !Dim.y)
-		return;
-
-	// Release references to old buffers
-	data.pTarget.Reset();
-
-	// Preserve the existing buffer count and format.
-	// Automatically choose the width and height to match the client rect for HWNDs.
-
-	GFX_THROW_INFO(data.pSwap->ResizeBuffers(0u, (UINT)Dim.x, (UINT)Dim.y, DXGI_FORMAT_UNKNOWN, 0u));
-
-	// Get buffer and create a render-target-view.
-
-	ComPtr<ID3D11Resource> pBackBuffer;
-	GFX_THROW_INFO(data.pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
-	GFX_THROW_INFO(_device->CreateRenderTargetView(pBackBuffer.Get(), NULL, data.pTarget.GetAddressOf()));
-
-	//	Create depth stencil texture
-
-	ComPtr<ID3D11Texture2D> pDepthStencil;
-	D3D11_TEXTURE2D_DESC descDepth = {};
-	descDepth.Width = (UINT)Dim.x;
-	descDepth.Height = (UINT)Dim.y;
-	descDepth.MipLevels = 1u;
-	descDepth.ArraySize = 1u;
-	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
-	descDepth.SampleDesc.Count = 1u;
-	descDepth.SampleDesc.Quality = 0u;
-	descDepth.Usage = D3D11_USAGE_DEFAULT;
-	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	GFX_THROW_INFO(_device->CreateTexture2D(&descDepth, NULL, &pDepthStencil));
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
-	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
-	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	descDSV.Texture2D.MipSlice = 0u;
-	GFX_THROW_INFO(_device->CreateDepthStencilView(pDepthStencil.Get(), &descDSV, data.pDSV.GetAddressOf()));
-
-	//	Update perspective to match scaling
-
-	cbuff.scaling = { Scale / Dim.x, Scale / Dim.y, Scale, 0.f };
-
-	data.Perspective->update(&cbuff);
-
-	clearDepthBuffer();
-
-	// If OIT is enabled resize its buffers as well
-	if (data.oitEnabled)
-	{
-		OITransparencyInternals& oit = *data.OIT;
-
-		// Release old RTs
-		oit.pOITAccumTex.Reset();
-		oit.pOITAccumRTV.Reset();
-		oit.pOITAccumSRV.Reset();
-		oit.pOITRevealTex.Reset();
-		oit.pOITRevealRTV.Reset();
-		oit.pOITRevealSRV.Reset();
-
-		D3D11_TEXTURE2D_DESC accumDesc = {};
-		accumDesc.Width = (UINT)Dim.x;
-		accumDesc.Height = (UINT)Dim.y;
-		accumDesc.MipLevels = 1u;
-		accumDesc.ArraySize = 1u;
-		accumDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		accumDesc.SampleDesc.Count = 1u;
-		accumDesc.SampleDesc.Quality = 0u;
-		accumDesc.Usage = D3D11_USAGE_DEFAULT;
-		accumDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-		GFX_THROW_INFO(_device->CreateTexture2D(&accumDesc, nullptr, oit.pOITAccumTex.GetAddressOf()));
-		GFX_THROW_INFO(_device->CreateRenderTargetView(oit.pOITAccumTex.Get(), nullptr, oit.pOITAccumRTV.GetAddressOf()));
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC accumSRVDesc = {};
-		accumSRVDesc.Format = accumDesc.Format;
-		accumSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		accumSRVDesc.Texture2D.MostDetailedMip = 0;
-		accumSRVDesc.Texture2D.MipLevels = 1;
-
-		GFX_THROW_INFO(_device->CreateShaderResourceView(oit.pOITAccumTex.Get(), &accumSRVDesc, oit.pOITAccumSRV.GetAddressOf()));
-
-		D3D11_TEXTURE2D_DESC revealDesc = accumDesc;
-		revealDesc.Format = DXGI_FORMAT_R8_UNORM;
-
-		GFX_THROW_INFO(_device->CreateTexture2D(&revealDesc, nullptr, oit.pOITRevealTex.GetAddressOf()));
-		GFX_THROW_INFO(_device->CreateRenderTargetView(oit.pOITRevealTex.Get(), nullptr, oit.pOITRevealRTV.GetAddressOf()));
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC revealSRVDesc = {};
-		revealSRVDesc.Format = revealDesc.Format;
-		revealSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		revealSRVDesc.Texture2D.MostDetailedMip = 0;
-		revealSRVDesc.Texture2D.MipLevels = 1;
-
-		GFX_THROW_INFO(_device->CreateShaderResourceView(oit.pOITRevealTex.Get(), &revealSRVDesc, oit.pOITRevealSRV.GetAddressOf()));
-	}
-
-	// If I was the render target reset me.
-	if (currentRenderTarget == this)
-		currentRenderTarget->setRenderTarget();
-}
-
-// Returns the current observer direction vector.
-
-Quaternion Graphics::getObserver() const
-{
-	return cbuff.observer;
-}
-
-// Returns the current Center POV.
-
-Vector3f Graphics::getCenter() const
-{
-	return { cbuff.center.x, cbuff.center.y ,cbuff.center.z };
-}
-
-// Returns the current scals.
-
-float Graphics::getScale() const
-{
-	return Scale;
 }

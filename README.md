@@ -1,33 +1,54 @@
-# LearnDirectX
+# Chaotic
 
-This project consists in a bunch of lybraries used for 3D rendering with DirectX11. They provide a base upon which to 
-create your own 3D apps, also coming with some examples and a template to get started.
+Library under development for 3D rendering apps in C++. Bloat free, minimal dependencies, minimal code.
 
-The project is still a work in progress, so many changes may be added in the future, currently is probably not suited 
-for distribution.
+No deployments yet. Still need to clean a lot of libraries and create a unified header chaotic.h and 
+chaotic.lib, and add some additional features. It will be ready soon.
+
+Right now the only way of using this library is cloning the entire VisualStudio solution and building it 
+yourself. Then create a new project and add the Chaotic `include/` directory to its path.
+
+## Usage
+
+Demo is still not available, but basic usage allows for minimal lines of code to create very complex views. 
+Including triangle meshes, math surfaces, curves, backgrounds, lights, and point and line meshes. And allows 
+for textures, illumination and different coloring and rendering settings.
+
+For a basic example, the following main file would create a window and plot an interactive surface given by the 
+specified function, moveable with the mouse and mouse wheel. 
+
+``` cpp
+#include "chaotic_defaults.h"
+
+void __stdcall WinMain()
+{
+	SURFACE_DESC desc = {};
+	desc.explicit_func = [](float x, float y) { return cosf(10.f * (x * x + y * y)) / 5.f; };
+	Surface surf(&desc);
+
+	defaultWindow window({ 640,320 });
+	window.pushDrawable(&surf);
+
+	while (Window::processEvents() != window.getID())
+	{
+		defaultEventManager(window.data);
+		surf.updateRotation(window.data.rot_free);
+		window.scale = window.data.scale;
+		window.drawFrame();
+	}
+}
+```
+
+This is just the most basic example, your only limit is imagination with this library, full deployment will be out soon.
 
 ## Requirements
 
-- [Visual Studio](https://visualstudio.com) (Is important for the program to be able to unite all the diffent files)
+- [Visual Studio](https://visualstudio.com) for Windows
 - OS Windows 7 or newer
 
-## Contents
+## License
 
-The project currently contains 5 different lybraries, they all have some functions needed for the apps to work properly. 
-They are the following:
+Chaotic is released under the MIT License.
+See the LICENSE file for details.
 
-- **ImGui**: These are some external dependencies used only for the widgets. For more information on what imGui is and
-  how to use it refer to its [repository](https://github.com/ocornut/imgui).
-- **dxerr**: This is just a library that includes some functions for error detection in our program.
-- **Math**: This library contains a bunch of math constructions that will be used by the rest of dependencies to do
-  their calculations. It includes 2D and 3D vectors, 3x3 matrices, complex numbers and quaternions.
-- **Image**: This library contains two important constructions for our applications, the color class, for color handling
-  and with some useful predefined colors, and the Image class, which is just an array of colors and allows for easy texture
-  implementation and image edition. For the loading and saving of image files it uses
-  [FreeImage](https://github.com/jpvanoosten/FreeImage).
-- **WindowCreation**: This is the main library of the solution and is the one that we will be including in our applications,
-  here the DirectX11 and Win32 tools are implemented and provides the tools for window creation and graphics creation.
-
-Due to the fact that the project is still in progress no more information about its usage will be provided. If you are 
-looking for a way to implement a 3D renderer for mathematical purposes in C++ this might be the library for you, for further 
-information please contact me directly.
+- Dear ImGui: Dear ImGui is licensed under the MIT License.

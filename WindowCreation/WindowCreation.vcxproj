@@ -244,7 +244,7 @@
     <ClInclude Include="include\Bindable\Topology.h" />
     <ClInclude Include="include\Bindable\VertexBuffer.h" />
     <ClInclude Include="include\Bindable\VertexShader.h" />
-    <ClInclude Include="include\default_helpers.h" />
+    <ClInclude Include="include\chaotic_defaults.h" />
     <ClInclude Include="include\Drawable.h" />
     <ClInclude Include="include\Drawable\Background.h" />
     <ClInclude Include="include\Drawable\Curve.h" />

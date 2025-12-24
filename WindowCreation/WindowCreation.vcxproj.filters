@@ -260,7 +260,7 @@
     <ClInclude Include="include\Image\Image.h">
       <Filter>Sources\Public\Image</Filter>
     </ClInclude>
-    <ClInclude Include="include\default_helpers.h">
+    <ClInclude Include="include\chaotic_defaults.h">
       <Filter>Sources\Public</Filter>
     </ClInclude>
     <ClInclude Include="include\Drawable\Scatter.h">

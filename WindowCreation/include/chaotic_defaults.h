@@ -1,4 +1,13 @@
 #pragma once
+
+/* LICENSE AND COPYRIGHT
+-------------------------------------------------------------------------------------------------------
+ * Chaotic — a 3D renderer for mathematical applications
+ * Copyright (c) 2025 Miguel Nasarre Budiño
+ * Licensed under the MIT License. See LICENSE file.
+-------------------------------------------------------------------------------------------------------
+ */
+
 // Default library dependencies.
 #include "Window.h"
 #include "iGManager.h"

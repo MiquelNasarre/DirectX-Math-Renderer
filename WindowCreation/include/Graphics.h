@@ -89,6 +89,11 @@ public:
 	// the center of the POV and the scale of the object looked at.
 	void updatePerspective(Quaternion obs, Vector3f center, float scale);
 
+	// Schedules a frame capture to be done during the next pushFrame() call. It expects 
+	// a valid pointer to an Image where the capture will be stored. The image dimensions 
+	// will be adjusted automatically. Pointer must be valid during next draw call.
+	void scheduleFrameCapture(Image* image);
+
 	// To draw transparent objects this setting needs to be toggled on, it causes extra 
 	// conputation due to other buffers being used for rendering, so only turn on if needed.
 	// It uses the McGuire/Bavoli OIT approach. For more information you can check the 

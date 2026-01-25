@@ -40,9 +40,9 @@ to deal with library linkage yourself.
 // to deal with library linkage yourself.
 
 #ifdef _DEBUG
-#pragma comment(lib, SOLUTION_DIR "WindowCreation/lib/WindowCreation_d.lib")
+#pragma comment(lib, SOLUTION_DIR "WindowCreation/lib/Chaotic_d.lib")
 #pragma comment(lib, SOLUTION_DIR "imGui/lib/imGui_d.lib")
 #else
-#pragma comment(lib, SOLUTION_DIR "WindowCreation/lib/WindowCreation.lib")
+#pragma comment(lib, SOLUTION_DIR "WindowCreation/lib/Chaotic.lib")
 #pragma comment(lib, SOLUTION_DIR "imGui/lib/imGui.lib")
 #endif

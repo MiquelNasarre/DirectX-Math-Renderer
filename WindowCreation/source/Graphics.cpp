@@ -166,6 +166,9 @@ struct GraphicsInternals
 
 	bool oitEnabled = false;
 	OITransparencyInternals* OIT = nullptr;
+
+	Image* captureImage = nullptr;
+	ComPtr<ID3D11Texture2D> pCaptureStaging = {};
 };
 
 // Initializes the class data and calls the creation of the graphics instance.
@@ -308,8 +311,9 @@ void Graphics::setWindowDimensions(const Vector2i Dim)
 	if (!Dim.x || !Dim.y)
 		return;
 
-	// Release references to old buffers
+	// Release references to old buffers.
 	data.pTarget.Reset();
+	data.pCaptureStaging.Reset(); // Will be recreated on next capture call
 
 	// Preserve the existing buffer count and format.
 	// Automatically choose the width and height to match the client rect for HWNDs.
@@ -485,6 +489,61 @@ void Graphics::pushFrame()
 	if (pWnd && *pWnd->imGuiPtrAdress())
 		((iGManager*)(*pWnd->imGuiPtrAdress()))->render();
 #endif
+
+	// If a frame capture is scheduled, copy the buffer before swapping.
+	if (data.captureImage)
+	{
+		// Access the back buffer
+		ComPtr<ID3D11Resource> pBackBuffer;
+		GFX_THROW_INFO(data.pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
+
+		// View it as a texture
+		ComPtr<ID3D11Texture2D> pBackBufferTex;
+		GFX_THROW_INFO(pBackBuffer.As(&pBackBufferTex));
+
+		// If the copy buffer is not created, create it.
+		if (!data.pCaptureStaging)
+		{
+			D3D11_TEXTURE2D_DESC stDesc = {};
+
+			stDesc.BindFlags = 0;
+			stDesc.MiscFlags = 0;
+			stDesc.Width = WindowDim.x;
+			stDesc.Height = WindowDim.y;
+			stDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			stDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+			stDesc.Usage = D3D11_USAGE_STAGING;
+			stDesc.MipLevels = 1;
+			stDesc.ArraySize = 1;
+			stDesc.SampleDesc.Count = 1;
+			stDesc.SampleDesc.Quality = 0;
+
+			GFX_THROW_INFO(_device->CreateTexture2D(&stDesc, nullptr, &data.pCaptureStaging));
+		}
+
+		// Copy data from the back buffer to the copy buffer.
+		_context->CopyResource(data.pCaptureStaging.Get(), pBackBufferTex.Get());
+
+		// Map staging resource to CPU pointer.
+		D3D11_MAPPED_SUBRESOURCE msr = {};
+		GFX_THROW_INFO(_context->Map(data.pCaptureStaging.Get(), 0, D3D11_MAP_READ, 0, &msr));
+
+		// Create the image with the desired dimensions.
+		if (data.captureImage->width() != WindowDim.x || data.captureImage->height() != WindowDim.y)
+			data.captureImage->reset(WindowDim.x, WindowDim.y);
+
+		// Copy image pixels
+		const unsigned rowBytes = WindowDim.x * sizeof(Color);
+		for (int y = 0; y < WindowDim.y; y++)
+			memcpy((byte*)data.captureImage->pixels() + y * rowBytes, (byte*)msr.pData + y * msr.RowPitch, rowBytes);
+
+		// Unmap resource
+		_context->Unmap(data.pCaptureStaging.Get(), 0);
+
+		// Reset image buffer.
+		data.captureImage = nullptr;
+	}
+
 	// Present the new frame to the window.
 	HRESULT hr;
 	if (FAILED(hr = data.pSwap->Present(1u, 0u))) {
@@ -555,6 +614,26 @@ void Graphics::updatePerspective(Quaternion obs, Vector3f center, float scale)
 	cbuff.scaling = { scale / WindowDim.x, scale / WindowDim.y, scale, 0.f };
 
 	data.Perspective->update(&cbuff);
+}
+
+// Schedules a frame capture to be done during the next pushFrame() call. It expects 
+// a valid pointer to an Image where the capture will be stored. The image dimensions 
+// will be adjusted automatically. Pointer must be valid during next draw call.
+
+void Graphics::scheduleFrameCapture(Image* image)
+{
+	GraphicsInternals& data = *((GraphicsInternals*)GraphicsData);
+
+	if (data.captureImage)
+		throw INFO_EXCEPT(
+			"ScheduleFrameCapture should not be called twice on the same frame.\n"
+			"The capture is not stored on the Image until the next pushFrame() call is issued."
+		);
+
+	if (!image)
+		throw INFO_EXCEPT("Expected to find a valid image pointer on scheduleFrameCapture but found nullptr.");
+
+	data.captureImage = image;
 }
 
 // To draw transparent objects this setting needs to be toggled on, it causes extra 

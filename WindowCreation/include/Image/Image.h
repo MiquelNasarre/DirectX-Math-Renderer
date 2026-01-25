@@ -40,6 +40,9 @@ private:
 public:
 	// Constructors/Destructors
 
+	// Empty constructor, load() or reset() can be called to reshape it.
+	Image() {}
+
 	// Initializes the image as stored in the bitmap file.
 	Image(const char* fmt_filename, ...);
 
@@ -57,6 +60,9 @@ public:
 
 	// Frees the pixel pointer.
 	~Image();
+
+	// Resets the image to the new dimensions and color.
+	void reset(unsigned width, unsigned height, Color color = Color::Transparent);
 
 	// File functions
 

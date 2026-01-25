@@ -111,21 +111,33 @@ Image::Image(Color* pixels, unsigned width, unsigned height)
 
 Image::Image(unsigned width, unsigned height, Color color)
 {
-    width_ = width;
-    height_ = height;
-
-    pixels_ = (Color*)calloc(width_ * height_, sizeof(Color));
-    
-    if (color != Color::Transparent)
-        for (unsigned int i = 0; i < width_ * height_; i++)
-            pixels_[i] = color;
+    reset(width, height, color);
 }
 
 // Frees the pixel pointer
 
 Image::~Image()
 {
-	free(pixels_);
+    if (pixels_)
+	    free(pixels_);
+}
+
+// Resets the image to the new dimensions and color.
+
+void Image::reset(unsigned width, unsigned height, Color color)
+{
+    // Free pixels if they exist.
+    if (pixels_)
+        free(pixels_);
+
+    width_ = width;
+    height_ = height;
+
+    pixels_ = (Color*)calloc(width_ * height_, sizeof(Color));
+
+    if (color != Color::Transparent)
+        for (unsigned int i = 0; i < width_ * height_; i++)
+            pixels_[i] = color;
 }
 
 /*

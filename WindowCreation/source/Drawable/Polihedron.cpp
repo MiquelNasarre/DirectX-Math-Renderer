@@ -3,6 +3,9 @@
 
 #include "Exception/_exDefault.h"
 
+#include <cstdio> // For mesh support
+#include <cstdlib> // For mesh support
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Polihedron Internals
@@ -77,6 +80,379 @@ struct PolihedronInternals
 
 	POLIHEDRON_DESC desc = {};
 };
+
+/*
+-----------------------------------------------------------------------------------------------------------
+ Triangle mesh formatting support
+-----------------------------------------------------------------------------------------------------------
+*/
+
+// To facilitate the loading of triangle meshes, this function is a parser for 
+// *.obj files, that reads the files and outputs a valid descriptor. If the file 
+// supports texturing, optionally accepts an image to be used as texture_image.
+// NOTE: All data is allocated by (new) and its deletion must be handled by the 
+// user. The image pointer used is the same as provided.
+// If any error occurs, including missing file, it will throw.
+
+POLIHEDRON_DESC Polihedron::getDescFromObj(const char* obj_file_path, Image* texture)
+{
+	// First let's open the file.
+	FILE* file = nullptr;
+	fopen_s(&file, obj_file_path, "r");
+	if (!file)
+		throw INFO_EXCEPT("OBJ parse error: Unable to open OBJ file.");
+
+	POLIHEDRON_DESC desc = {};
+	desc.texture_image = texture;
+
+	// Define convenient helpers
+
+	auto startsWith = [](const char* s, const char* prefix) -> bool
+		{
+			while (*prefix)
+			{
+				if (*s++ != *prefix++) return false;
+			}
+			return true;
+		};
+
+	auto objToZeroBased = [](long idx, int countSoFar)
+		{
+			if (idx > 0) return (int)(idx - 1);
+			if (idx < 0) return (int)(countSoFar + idx); // idx is negative
+			return -1; // invalid in OBJ
+		};
+
+	auto parseFaceCornerToken = [objToZeroBased](
+		const char* token,
+		int vpCountSoFar, int vtCountSoFar, int vnCountSoFar,
+		int& out_vp, int& out_vt, int& out_vn)
+		{
+			out_vp = out_vt = out_vn = -1;
+
+			const char* p = token;
+
+			// v
+			char* end = nullptr;
+			long v = std::strtol(p, &end, 10);
+			if (end == p) throw INFO_EXCEPT("OBJ parse error: face token missing vertex index.");
+			out_vp = objToZeroBased(v, vpCountSoFar);
+			p = end;
+
+			if (*p == '\0') return;
+			if (*p != '/') throw INFO_EXCEPT("OBJ parse error: invalid face token format.");
+
+			++p; // skip '/'
+
+			// Could be v//vn or v/vt[/vn]
+			if (*p != '/')
+			{
+				long vt = std::strtol(p, &end, 10);
+				if (end != p) out_vt = objToZeroBased(vt, vtCountSoFar);
+				p = end;
+			}
+
+			if (*p == '\0') return;
+			if (*p != '/') throw INFO_EXCEPT("OBJ parse error: invalid face token format (expected '/').");
+
+			++p; // skip '/'
+
+			// vn (may be empty in malformed files; treat as missing)
+			if (*p != '\0')
+			{
+				long vn = std::strtol(p, &end, 10);
+				if (end != p) out_vn = objToZeroBased(vn, vnCountSoFar);
+			}
+		};
+
+	auto countFaceCorners = [](char* lineAfterF)
+		{
+			// Counts tokens separated by whitespace
+			int count = 0;
+			char* p = lineAfterF;
+			while (*p)
+			{
+				while (*p == ' ' || *p == '\t') ++p;
+				if (*p == '\0' || *p == '\n' || *p == '\r') break;
+
+				// token start
+				++count;
+				while (*p && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r') ++p;
+			}
+			return count;
+		};
+
+	// Pass 1: count
+
+	unsigned vertexCount = 0;
+	unsigned uvCount = 0;
+	unsigned normalCount = 0;
+	unsigned triangleCount = 0;
+
+	int W = 0, H = 0;
+	if (texture)
+		W = texture->width(), H = texture->height();
+
+	{
+		char line[2048];
+		while (fgets(line, sizeof(line), file))
+		{
+			char* p = line;
+			while (*p == ' ' || *p == '\t') ++p;
+
+			if (*p == '\0' || *p == '\n' || *p == '\r' || *p == '#') continue;
+
+			if (startsWith(p, "v "))
+				++vertexCount;
+
+			else if (startsWith(p, "vt "))
+				++uvCount;
+
+			else if (startsWith(p, "vn "))
+				++normalCount;
+
+			else if (startsWith(p, "f "))
+			{
+				p += 2; // skip "f "
+				int corners = countFaceCorners(p);
+				if (corners < 3) throw INFO_EXCEPT("OBJ parse error: face has fewer than 3 vertices.");
+				triangleCount += (unsigned)(corners - 2);
+			}
+		}
+	}
+
+	if (vertexCount == 0 || triangleCount == 0)
+	{
+		fclose(file);
+		throw INFO_EXCEPT("OBJ parse error: file contains no vertices or no faces.");
+	}
+
+	// Allocate arrays owned by the user
+	desc.vertex_list = new Vector3f[vertexCount];
+	desc.triangle_list = new Vector3i[triangleCount];
+	desc.triangle_count = triangleCount;
+
+	// Temporary raw arrays for vt/vn
+	Vector2f* rawUV = nullptr;
+	Vector3f* rawNrm = nullptr;
+	if (uvCount) rawUV = new Vector2f[uvCount];
+	if (normalCount) rawNrm = new Vector3f[normalCount];
+
+	// Decide whether to allocate per-triangle UVs and normals
+	bool wantTextured = (texture != nullptr) && (uvCount > 0);
+	bool wantPerTriNormals = (normalCount > 0);
+
+	// Set parameters
+	if (wantTextured)
+	{
+		desc.coloring = POLIHEDRON_DESC::TEXTURED_COLORING;
+		desc.texture_coordinates_list = new Vector2i[triangleCount * 3u];
+	}
+	else
+		desc.coloring = POLIHEDRON_DESC::GLOBAL_COLORING;
+
+	if (wantPerTriNormals)
+	{
+		desc.normal_computation = POLIHEDRON_DESC::PER_TRIANGLE_LIST_NORMALS;
+		desc.normal_vectors_list = new Vector3f[triangleCount * 3u];
+	}
+	else
+		desc.normal_computation = POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS;
+
+
+	// Cleanup helper
+	auto cleanupAndThrow = [&](const char* msg) -> void
+		{
+			delete[] desc.vertex_list;
+			delete[] desc.triangle_list;
+			delete[] desc.texture_coordinates_list;
+			delete[] desc.normal_vectors_list;
+			delete[] rawUV;
+			delete[] rawNrm;
+
+			desc.vertex_list = nullptr;
+			desc.triangle_list = nullptr;
+			desc.texture_coordinates_list = nullptr;
+			desc.normal_vectors_list = nullptr;
+
+			fclose(file);
+			throw INFO_EXCEPT(msg);
+		};
+
+	// Pass 2: fill
+
+	rewind(file);
+
+	unsigned vpSoFar = 0;
+	unsigned vtSoFar = 0;
+	unsigned vnSoFar = 0;
+	unsigned triSoFar = 0;
+
+	// We keep texturing enabled when possible, and default missing VT to (0,0).
+	// We keep normals enabled only if faces actually provide them.
+
+	const int MAX_FACE_CORNERS = 256;
+	int faceVP[MAX_FACE_CORNERS];
+	int faceVT[MAX_FACE_CORNERS];
+	int faceVN[MAX_FACE_CORNERS];
+
+	char line[2048];
+	while (fgets(line, (int)sizeof(line), file))
+	{
+		char* p = line;
+		while (*p == ' ' || *p == '\t') ++p;
+
+		if (*p == '\0' || *p == '\n' || *p == '\r' || *p == '#') continue;
+
+		if (startsWith(p, "v "))
+		{
+			p += 2;
+			char* end = nullptr;
+			float x = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid v line.");
+			p = end; float y = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid v line.");
+			p = end; float z = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid v line.");
+
+			desc.vertex_list[vpSoFar] = { x, y, z };
+			++vpSoFar;
+		}
+		else if (startsWith(p, "vt "))
+		{
+			p += 3;
+			char* end = nullptr;
+			float u = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid vt line.");
+			p = end; float v = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid vt line.");
+
+			if (rawUV)
+				rawUV[vtSoFar] = { u, v };
+
+			++vtSoFar;
+		}
+		else if (startsWith(p, "vn "))
+		{
+			p += 3;
+			char* end = nullptr;
+			float x = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid vn line.");
+			p = end; float y = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid vn line.");
+			p = end; float z = strtof(p, &end); if (end == p) cleanupAndThrow("OBJ parse error: invalid vn line.");
+
+			if (rawNrm)
+				rawNrm[vnSoFar] = { x, y, z };
+
+			++vnSoFar;
+		}
+		else if (startsWith(p, "f "))
+		{
+			p += 2;
+
+			// Extract tokens
+			int cornerCount = 0;
+			while (*p)
+			{
+				while (*p == ' ' || *p == '\t') ++p;
+				if (*p == '\0' || *p == '\n' || *p == '\r') break;
+
+				if (cornerCount >= MAX_FACE_CORNERS)
+					cleanupAndThrow("OBJ parse error: face has too many vertices (increase MAX_FACE_CORNERS).");
+
+				char* tokenStart = p;
+				while (*p && *p != ' ' && *p != '\t' && *p != '\n' && *p != '\r') ++p;
+
+				char saved = *p;
+				*p = '\0';
+
+				int vp = -1, vt = -1, vn = -1;
+				parseFaceCornerToken(tokenStart, (int)vpSoFar, (int)vtSoFar, (int)vnSoFar, vp, vt, vn);
+
+				if (vp < 0 || vp >= (int)vpSoFar) cleanupAndThrow("OBJ parse error: face vertex index out of range.");
+
+				faceVP[cornerCount] = vp;
+				faceVT[cornerCount] = vt;
+				faceVN[cornerCount] = vn;
+
+				*p = saved;
+				++cornerCount;
+			}
+
+			if (cornerCount < 3) cleanupAndThrow("OBJ parse error: face has fewer than 3 vertices.");
+
+			// Fan triangulation: (0, i, i+1)
+			for (int i = 1; i < cornerCount - 1; ++i)
+			{
+				if (triSoFar >= triangleCount)
+					cleanupAndThrow("OBJ parse error: internal triangle count mismatch.");
+
+				const int a = 0;
+				const int b = i;
+				const int c = i + 1;
+
+				desc.triangle_list[triSoFar] = Vector3i{ faceVP[a], faceVP[b], faceVP[c] };
+
+				// Per-triangle UVs -> pixel coords (3 per triangle)
+				if (wantTextured)
+				{
+					auto uvToPixel = [&](const Vector2f& uv) -> Vector2i
+						{
+							float u = uv.x;
+							float v = uv.y;
+
+							// Common convention: flip V. If your textures appear upside down, remove (1 - v).
+							int px = (int)(u * (float)(W - 1) + 0.5f);
+							int py = (int)((1.0f - v) * (float)(H - 1) + 0.5f);
+
+							if (px < 0) px = 0; else if (px >= W) px = W - 1;
+							if (py < 0) py = 0; else if (py >= H) py = H - 1;
+							return Vector2i{ px, py };
+						};
+
+					auto cornerUV = [&](int vtIndex) -> Vector2i
+						{
+							if (vtIndex < 0 || vtIndex >= (int)vtSoFar) // missing or not yet defined
+								return Vector2i{ 0, 0 };
+							return uvToPixel(rawUV[vtIndex]);
+						};
+
+					desc.texture_coordinates_list[triSoFar * 3u + 0u] = cornerUV(faceVT[a]);
+					desc.texture_coordinates_list[triSoFar * 3u + 1u] = cornerUV(faceVT[b]);
+					desc.texture_coordinates_list[triSoFar * 3u + 2u] = cornerUV(faceVT[c]);
+				}
+
+				// Per-triangle-corner normals (3 per triangle)
+				// (unchanged: if a face corner lacks VN, you will still have vn=-1 and likely want computed normals)
+				if (wantPerTriNormals)
+				{
+					// If VN is missing for any corner, we cannot safely index rawNrm.
+					// Keep the old "global downgrade" behavior for normals by detecting missing VN per triangle.
+					if (faceVN[a] < 0 || faceVN[a] >= (int)vnSoFar ||
+						faceVN[b] < 0 || faceVN[b] >= (int)vnSoFar ||
+						faceVN[c] < 0 || faceVN[c] >= (int)vnSoFar)
+					{
+						// Drop normals and compute later (same end-result as your previous logic)
+						delete[] desc.normal_vectors_list;
+						desc.normal_vectors_list = nullptr;
+						desc.normal_computation = POLIHEDRON_DESC::COMPUTED_TRIANGLE_NORMALS;
+						wantPerTriNormals = false;
+					}
+					else
+					{
+						desc.normal_vectors_list[triSoFar * 3u + 0u] = rawNrm[faceVN[a]];
+						desc.normal_vectors_list[triSoFar * 3u + 1u] = rawNrm[faceVN[b]];
+						desc.normal_vectors_list[triSoFar * 3u + 2u] = rawNrm[faceVN[c]];
+					}
+				}
+
+				++triSoFar;
+			}
+		}
+		// else ignore: usemtl, mtllib, o, g, s, etc.
+	}
+
+	// Temp arrays no longer needed
+	delete[] rawUV;
+	delete[] rawNrm;
+
+	fclose(file);
+	return desc;
+}
 
 /*
 -----------------------------------------------------------------------------------------------------------

@@ -69,7 +69,7 @@ struct POLIHEDRON_DESC
 		// The normal vectors will be computed by triagle and assigned to each vertex 
 		// accordingly, grid pattern is clearly visible unless the grid is very thin.
 		COMPUTED_TRIANGLE_NORMALS,
-		// Each vertex has its own normal vector attached, an that onw will be used
+		// Each vertex has its own normal vector attached, and that one will be used
 		// across all its triangle connections. The list must be provided.
 		PER_VERTEX_LIST_NORMALS,
 		// Each vertex appearence on each triangle will have a different normal from
@@ -116,6 +116,15 @@ struct POLIHEDRON_DESC
 // limited to textures, ilumination, transparencies. Check the descriptor to see all options.
 class Polihedron : public Drawable
 {
+public:
+	// To facilitate the loading of triangle meshes, this function is a parser for 
+	// *.obj files, that reads the files and outputs a valid descriptor. If the file 
+	// supports texturing, optionally accepts an image to be used as texture_image.
+	// NOTE: All data is allocated by (new) and its deletion must be handled by the 
+	// user. The image pointer used is the same as provided.
+	// If any error occurs, including missing file, it will throw.
+	static POLIHEDRON_DESC getDescFromObj(const char* obj_file_path, Image* texture = nullptr);
+
 public:
 	// Polihedron constructor, if the pointer is valid it will call the initializer.
 	Polihedron(const POLIHEDRON_DESC* pDesc = nullptr);

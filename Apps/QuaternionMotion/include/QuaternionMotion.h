@@ -65,6 +65,8 @@ private:
 	Vector2i lastPos = {};
 	bool dragging = false;
 
+	WINDOW_DESC desc = {};
+
 	//	Magnet motion
 
 	bool magnetized = false;

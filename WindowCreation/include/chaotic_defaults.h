@@ -400,11 +400,13 @@ public:
 	// Calls the window constructor with the specified dimensions and window name.
 	// If imGui is included it initializes its defaultImGui manager and it pushes
 	// sliders for the perspective and a full screen selector.
-	defaultWindow(Vector2i winDim, const char* name = "Hello World!") :
-		Window(winDim, name) 
+	defaultWindow(Vector2i winDim, const char* name = "Chaotic Window") : Window() 
 #ifdef _INCLUDE_IMGUI
 		,imGui(*this) 
 	{
+		setTitle(name);
+		setDimensions(winDim);
+
 		imGui.pushSlider(&theta, { -2.f * MATH_PI, 2.f * MATH_PI }, "Theta");
 		imGui.pushSlider(  &phi, { -MATH_PI / 2.f, MATH_PI / 2.f },   "Phi");
 		imGui.pushSlider(&scale, {            1.f,        2000.f }, "Scale");
@@ -415,7 +417,9 @@ public:
 	}
 	defaultImGui imGui;
 #else
-	{}
+	{
+		setTitle(name);
+	}
 #endif
 	// Deletes the owned drawables.
 	~defaultWindow()
@@ -544,6 +548,9 @@ public:
 protected:
 	// Whether the screen mode has to be updated. (1 normal, 2 full)
 	int screen_mode = 0; 
+
+	// Descriptor to initialize the window
+	WINDOW_DESC desc = {};
 
 	// Vectors to store the drawables and their ownership status.
 	vector<Drawable*> drawables;

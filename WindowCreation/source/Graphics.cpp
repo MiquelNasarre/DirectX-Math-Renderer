@@ -618,7 +618,7 @@ void Graphics::updatePerspective(Quaternion obs, Vector3f center, float scale)
 
 // Schedules a frame capture to be done during the next pushFrame() call. It expects 
 // a valid pointer to an Image where the capture will be stored. The image dimensions 
-// will be adjusted automatically. Pointer must be valid during next draw call.
+// will be adjusted automatically. Pointer must be valid during next push call.
 
 void Graphics::scheduleFrameCapture(Image* image)
 {

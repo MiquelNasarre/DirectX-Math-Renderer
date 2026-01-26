@@ -7,7 +7,8 @@
 #include <cmath>
 
 QuaternionMotion::QuaternionMotion()
-	: window({ 640, 480 }, "QuaternionMotion")
+	: desc{ "QuaternionMotion", WINDOW_DESC::WINDOW_MODE_NORMAL, { 640, 480 }  },
+	window(&desc)
 {
 	window.setFramerateLimit(60);
 #ifdef _INCLUDE_IMGUI

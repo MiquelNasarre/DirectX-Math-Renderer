@@ -37,6 +37,9 @@ private:
 	unsigned width_	 = 0u;	// Stores the width of the image
 	unsigned height_ = 0u;	// Stores the height of the image
 
+	// Internal function to format strings for the templates
+	const char* internal_formatting(const char* fmt_filename, ...);
+
 public:
 	// Constructors/Destructors
 
@@ -44,7 +47,11 @@ public:
 	Image() {}
 
 	// Initializes the image as stored in the bitmap file.
-	Image(const char* fmt_filename, ...);
+	Image(const char* filename);
+
+	// Initializes the image as stored in the bitmap file. Regular string formatting.
+	template<class Arg0, class ...Args>
+	Image(const char* fmt_filename, Arg0 arg0, Args... args) : Image(internal_formatting(fmt_filename, arg0, args...)) {}
 
 	// Copies the other image.
 	Image(const Image& other);
@@ -66,11 +73,19 @@ public:
 
 	// File functions
 
+	// Loads an image from the specified file path. Regular string formatting.
+	template<class Arg0, class ...Args>
+	bool load(const char* fmt_filename, Arg0 arg0, Args... args) { return load(internal_formatting(fmt_filename, arg0, args...)); }
+
 	// Loads an image from the specified file path.
-	bool load(const char* fmt_filename, ...);
+	bool load(const char* filename);
+
+	// Saves the image to the specified file path. Regular string formatting.
+	template<class Arg0, class ...Args>
+	bool save(const char* fmt_filename, Arg0 arg0, Args... args) const { return save(internal_formatting(fmt_filename, arg0, args...)); }
 
 	// Saves the image to the specified file path.
-	bool save(const char* fmt_filename, ...) const;
+	bool save(const char* fmt_filename) const;
 
 	// Getters
 

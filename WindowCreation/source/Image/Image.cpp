@@ -47,28 +47,47 @@ static inline uint32_t read_le32(FILE* f)
 
 /*
 -------------------------------------------------------------------------------------------------------
+ Internal Functions
+-------------------------------------------------------------------------------------------------------
+*/
+
+// Internal function to format strings for the templates
+
+const char* Image::internal_formatting(const char* fmt_filename, ...)
+{
+    // Sanity check
+    if (!fmt_filename)
+        return nullptr;
+
+    // Load args
+    va_list ap;
+
+    // Get string
+    thread_local static char filename[512];
+
+    // Format
+    va_start(ap, fmt_filename);
+    if (vsnprintf(filename, 507, fmt_filename, ap) < 0)
+        return nullptr;
+    va_end(ap);
+
+    // Make sure it ends and return
+    filename[507] = '\0';
+
+    return filename;
+}
+
+/*
+-------------------------------------------------------------------------------------------------------
  Constructors / Destructors
 -------------------------------------------------------------------------------------------------------
 */
 
-// Initializes the image as stored in the bitmap file
+// Initializes the image as stored in the bitmap file.
 
-Image::Image(const char* fmt_filename, ...)
+Image::Image(const char* filename)
 {
-    if (!fmt_filename || !*fmt_filename)
-        throw "Could not create image from file";
-
-    va_list ap;
-
-    // Unwrap the format
-    char filename[512];
-
-    va_start(ap, fmt_filename);
-    if (vsnprintf(filename, 512, fmt_filename, ap) < 0) 
-        throw "Could not create image from file";
-    va_end(ap);
-
-    if(!load(filename)) 
+    if (!load(filename))
         throw "Could not create image from file";
 }
 
@@ -148,27 +167,28 @@ void Image::reset(unsigned width, unsigned height, Color color)
 
 // Loads an image from the specified file path
 
-bool Image::save(const char* fmt_filename, ...) const
+bool Image::save(const char* filename_) const
 {
-    if (!fmt_filename || !*fmt_filename)
+    if (!filename_ || !*filename_)
         return 0;
 
-    va_list ap;
-
-    // Unwrap the format
     char filename[512];
+    strncpy_s(filename, filename_, 507);
+    filename[507] = '\0';
 
-    va_start(ap, fmt_filename);
-    if (vsnprintf(filename, 512, fmt_filename, ap) < 0) return false;
-    va_end(ap);
+    // Force the correct extension
+    char* base = filename;
+    if (char* p = strrchr(filename, '/'))  base = p + 1;
+    if (char* p = strrchr(filename, '\\')) if (p + 1 > base) base = p + 1;
 
-    unsigned c = 0;
-    while (filename[++c] && filename[c] != '.');
-    filename[c++] = '.';
-    filename[c++] = 'b';
-    filename[c++] = 'm';
-    filename[c++] = 'p';
-    filename[c++] = '\0';
+    char* dot = strrchr(base, '.');
+    char* end = dot ? dot : filename + strlen(filename);
+
+    end[0] = '.';
+    end[1] = 'b';
+    end[2] = 'm';
+    end[3] = 'p';
+    end[4] = '\0';
 
     FILE* file = nullptr;
     fopen_s(&file, filename, "wb");
@@ -242,27 +262,28 @@ bool Image::save(const char* fmt_filename, ...) const
 
 // Saves the image to the specified file path
 
-bool Image::load(const char* fmt_filename, ...) 
+bool Image::load(const char* filename_) 
 {
-    if (!fmt_filename || !*fmt_filename)
+    if (!filename_ || !*filename_)
         return 0;
 
-    va_list ap;
-
-    // Unwrap the format
     char filename[512];
+    strncpy_s(filename, filename_, 507);
+    filename[507] = '\0';
 
-    va_start(ap, fmt_filename);
-    if (vsnprintf(filename, 512, fmt_filename, ap) < 0) return false;
-    va_end(ap);
+    // Force the correct extension
+    char* base = filename;
+    if (char* p = strrchr(filename, '/'))  base = p + 1;
+    if (char* p = strrchr(filename, '\\')) if (p + 1 > base) base = p + 1;
 
-    unsigned c = 0;
-    while (filename[++c] && filename[c] != '.');
-    filename[c++] = '.';
-    filename[c++] = 'b';
-    filename[c++] = 'm';
-    filename[c++] = 'p';
-    filename[c++] = '\0';
+    char* dot = strrchr(base, '.');
+    char* end = dot ? dot : filename + strlen(filename);
+
+    end[0] = '.';
+    end[1] = 'b';
+    end[2] = 'm';
+    end[3] = 'p';
+    end[4] = '\0';
 
     FILE* file = nullptr;
     fopen_s(&file, filename, "rb");

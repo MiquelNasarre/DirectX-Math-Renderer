@@ -91,7 +91,7 @@ public:
 
 	// Schedules a frame capture to be done during the next pushFrame() call. It expects 
 	// a valid pointer to an Image where the capture will be stored. The image dimensions 
-	// will be adjusted automatically. Pointer must be valid during next draw call.
+	// will be adjusted automatically. Pointer must be valid during next push call.
 	void scheduleFrameCapture(Image* image);
 
 	// To draw transparent objects this setting needs to be toggled on, it causes extra 

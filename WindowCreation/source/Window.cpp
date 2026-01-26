@@ -32,11 +32,91 @@ struct WindowInternals
 	Vector2i Position = {};		// Position of the window.
 	HWND hWnd = nullptr;		// Handle to the window.
 	char Name[512] = {};		// Name of the window.
+	bool wallpaper = false;		// Whether it is a wallpaper window.
+	bool w_persist = false;		// Whether the wallpaper persisits past destructor.
+	int monitor_idx = 0;		// Stores the last monitor IDX used in wallpaper mode.
 
 	static inline bool noFrameUpdate = false;	// Schedules next frame time to be skipped.
 	static inline float frame = 0.f;			// Stores the time of the last frame push.
 	static inline float Frametime = 0.f;		// Stores the specified time for each frame.
 };
+
+/*
+-----------------------------------------------------------------------------------------------------------
+ Helpers for Wallpaper mode
+-----------------------------------------------------------------------------------------------------------
+*/
+
+static BOOL CALLBACK EnumWindowsFindWorkerW(HWND top, LPARAM lParam)
+{
+	HWND& phwnd = *(HWND*)lParam;
+
+	// Does this top-level window host the desktop icons view?
+	HWND defView = FindWindowExW(top, nullptr, L"SHELLDLL_DefView", nullptr);
+	if (defView)
+	{
+		// The WorkerW we want is typically a sibling of this top-level window.
+		// This finds the next WorkerW after 'top' in the Z-order.
+		HWND workerw = FindWindowExW(nullptr, top, L"WorkerW", nullptr);
+		if (workerw)
+		{
+			phwnd = workerw;
+			return FALSE; // stop enumeration
+		}
+	}
+	return TRUE;
+}
+
+struct MonitorPick
+{
+	int indexWanted = 0;
+	int indexNow = 0;
+	RECT rc = {};
+	bool found = false;
+};
+
+static BOOL CALLBACK EnumMonProc(HMONITOR hMon, HDC, LPRECT, LPARAM p)
+{
+	auto& mp = *(MonitorPick*)p;
+
+	MONITORINFO mi = {};
+	mi.cbSize = sizeof(mi);
+	if (!GetMonitorInfoW(hMon, &mi))
+		return TRUE;
+
+	if (mp.indexNow == mp.indexWanted)
+	{
+		mp.rc = mi.rcMonitor;     // virtual-desktop coordinates
+		mp.found = true;
+		return FALSE;             // stop
+	}
+
+	mp.indexNow++;
+	return TRUE;
+}
+
+static RECT GetMonitorRectByIndex(int monitorIndex)
+{
+	MonitorPick mp = {};
+	mp.indexWanted = monitorIndex;
+	mp.indexNow = 0;
+	mp.found = false;
+
+	if (monitorIndex != -1)
+		EnumDisplayMonitors(nullptr, nullptr, EnumMonProc, (LPARAM)&mp);
+
+	if (!mp.found)
+	{
+		// fallback to virtual screen
+		RECT vr = {};
+		vr.left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+		vr.top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+		vr.right = vr.left + GetSystemMetrics(SM_CXVIRTUALSCREEN);
+		vr.bottom = vr.top + GetSystemMetrics(SM_CYVIRTUALSCREEN);
+		return vr;
+	}
+	return mp.rc;
+}
 
 /*
 -----------------------------------------------------------------------------------------------------------
@@ -50,7 +130,7 @@ class MSGHandlePipeline
 public:
 	// Custom procedure for window message handling, Stores mouse and keyboard events and
 	// handles other specific window events. Other events are sent to the defaul procedure.
-	static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, WindowInternals* _data) noexcept
+	static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, WindowInternals* _data, Window* pWnd) noexcept
 	{
 		WindowInternals& data = *_data;
 
@@ -62,11 +142,6 @@ public:
 		{
 		case WM_CLOSE:
 		{
-			// Get the Window* for this HWND (you already do this in your thunk)
-			Window* pWnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-			if (!pWnd)
-				return DefWindowProc(hWnd, msg, wParam, lParam);
-
 			// Send a custom message to the thread's message queue
 			PostThreadMessage(GetCurrentThreadId(), WM_APP_WINDOW_CLOSE, (WPARAM)pWnd->getID(), 0);
 			return 0;
@@ -75,7 +150,8 @@ public:
 		case WM_SIZE:
 			data.Dimensions.x = LOWORD(lParam);
 			data.Dimensions.y = HIWORD(lParam);
-			data.graphics->setWindowDimensions(data.Dimensions);
+			if (data.graphics)
+				data.graphics->setWindowDimensions(data.Dimensions);
 			break;
 
 		case WM_MOVE:
@@ -170,10 +246,10 @@ public:
 	{
 		// retrieve ptr to window class
 		Window* const pWnd = reinterpret_cast<Window*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-		if (!pWnd || !pWnd->WindowData)
+		if (!pWnd)
 			return DefWindowProc(hWnd, msg, wParam, lParam);
 		// forward message to window class handler
-		return HandleMsg(hWnd, msg, wParam, lParam, (WindowInternals*)pWnd->WindowData);
+		return HandleMsg(hWnd, msg, wParam, lParam, (WindowInternals*)pWnd->WindowData, pWnd);
 	}
 
 	// Setup to create the trampoline method. Creates a virtual window that points to the 
@@ -186,6 +262,9 @@ public:
 			// extract ptr to window class from creation data
 			const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
 			Window* const pWnd = static_cast<Window*>(pCreate->lpCreateParams);
+			// set the window handle inside the class data
+			auto& data = *((WindowInternals*)pWnd->WindowData);
+			data.hWnd = hWnd;
 			// set WinAPI-managed user data to store ptr to window class
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
 			// set message proc to normal (non-setup) handler now that setup is finished
@@ -242,7 +321,7 @@ private:
 		UnregisterClassA(wndClassName, hInst);
 	}
 
-	static constexpr LPCSTR wndClassName = "DirectX Window";
+	static constexpr LPCSTR wndClassName = "Chaotic Window";
 	static inline HINSTANCE hInst;
 	static WindowClass wndClass;
 };
@@ -293,60 +372,153 @@ void Window::close()
 	PostThreadMessage(GetCurrentThreadId(), WM_APP_WINDOW_CLOSE, (WPARAM)getID(), 0);
 }
 
-// Creates the window and its associated Graphics object with the
-// specified dimensions, title, icon and theme.
+// Creates the window and its associated Graphics, expects a valid descriptor 
+// pointer, if not provided it chooses the default descriptor settings.
 
-Window::Window(Vector2i Dim, const char* Title): w_id { next_id++ }
+Window::Window(WINDOW_DESC* pDesc): w_id { next_id++ }
 {
-	//	Calculate window size based on desired client region size
+	//  If descriptor not provided, default
+	WINDOW_DESC desc = {};
+	if (pDesc)
+		desc = *pDesc;
 
-	RECT wr;
-	wr.left = 100;
-	wr.right = Dim.x + wr.left;
-	wr.top = 100;
-	wr.bottom = Dim.y + wr.top;
-	if (!AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_OVERLAPPEDWINDOW, FALSE))
-		throw WND_LAST_EXCEPT();
-
-	//	Create Window & get hWnd
-
-	HWND hWnd = CreateWindowExA(
-		NULL,
-		WindowClass::GetName(), 
-		NULL,
-		WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, 
-		CW_USEDEFAULT, 
-		wr.right - wr.left, 
-		wr.bottom - wr.top,
-		nullptr, 
-		nullptr, 
-		WindowClass::GetInstance(),
-		this
-	);
-
-	//	Check for error
-
-	if (!hWnd)
-		throw WND_LAST_EXCEPT();
-
-	// Create internal data
+	//  Create internal data
 	WindowData = new WindowInternals;
 	WindowInternals& data = *((WindowInternals*)WindowData);
+	data.wallpaper = (desc.window_mode == WINDOW_DESC::WINDOW_MODE_WALLPAPER);
 
-	data.graphics	= new Graphics(hWnd);
-	data.hWnd		= hWnd;
-	data.Dimensions = Dim;
+	switch (desc.window_mode)
+	{
+		case WINDOW_DESC::WINDOW_MODE_WALLPAPER:
+		{
+			// Set persistance setting
+			data.w_persist = desc.wallpaper_persist;
+			data.monitor_idx = desc.monitor_idx;
+
+			// Spawn the workerW
+			HWND progman = FindWindowW(L"Progman", nullptr);
+			if (!progman)
+				throw INFO_EXCEPT("Could not find desktop workerW to parent to, unable to create wallpaper window.");
+
+			// This function makes the workerW appear
+			DWORD_PTR result = 0;
+			if (!SendMessageTimeoutW(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, &result))
+				throw INFO_EXCEPT("Could not find desktop workerW to parent to, unable to create wallpaper window.");
+
+			// Find that workerW window
+			HWND workerw = nullptr;
+			EnumWindows(EnumWindowsFindWorkerW, (LPARAM)&workerw);
+			if (!workerw)
+				throw INFO_EXCEPT("Could not find desktop workerW to parent to, unable to create wallpaper window.");
+
+			// Virtual desktop size. Depending on monitor
+			// This function also squeezes other windows of the same process if scale is different in a monitor, but its worth it.
+			SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+			RECT vr = GetMonitorRectByIndex(desc.monitor_idx);
+
+			// Set correct dimensions.
+			data.Dimensions = { vr.right - vr.left, vr.bottom - vr.top };
+
+			// Get correct positions
+			POINT pt = { vr.left, vr.top };
+			ScreenToClient(workerw, &pt);
+			int childX = pt.x;
+			int childY = pt.y;
+
+			// Create a borderless window
+			HWND hWnd = CreateWindowExA(
+				WS_EX_TOOLWINDOW,
+				WindowClass::GetName(),
+				nullptr,
+				WS_POPUP,
+				childX,
+				childY,
+				vr.right - vr.left,
+				vr.bottom - vr.top,
+				nullptr,
+				nullptr,
+				WindowClass::GetInstance(),
+				this
+			);
+
+			// Sanity check
+			if (!hWnd)
+				throw WND_LAST_EXCEPT();
+
+			// Set workerW as parent window
+			SetParent(hWnd, workerw);
+
+			// Convert popup -> child after parenting
+			LONG_PTR s = GetWindowLongPtrW(hWnd, GWL_STYLE);
+			s &= ~WS_POPUP;
+			s |= WS_CHILD;
+			SetWindowLongPtrW(hWnd, GWL_STYLE, s);
+
+			// Fit exactly to virtual screen; don't steal focus
+			SetWindowPos(
+				hWnd,
+				nullptr,
+				childX,
+				childY,
+				vr.right - vr.left,
+				vr.bottom - vr.top,
+				SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED
+			);
+			break;
+		}
+	
+		case WINDOW_DESC::WINDOW_MODE_NORMAL:
+		default:
+		{
+			// Use specified dimensions
+			data.Dimensions = desc.window_dim;
+
+			//	Calculate window size based on desired client region size
+			RECT wr;
+			wr.left = 100;
+			wr.right = desc.window_dim.x + wr.left;
+			wr.top = 100;
+			wr.bottom = desc.window_dim.y + wr.top;
+			if (!AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_OVERLAPPEDWINDOW, FALSE))
+				throw WND_LAST_EXCEPT();
+
+			//	Create Window & get hWnd
+			HWND hWnd = CreateWindowExA(
+				NULL,
+				WindowClass::GetName(),
+				NULL,
+				WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+				CW_USEDEFAULT,
+				CW_USEDEFAULT,
+				wr.right - wr.left,
+				wr.bottom - wr.top,
+				nullptr,
+				nullptr,
+				WindowClass::GetInstance(),
+				this
+			);
+
+			//	Check for error
+			if (!hWnd)
+				throw WND_LAST_EXCEPT();
+			break;
+		}
+	};
+
+	//  Create graphics
+	data.graphics = new Graphics(data.hWnd);
 
 	//	Set title & dark theme
+	setTitle(desc.window_title);
+	if (!data.wallpaper)
+		setDarkTheme(desc.dark_theme);
 
-	setTitle(Title);
-	setDarkTheme(true);
+	//  Set icon if requested
+	if (desc.icon_filename[0] != '\0')
+		setIcon(desc.icon_filename);
 
-	//	Create graphics object
-
+	//	Create graphics buffers
 	data.graphics->setWindowDimensions(data.Dimensions);
-	
 }
 
 // Handles the proper deletion of the window data after its closing.
@@ -361,7 +533,18 @@ Window::~Window()
 #endif
 	delete data.graphics;
 
+	// Detach from workerW before destroying
+	if (data.wallpaper)
+		SetParent(data.hWnd, nullptr);
+
 	DestroyWindow(data.hWnd);
+
+	// Redraw desktop background to avoid persistance
+	if (data.wallpaper && !data.w_persist)
+	{
+		DwmFlush();
+		SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, nullptr, SPIF_SENDCHANGE);
+	}
 
 	delete &data;
 }
@@ -429,6 +612,12 @@ void Window::setDimensions(Vector2i Dim)
 	
 	WindowInternals& data = *((WindowInternals*)WindowData);
 
+	if (data.wallpaper)
+		throw INFO_EXCEPT(
+			"Calling setDimensions on a wallpaper window is not allowed.\n"
+			"Please use setWallpaperMonitor to adjust wallpaper window."
+		);
+
 	RECT wr;
 	wr.left = 100;
 	wr.right = width + wr.left;
@@ -449,6 +638,12 @@ void Window::setPosition(Vector2i Pos)
 
 	WindowInternals& data = *((WindowInternals*)WindowData);
 
+	if (data.wallpaper)
+		throw INFO_EXCEPT(
+			"Calling setPosition on a wallpaper window is not allowed.\n"
+			"Please use setWallpaperMonitor to adjust wallpaper window."
+		);
+
 	int eX = -8;
 	int eY = -31;
 	X += eX;
@@ -456,6 +651,73 @@ void Window::setPosition(Vector2i Pos)
 
 	if (!SetWindowPos(data.hWnd, data.hWnd, X, Y, 0, 0, SWP_NOSIZE | SWP_NOZORDER))
 		throw WND_LAST_EXCEPT();
+}
+
+// Selects the monitor where the wallpaper will be shown. If -1
+// then the wallpaper window will expand to all monitors in use.
+
+void Window::setWallpaperMonitor(int monitor_idx)
+{
+	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	if (!data.wallpaper)
+		throw INFO_EXCEPT(
+			"Calling setWallpaperMonitor on a non wallpaper window is not allowed.\n"
+			"If you want to create a wallpaper window you must initialize it with wallpaper mode in the descriptor."
+		);
+
+	// Spawn the workerW
+	HWND progman = FindWindowW(L"Progman", nullptr);
+	if (!progman)
+		throw INFO_EXCEPT("Could not find desktop workerW to parent to, unable to update wallpaper window.");
+
+	// This function makes the workerW appear
+	DWORD_PTR result = 0;
+	if (!SendMessageTimeoutW(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, &result))
+		throw INFO_EXCEPT("Could not find desktop workerW to parent to, unable to update wallpaper window.");
+
+	// Find that workerW window
+	HWND workerw = nullptr;
+	EnumWindows(EnumWindowsFindWorkerW, (LPARAM)&workerw);
+	if (!workerw)
+		throw INFO_EXCEPT("Could not find desktop workerW to parent to, unable to update wallpaper window.");
+
+	// Detach
+	SetParent(data.hWnd, nullptr);
+
+	// Update IDX
+	data.monitor_idx = monitor_idx;
+
+	// Get new rectangle
+	RECT vr = GetMonitorRectByIndex(data.monitor_idx);
+
+	// Set correct dimensions.
+	data.Dimensions = { vr.right - vr.left, vr.bottom - vr.top };
+
+	// Get correct positions
+	POINT pt = { vr.left, vr.top };
+	ScreenToClient(workerw, &pt);
+	int childX = pt.x;
+	int childY = pt.y;
+
+	// Fit exactly to virtual screen; don't steal focus
+	SetWindowPos(
+		data.hWnd,
+		nullptr,
+		childX,
+		childY,
+		vr.right - vr.left,
+		vr.bottom - vr.top,
+		SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_FRAMECHANGED
+	);
+
+	// Reshape graphics buffers
+	data.graphics->setWindowDimensions(data.Dimensions);
+
+	// Flush and re-attach to clean last monitor
+	DwmFlush();
+	SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, nullptr, SPIF_SENDCHANGE);
+	SetParent(data.hWnd, workerw);
 }
 
 // Sets the maximum framerate of the widow to the one specified.
@@ -472,7 +734,14 @@ void Window::setDarkTheme(bool DARK_THEME)
 {
 	WindowInternals& data = *((WindowInternals*)WindowData);
 
-	if (FAILED(DwmSetWindowAttribute(data.hWnd, DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, &DARK_THEME, sizeof(BOOL))))
+	if (data.wallpaper)
+		throw INFO_EXCEPT(
+			"Calling setDarkTheme on a wallpaper window is not allowed.\n"
+			"Please use setWallpaperMonitor to adjust wallpaper window."
+		);
+
+	BOOL theme = DARK_THEME;
+	if (FAILED(DwmSetWindowAttribute(data.hWnd, DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, &theme, sizeof(BOOL))))
 		throw WND_LAST_EXCEPT();
 
 	// Window dimensions wiggle to force and udate.
@@ -485,6 +754,12 @@ void Window::setDarkTheme(bool DARK_THEME)
 void Window::setFullScreen(bool FULL_SCREEN)
 {
 	WindowInternals& data = *((WindowInternals*)WindowData);
+
+	if (data.wallpaper)
+		throw INFO_EXCEPT(
+			"Calling setFullScreen on a wallpaper window is not allowed.\n"
+			"Please use setWallpaperMonitor to adjust wallpaper window."
+		);
 
 	static WINDOWPLACEMENT g_wpPrev;
 

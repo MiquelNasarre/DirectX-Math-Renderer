@@ -24,10 +24,52 @@ object contained inside the window, for an example on how to use the library you
 can check the demo apps or the default helpers header.
 
 For further information check the github page: 
-https://github.com/MiquelNasarre/DirectX-Math-Renderer.git
+https://github.com/MiquelNasarre/Chaotic.git
 -------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------
 */
+
+// Window descriptor struct, to be created and passed as a pointer to initialize
+// a Window. Contains some basic initial setting for the window as well as the 
+// mode toggle that allows you to create a desktop background window.
+struct WINDOW_DESC
+{
+	// Initial window title.
+	char window_title[512] = "Chaotic Window";
+
+	// Window mode, If set to wallpaper it will default to the back of 
+	// the desktop at full screen.
+	// NOTE: A wallpaper window does not take focus, so no messages will 
+	// be processed, other methoes must be used for interaction. For example,
+	// an active console, another window or a limited lifespan.
+	// NOTE: You can swap the monitor display by using setWallpaperMonitor, 
+	// other reshaping functions will throw. It does not adjust automatically 
+	// to settings changes, so setWallpaperMonitor must be called to re-adjust.
+	enum WINDOW_MODE
+	{
+		WINDOW_MODE_NORMAL,
+		WINDOW_MODE_WALLPAPER
+	}
+	window_mode = WINDOW_MODE_NORMAL;
+
+	// Initial window dimensions.
+	Vector2i window_dim = { 640, 320 };
+
+	// Initial window icon file path. If none provided defaults.
+	char icon_filename[512] = "";
+
+	// Initial window theme.
+	bool dark_theme = true;
+
+	// Whether the wallpaper persists past the window lifetime. 
+	// NOTE: It will persist until the desktop flushes itself, 
+	// due to reshaping, restart, etc.
+	bool wallpaper_persist = false;
+
+	// Selects the monitor where the wallpaper will be shown. If -1
+	// then the wallpaper window will expand to all monitors in use.
+	int monitor_idx = 0;
+};
 
 // The window class contains all the necessary functions to create and use a window.
 // Since the library is built for 3D apps it also contains a graphics object and 
@@ -64,9 +106,9 @@ public:
 public:
 	// --- CONSTRUCTOR / DESTRUCTOR ---
 
-	// Creates the window and its associated Graphics object with the
-	// specified dimensions, title, icon and theme.
-	Window(Vector2i Dim, const char* Title);
+	// Creates the window and its associated Graphics, expects a valid descriptor 
+	// pointer, if not provided it chooses the default descriptor settings.
+	Window(WINDOW_DESC* pDesc = nullptr);
 
 	// Handles the proper deletion of the window data after its closing.
 	~Window();
@@ -91,6 +133,10 @@ public:
 
 	// Sets the position of the window to the one specified.
 	void setPosition(Vector2i Pos);
+
+	// Selects the monitor where the wallpaper will be shown. If -1
+	// then the wallpaper window will expand to all monitors in use.
+	void setWallpaperMonitor(int monitor_idx);
 
 	// Toggles the dark theme of the window on or off as specified.
 	void setDarkTheme(bool DARK_THEME);

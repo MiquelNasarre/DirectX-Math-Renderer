@@ -27,13 +27,11 @@ class VertexShader : public Bindable
 	// Needs access to the bytecode.
 	friend class InputLayout;
 public:
-#ifndef _DEPLOYMENT
 	// Given a (*.cso) file path it creates the bytecode and the vertex shader object.
 	VertexShader(const wchar_t* path);
-#else
+
 	// Raw constructor for deployment, uses embedded resources. Expects valid blobs.
-	VertexShader(const void* bytecode, size_t size);
-#endif
+	VertexShader(const void* bytecode, unsigned long long size);
 
 	// Releases the pointers and deletes the internal data.
 	~VertexShader();

@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";IS_DEBUG=true;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)WindowCreation/include/;$(SolutionDir)imGui/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)WindowCreation/include/;$(SolutionDir)imGui/include/imgui/</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -160,7 +160,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SOLUTION_DIR=R"($(SolutionDir))";IS_DEBUG=false;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)WindowCreation/include/;$(SolutionDir)imGui/include/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include/;$(SolutionDir)WindowCreation/include/;$(SolutionDir)imGui/include/imgui/</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>

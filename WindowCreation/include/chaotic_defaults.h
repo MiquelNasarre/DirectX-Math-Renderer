@@ -3,30 +3,17 @@
 /* LICENSE AND COPYRIGHT
 -------------------------------------------------------------------------------------------------------
  * Chaotic — a 3D renderer for mathematical applications
- * Copyright (c) 2025 Miguel Nasarre Budiño
+ * Copyright (c) 2025-2026 Miguel Nasarre Budiño
  * Licensed under the MIT License. See LICENSE file.
 -------------------------------------------------------------------------------------------------------
  */
 
 // Default library dependencies.
-#include "Window.h"
-#include "iGManager.h"
-#include "Keyboard.h"
-#include "Mouse.h"
-#include "Exception/Exception.h"
-
-// Include all default drawables for convenience.
-#include "Drawable/Surface.h"
-#include "Drawable/Polihedron.h"
-#include "Drawable/Background.h"
-#include "Drawable/Scatter.h"
-#include "Drawable/Curve.h"
-#include "Drawable/Light.h"
+#include "chaotic.h"
 
 // Some std dependencies for easier user experience.
 #include <vector>
 #include <string>
-#include <cmath>
 using std::vector;
 using std::string;
 
@@ -189,7 +176,7 @@ void defaultEventManager(EventData& data)
 }
 
 #ifdef _INCLUDE_IMGUI
-#include "imgui/imgui.h"
+#include "imgui.h"
 // ImGui is a natural addition to this library due to its very powerful and simple widget
 // capabilities. If you have ImGui included this class defines a simple default iGManager
 // from which to add imGui widgets to your app. It has multiple functions to add sliders, 

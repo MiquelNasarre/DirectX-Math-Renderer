@@ -24,13 +24,12 @@ https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl
 class PixelShader : public Bindable
 {
 public:
-#ifndef _DEPLOYMENT
 	// Given a (*.cso) file path it creates the bytecode and the pixel shader object.
 	PixelShader(const wchar_t* path);
-#else
+
 	// Raw constructor for deployment, uses embedded resources. Expects valid blobs.
-	PixelShader(const void* bytecode, size_t size);
-#endif
+	PixelShader(const void* bytecode, unsigned long long size);
+
 	// Releases the pointers and deletes the internal data.
 	~PixelShader() override;
 

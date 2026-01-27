@@ -2,7 +2,7 @@
 
 #ifdef _INCLUDE_IMGUI
 #include "IG_QuaternionMotion.h"
-#include "imgui/imgui.h"
+#include "imgui.h"
 #include <string>
 
 static IG_DATA::lightsource savestate;

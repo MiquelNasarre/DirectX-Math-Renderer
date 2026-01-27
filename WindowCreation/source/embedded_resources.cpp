@@ -197,7 +197,7 @@ const void* getBlobFromId(BLOB_ID id) noexcept
 
 // Returns the size in bytes of the blob data.
 
-size_t getBlobSizeFromId(BLOB_ID id) noexcept
+unsigned long long getBlobSizeFromId(BLOB_ID id) noexcept
 {
 	switch (id)
 	{

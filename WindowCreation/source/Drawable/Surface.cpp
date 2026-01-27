@@ -3,6 +3,10 @@
 
 #include "Exception/_exDefault.h"
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Surface Internals
@@ -311,13 +315,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"GlobalColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITGlobalColorPS.cso" : SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"GlobalColorPS.cso" : SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 
 					// Create the input layout
 					INPUT_ELEMENT_DESC ied[2] =
@@ -469,13 +491,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexTextureVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexTexturePS.cso" : SHADERS_DIR L"OITUnlitVertexTexturePS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_TEXTURE_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_TEXTURE_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexTexturePS.cso" : SHADERS_DIR L"UnlitVertexTexturePS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_VERTEX_TEXTURE_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_VERTEX_TEXTURE_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -622,13 +662,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -775,13 +833,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -928,13 +1004,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -1228,13 +1322,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"GlobalColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITGlobalColorPS.cso" : SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"GlobalColorPS.cso" : SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 
 					// Create the input layout
 					INPUT_ELEMENT_DESC ied[2] =
@@ -1339,13 +1451,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexTextureVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITCubeTexturePS.cso" : SHADERS_DIR L"OITUnlitCubeTexturePS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_CUBE_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_CUBE_TEXTURE_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_CUBE_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_CUBE_TEXTURE_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"CubeTexturePS.cso" : SHADERS_DIR L"UnlitCubeTexturePS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_CUBE_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_CUBE_TEXTURE_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_CUBE_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_CUBE_TEXTURE_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -1457,13 +1587,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -1619,13 +1767,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"GlobalColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITGlobalColorPS.cso" : SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"GlobalColorPS.cso" : SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 
 					// Create the input layout
 					INPUT_ELEMENT_DESC ied[2] =
@@ -1777,13 +1943,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexTextureVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexTexturePS.cso" : SHADERS_DIR L"OITUnlitVertexTexturePS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_TEXTURE_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_TEXTURE_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexTexturePS.cso" : SHADERS_DIR L"UnlitVertexTexturePS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_VERTEX_TEXTURE_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_VERTEX_TEXTURE_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -1930,13 +2114,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -2083,13 +2285,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -2236,13 +2456,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =
@@ -2810,13 +3048,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"GlobalColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITGlobalColorPS.cso" : SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"GlobalColorPS.cso" : SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)
+						));
+#endif
 
 					// Create the input layout
 					INPUT_ELEMENT_DESC ied[2] =
@@ -2925,13 +3181,31 @@ void Surface::initialize(const SURFACE_DESC* pDesc)
 					}
 
 					// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 					VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+					VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 
 					// Create the corresponding Pixel Shader and Blender
 					if (data.desc.enable_transparency)
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 					else
+#ifndef _DEPLOYMENT
 						AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+						AddBind(new PixelShader(
+							getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+							getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+						));
+#endif
 
 					// Create the corresponding input layout
 					INPUT_ELEMENT_DESC ied[3] =

@@ -10,6 +10,10 @@
 
 #include <cstdarg> // For formatted window titles
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Window Internal Data struct
@@ -308,7 +312,23 @@ private:
 		wc.cbClsExtra = 0;
 		wc.cbWndExtra = 0;
 		wc.hInstance = GetInstance();
+#ifndef _DEPLOYMENT
 		wc.hIcon = static_cast<HICON>(LoadImageA(0, RESOURCES_DIR "Icon.ico", IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE | LR_SHARED));
+#else
+		int cx = GetSystemMetrics(SM_CXICON);
+		int cy = GetSystemMetrics(SM_CYICON);
+		int id = LookupIconIdFromDirectoryEx(
+			(PBYTE)getBlobFromId(BLOB_ID::BLOB_DEFAULT_ICON), TRUE, cx, cy, LR_DEFAULTCOLOR
+		);
+		wc.hIcon = CreateIconFromResourceEx(
+			(PBYTE)getBlobFromId(BLOB_ID::BLOB_DEFAULT_ICON) + id,
+			(DWORD)getBlobSizeFromId(BLOB_ID::BLOB_DEFAULT_ICON) - id,
+			TRUE,
+			0x00030000,
+			cx, cy,
+			LR_DEFAULTCOLOR
+		);
+#endif
 		wc.hbrBackground = nullptr;
 		wc.lpszMenuName = nullptr;
 		wc.lpszClassName = GetName();

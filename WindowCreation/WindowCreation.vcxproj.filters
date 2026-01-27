@@ -141,6 +141,9 @@
     <ClCompile Include="source\Drawable\Scatter.cpp">
       <Filter>Sources\Private\Drawable</Filter>
     </ClCompile>
+    <ClCompile Include="source\embedded_resources.cpp">
+      <Filter>Sources\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Bindable.h">
@@ -260,11 +263,23 @@
     <ClInclude Include="include\Image\Image.h">
       <Filter>Sources\Public\Image</Filter>
     </ClInclude>
+    <ClInclude Include="include\Drawable\Scatter.h">
+      <Filter>Sources\Public\Drawable</Filter>
+    </ClInclude>
+    <ClInclude Include="include\embedded_resources.h">
+      <Filter>Sources\Public</Filter>
+    </ClInclude>
     <ClInclude Include="include\chaotic_defaults.h">
       <Filter>Sources\Public</Filter>
     </ClInclude>
-    <ClInclude Include="include\Drawable\Scatter.h">
-      <Filter>Sources\Public\Drawable</Filter>
+    <ClInclude Include="include\chaotic.h">
+      <Filter>Sources\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="include\chaotic_customs.h">
+      <Filter>Sources\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="include\chaotic_internals.h">
+      <Filter>Sources\Public</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -23,6 +23,10 @@ to deal with library linkage yourself.
 // ImGui headers and this definition is uncommented during build.
 #define _INCLUDE_IMGUI
 
+// Toggle that opens the raw bytecode shaders constructors and uses the 
+// embedded resources instead of the files, so that the library is compact.
+#define _DEPLOYMENT
+
 // Default API includes
 
 #include "Math/Vectors.h"

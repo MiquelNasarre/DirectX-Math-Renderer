@@ -19,6 +19,7 @@ struct PixelShaderInternals
 --------------------------------------------------------------------------------------------
 */
 
+#ifndef _DEPLOYMENT
 // Given a (*.cso) file path it creates the bytecode and the pixel shader object.
 
 PixelShader::PixelShader(const wchar_t* path)
@@ -30,6 +31,25 @@ PixelShader::PixelShader(const wchar_t* path)
 	GFX_THROW_INFO(D3DReadFileToBlob(path, &pBlob));
 	GFX_THROW_INFO(_device->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, data.pPixelShader.GetAddressOf()));
 }
+
+#else
+// Raw constructor for deployment, uses embedded resources. Expects valid blobs.
+
+PixelShader::PixelShader(const void* bytecode, size_t size)
+{
+    BindableData = new PixelShaderInternals;
+    auto& ps = *static_cast<PixelShaderInternals*>(BindableData);
+
+    GFX_THROW_INFO(
+        _device->CreatePixelShader(
+            bytecode,
+            size,
+            nullptr,
+            ps.pPixelShader.GetAddressOf()
+        )
+    );
+}
+#endif
 
 // Releases the pointers and deletes the internal data.
 

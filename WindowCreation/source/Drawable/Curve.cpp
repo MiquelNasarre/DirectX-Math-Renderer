@@ -3,6 +3,10 @@
 
 #include "Exception/_exDefault.h"
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Curve Internals
@@ -129,16 +133,28 @@ void Curve::initialize(const CURVE_DESC* pDesc)
 				data.Vertices = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"CurveVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_CURVE_VS), getBlobSizeFromId(BLOB_ID::BLOB_CURVE_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout
@@ -176,16 +192,28 @@ void Curve::initialize(const CURVE_DESC* pDesc)
 				data.ColVertices = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"ColorCurveVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_COLOR_CURVE_VS), getBlobSizeFromId(BLOB_ID::BLOB_COLOR_CURVE_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout
@@ -220,16 +248,28 @@ void Curve::initialize(const CURVE_DESC* pDesc)
 				data.ColVertices = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"ColorCurveVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_COLOR_CURVE_VS), getBlobSizeFromId(BLOB_ID::BLOB_COLOR_CURVE_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout

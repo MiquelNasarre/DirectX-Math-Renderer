@@ -4,6 +4,10 @@
 #include "Exception/_exDefault.h"
 #include <math.h>
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Light Internals
@@ -112,7 +116,11 @@ void Light::initialize(const LIGHT_DESC* pDesc)
 
 	// Then add all other binds.
 
+#ifndef _DEPLOYMENT
 	VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"LightVS.cso"));
+#else
+	VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_LIGHT_VS), getBlobSizeFromId(BLOB_ID::BLOB_LIGHT_VS)));
+#endif
 
 	INPUT_ELEMENT_DESC ied[1] =
 	{
@@ -124,7 +132,11 @@ void Light::initialize(const LIGHT_DESC* pDesc)
 	AddBind(new Rasterizer(false));
 	AddBind(new Topology(TRIANGLE_LIST));
 	AddBind(new Blender(BLEND_MODE_ADDITIVE));
+#ifndef _DEPLOYMENT
 	AddBind(new PixelShader(SHADERS_DIR L"LightPS.cso"));
+#else
+	AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_LIGHT_PS), getBlobSizeFromId(BLOB_ID::BLOB_LIGHT_PS)));
+#endif
 }
 
 /*

@@ -20,6 +20,7 @@ struct VertexShaderInternals
 --------------------------------------------------------------------------------------------
 */
 
+#ifndef _DEPLOYMENT
 // Given a (*.cso) file path it creates the bytecode and the vertex shader object.
 
 VertexShader::VertexShader(const wchar_t* path)
@@ -35,6 +36,27 @@ VertexShader::VertexShader(const wchar_t* path)
 		data.pVertexShader.GetAddressOf()
 	) );
 }
+
+#else
+// Raw constructor for deployment, uses embedded resources. Expects valid blobs.
+
+VertexShader::VertexShader(const void* bytecode, size_t size)
+{
+	BindableData = new VertexShaderInternals;
+	VertexShaderInternals& data = *(VertexShaderInternals*)BindableData;
+
+	GFX_THROW_INFO(D3DCreateBlob(static_cast<SIZE_T>(size), data.pBytecodeBlob.GetAddressOf()));
+
+	memcpy(data.pBytecodeBlob->GetBufferPointer(), bytecode, size);
+
+	GFX_THROW_INFO(_device->CreateVertexShader(
+		data.pBytecodeBlob->GetBufferPointer(),
+		data.pBytecodeBlob->GetBufferSize(),
+		NULL,
+		data.pVertexShader.GetAddressOf()
+	));
+}
+#endif
 
 // Releases the pointers and deletes the internal data.
 

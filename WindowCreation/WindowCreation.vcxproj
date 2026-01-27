@@ -217,6 +217,7 @@
     <ClCompile Include="source\Drawable\Scatter.cpp" />
     <ClCompile Include="source\Drawable\Surface.cpp" />
     <ClCompile Include="source\Drawable\Polihedron.cpp" />
+    <ClCompile Include="source\embedded_resources.cpp" />
     <ClCompile Include="source\Exception\DxgiInfoManager.cpp" />
     <ClCompile Include="source\Exception\Exception.cpp" />
     <ClCompile Include="source\Graphics.cpp" />
@@ -244,7 +245,10 @@
     <ClInclude Include="include\Bindable\Topology.h" />
     <ClInclude Include="include\Bindable\VertexBuffer.h" />
     <ClInclude Include="include\Bindable\VertexShader.h" />
+    <ClInclude Include="include\chaotic.h" />
+    <ClInclude Include="include\chaotic_customs.h" />
     <ClInclude Include="include\chaotic_defaults.h" />
+    <ClInclude Include="include\chaotic_internals.h" />
     <ClInclude Include="include\Drawable.h" />
     <ClInclude Include="include\Drawable\Background.h" />
     <ClInclude Include="include\Drawable\Curve.h" />
@@ -252,6 +256,7 @@
     <ClInclude Include="include\Drawable\Scatter.h" />
     <ClInclude Include="include\Drawable\Surface.h" />
     <ClInclude Include="include\Drawable\Polihedron.h" />
+    <ClInclude Include="include\embedded_resources.h" />
     <ClInclude Include="include\Exception\DxgiInfoManager.h" />
     <ClInclude Include="include\Exception\Exception.h" />
     <ClInclude Include="include\Exception\_exDefault.h" />

@@ -3,6 +3,10 @@
 
 #include "Exception/_exDefault.h"
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Scatter Internals
@@ -128,23 +132,39 @@ void Scatter::initialize(const SCATTER_DESC* pDesc)
 				data.Points = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"CurveVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_CURVE_VS), getBlobSizeFromId(BLOB_ID::BLOB_CURVE_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
 			switch (data.desc.blending)
 			{
 			case SCATTER_DESC::OPAQUE_POINTS:
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 				break;
 
 			case SCATTER_DESC::GLOWING_POINTS:
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_ADDITIVE));
 				AddBind(new DepthStencil(DEPTH_STENCIL_MODE_NOWRITE));
 				break;
 
 			case SCATTER_DESC::TRANSPARENT_POINTS:
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 				break;
 			}
@@ -184,23 +204,40 @@ void Scatter::initialize(const SCATTER_DESC* pDesc)
 				data.ColPoints = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"ColorCurveVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_COLOR_CURVE_VS), getBlobSizeFromId(BLOB_ID::BLOB_COLOR_CURVE_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
+// Create the corresponding Pixel Shader and Blender
 			switch (data.desc.blending)
 			{
 			case SCATTER_DESC::OPAQUE_POINTS:
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 				break;
 
 			case SCATTER_DESC::GLOWING_POINTS:
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_ADDITIVE));
 				AddBind(new DepthStencil(DEPTH_STENCIL_MODE_NOWRITE));
 				break;
 
 			case SCATTER_DESC::TRANSPARENT_POINTS:
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS), getBlobSizeFromId(BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 				break;
 			}

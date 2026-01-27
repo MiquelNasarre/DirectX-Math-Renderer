@@ -6,6 +6,10 @@
 #include <cstdio> // For mesh support
 #include <cstdlib> // For mesh support
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Polihedron Internals
@@ -580,16 +584,34 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 				data.Vertices = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"GlobalColorVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_GLOBAL_COLOR_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITGlobalColorPS.cso" : SHADERS_DIR L"OITUnlitGlobalColorPS.cso"));
+#else
+				AddBind(new PixelShader(
+					getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS), 
+					getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_GLOBAL_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_GLOBAL_COLOR_PS) 
+				));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"GlobalColorPS.cso" : SHADERS_DIR L"UnlitGlobalColorPS.cso"));
+#else
+				AddBind(new PixelShader(
+					getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS),
+					getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_GLOBAL_COLOR_PS : BLOB_ID::BLOB_UNLIT_GLOBAL_COLOR_PS)
+				));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout
@@ -671,16 +693,34 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 				data.ColVertices = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexColorVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_COLOR_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexColorPS.cso" : SHADERS_DIR L"OITUnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(
+					getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS),
+					getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_COLOR_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_COLOR_PS)
+				));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexColorPS.cso" : SHADERS_DIR L"UnlitVertexColorPS.cso"));
+#else
+				AddBind(new PixelShader(
+					getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS),
+					getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_COLOR_PS : BLOB_ID::BLOB_UNLIT_VERTEX_COLOR_PS)
+				));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout
@@ -777,16 +817,34 @@ void Polihedron::initialize(const POLIHEDRON_DESC* pDesc)
 				data.TexVertices = nullptr;
 			}
 			// Create the corresponding Vertex Shader
+#ifndef _DEPLOYMENT
 			VertexShader* pvs = AddBind(new VertexShader(SHADERS_DIR L"VertexTextureVS.cso"));
+#else
+			VertexShader* pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS), getBlobSizeFromId(BLOB_ID::BLOB_VERTEX_TEXTURE_VS)));
+#endif
 			// Create the corresponding Pixel Shader and Blender
 			if (data.desc.enable_transparency)
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"OITVertexTexturePS.cso" : SHADERS_DIR L"OITUnlitVertexTexturePS.cso"));
+#else
+				AddBind(new PixelShader(
+					getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_TEXTURE_PS),
+					getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_OIT_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_OIT_UNLIT_VERTEX_TEXTURE_PS)
+				));
+#endif
 				AddBind(new Blender(BLEND_MODE_OIT_WEIGHTED));
 			}
 			else
 			{
+#ifndef _DEPLOYMENT
 				AddBind(new PixelShader(data.desc.enable_iluminated ? SHADERS_DIR L"VertexTexturePS.cso" : SHADERS_DIR L"UnlitVertexTexturePS.cso"));
+#else
+				AddBind(new PixelShader(
+					getBlobFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_VERTEX_TEXTURE_PS),
+					getBlobSizeFromId(data.desc.enable_iluminated ? BLOB_ID::BLOB_VERTEX_TEXTURE_PS : BLOB_ID::BLOB_UNLIT_VERTEX_TEXTURE_PS)
+				));
+#endif
 				AddBind(new Blender(BLEND_MODE_OPAQUE));
 			}
 			// Create the corresponding input layout

@@ -3,6 +3,10 @@
 
 #include "Exception/_exDefault.h"
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 /*
 -----------------------------------------------------------------------------------------------------------
  Background Internals
@@ -80,8 +84,13 @@ void Background::initialize(const BACKGROUND_DESC* pDesc)
 	{
 	case BACKGROUND_DESC::STATIC_BACKGROUND:
 	{
+#ifndef _DEPLOYMENT
 		pvs = AddBind(new VertexShader(SHADERS_DIR L"BackgroundVS.cso"));
 		AddBind(new PixelShader(SHADERS_DIR L"BackgroundPS.cso"));
+#else
+		pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_BACKGROUND_VS), getBlobSizeFromId(BLOB_ID::BLOB_BACKGROUND_VS)));
+		AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_BACKGROUND_PS), getBlobSizeFromId(BLOB_ID::BLOB_BACKGROUND_PS)));
+#endif
 
 		_float4vector rectangle = { 0.f, 0.f, 1.f, 1.f };
 		data.pCBuff = AddBind(new ConstantBuffer(&rectangle, VERTEX_CONSTANT_BUFFER));
@@ -92,8 +101,13 @@ void Background::initialize(const BACKGROUND_DESC* pDesc)
 
 	case BACKGROUND_DESC::DYNAMIC_BACKGROUND:
 	{
+#ifndef _DEPLOYMENT
 		pvs = AddBind(new VertexShader(SHADERS_DIR L"DynamicBgVS.cso"));
 		AddBind(new PixelShader(SHADERS_DIR L"DynamicBgPS.cso"));
+#else
+		pvs = AddBind(new VertexShader(getBlobFromId(BLOB_ID::BLOB_DYNAMIC_BG_VS), getBlobSizeFromId(BLOB_ID::BLOB_DYNAMIC_BG_VS)));
+		AddBind(new PixelShader(getBlobFromId(BLOB_ID::BLOB_DYNAMIC_BG_PS), getBlobSizeFromId(BLOB_ID::BLOB_DYNAMIC_BG_PS)));
+#endif
 
 		data.pCBuff = AddBind(new ConstantBuffer(&data.projection, VERTEX_CONSTANT_BUFFER));
 

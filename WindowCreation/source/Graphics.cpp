@@ -3,6 +3,10 @@
 
 #include "WinHeader.h"
 
+#ifdef _DEPLOYMENT
+#include "embedded_resources.h"
+#endif
+
 // Uncomment to use the Graphics Debugger.
 //#define GRAPHICS_DEBUGGING
 
@@ -761,8 +765,13 @@ void Graphics::enableOITransparency()
 		INPUT_ELEMENT_DESC ied = { "Position", _2_FLOAT };
 
 		oit.resolveBindables[0] = new VertexBuffer(V, 4);
+#ifndef _DEPLOYMENT
 		oit.resolveBindables[1] = new VertexShader(SHADERS_DIR L"OITresolveVS.cso");
 		oit.resolveBindables[2] = new PixelShader(SHADERS_DIR L"OITresolvePS.cso");
+#else
+		oit.resolveBindables[1] = new VertexShader(getBlobFromId(BLOB_ID::BLOB_OIT_RESOLVE_VS), getBlobSizeFromId(BLOB_ID::BLOB_OIT_RESOLVE_VS));
+		oit.resolveBindables[2] = new PixelShader(getBlobFromId(BLOB_ID::BLOB_OIT_RESOLVE_PS), getBlobSizeFromId(BLOB_ID::BLOB_OIT_RESOLVE_PS));
+#endif
 		oit.resolveBindables[3] = new Sampler(SAMPLE_FILTER_POINT, SAMPLE_ADDRESS_WRAP);
 		oit.resolveBindables[4] = new InputLayout(&ied, 1u, (VertexShader*)oit.resolveBindables[1]);
 		oit.resolveBindables[5] = new Topology(TRIANGLE_STRIP);
